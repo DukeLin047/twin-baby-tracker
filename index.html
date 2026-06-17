@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>新生兒成長紀錄</title>
+<meta name="application-name" content="新生兒成長紀錄">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="新生兒成長紀錄">
+<meta name="theme-color" content="#0891B2">
+<link rel="manifest" id="pwa-manifest">
+<link rel="apple-touch-icon" id="apple-icon">
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+// ── PWA Icon ─────────────────────────────────────────
+const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#0891B2"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#g)"/>
+  <circle cx="172" cy="185" r="62" fill="url(#g2)" opacity="0.95"/>
+  <ellipse cx="172" cy="185" rx="28" ry="30" fill="white" opacity="0.9"/>
+  <circle cx="162" cy="178" r="6" fill="#1D4ED8"/>
+  <circle cx="182" cy="178" r="6" fill="#1D4ED8"/>
+  <path d="M159 193 q13 12 26 0" stroke="#1D4ED8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="340" cy="185" r="62" fill="url(#g2)" opacity="0.85"/>
+  <ellipse cx="340" cy="185" rx="28" ry="30" fill="white" opacity="0.9"/>
+  <circle cx="330" cy="178" r="6" fill="#0E7490"/>
+  <circle cx="350" cy="178" r="6" fill="#0E7490"/>
+  <path d="M327 193 q13 12 26 0" stroke="#0E7490" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <text x="256" y="202" text-anchor="middle" font-size="36" fill="white" opacity="0.9">♥</text>
+  <text x="256" y="310" text-anchor="middle" font-family="sans-serif" font-size="38" font-weight="700" fill="white">新生兒成長紀錄</text>
+  <text x="256" y="355" text-anchor="middle" font-family="sans-serif" font-size="24" fill="rgba(255,255,255,0.7)">雙寶日誌</text>
+</svg>`;
+const iconBlob = new Blob([iconSVG], {type:'image/svg+xml'});
+const iconURL = URL.createObjectURL(iconBlob);
+document.getElementById('apple-icon').href = iconURL;
+const manifest = {
+  name:"新生兒成長紀錄", short_name:"雙寶日誌",
+  start_url:"./", display:"standalone",
+  background_color:"#0891B2", theme_color:"#0891B2",
+  icons:[{src:iconURL,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]
+};
+const mBlob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
+</script>
+
+<style>
+:root {
+  --a:#2563EB; --a-light:#DBEAFE; --a-mid:#93C5FD;
+  --b:#0891B2; --b-light:#CFFAFE; --b-mid:#67E8F9;
+  --ink:#0F172A; --ink2:#475569; --ink3:#94A3B8;
+  --surface:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0;
+  --success:#10B981; --danger:#EF4444;
+  --radius:16px; --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Noto Sans TC',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;padding-bottom:90px;}
+
+/* Sync status bar */
+#syncBar{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  padding:6px 16px;font-size:12px;font-weight:600;
+  text-align:center;transition:all 0.3s;transform:translateY(-100%);
+}
+#syncBar.show{transform:translateY(0);}
+#syncBar.syncing{background:#FEF3C7;color:#92400E;}
+#syncBar.ok{background:#D1FAE5;color:#065F46;}
+#syncBar.err{background:#FEE2E2;color:#991B1B;}
+
+header{background:linear-gradient(135deg,var(--a) 0%,var(--b) 100%);color:white;padding:20px 20px 28px;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(37,99,235,0.25);}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;}
+header h1{font-size:22px;font-weight:700;letter-spacing:0.5px;}
+header p{font-size:13px;opacity:0.8;margin-top:2px;}
+.sync-dot{width:10px;height:10px;border-radius:50%;background:#10B981;margin-top:6px;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,0.4);}
+.sync-dot.offline{background:#F59E0B;}
+.sync-dot.error{background:#EF4444;}
+.date-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 14px;}
+.date-bar span{font-size:14px;font-weight:600;}
+.date-nav{background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 6px;}
+
+.baby-tabs{display:flex;gap:10px;padding:16px 20px 8px;}
+.baby-tab{flex:1;padding:14px 10px;border-radius:var(--radius);border:2px solid transparent;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--card);}
+.baby-tab.a{border-color:var(--a-mid);}
+.baby-tab.a.active{background:var(--a);color:white;border-color:var(--a);}
+.baby-tab.b{border-color:var(--b-mid);}
+.baby-tab.b.active{background:var(--b);color:white;border-color:var(--b);}
+.baby-tab .name{font-size:15px;font-weight:700;}
+.baby-tab .tag{font-size:11px;opacity:0.65;margin-top:2px;}
+.baby-tab.a:not(.active) .name{color:var(--a);}
+.baby-tab.b:not(.active) .name{color:var(--b);}
+
+.summary{display:flex;gap:8px;padding:4px 20px 12px;overflow-x:auto;scrollbar-width:none;}
+.summary::-webkit-scrollbar{display:none;}
+.sum-chip{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;font-size:13px;white-space:nowrap;font-weight:600;background:var(--card);border:1.5px solid var(--border);}
+.sum-chip .icon{font-size:15px;}
+.sum-chip.a-chip{border-color:var(--a-mid);color:var(--a);}
+.sum-chip.b-chip{border-color:var(--b-mid);color:var(--b);}
+
+.section{padding:0 20px 16px;}
+.section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;margin-top:4px;}
+
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px;cursor:pointer;text-align:left;transition:all 0.15s;position:relative;overflow:hidden;}
+.action-btn:active{transform:scale(0.97);}
+.action-btn .icon{font-size:26px;margin-bottom:6px;display:block;}
+.action-btn .label{font-size:14px;font-weight:700;color:var(--ink);}
+.action-btn .sub{font-size:12px;color:var(--ink3);margin-top:2px;}
+.action-btn.a-btn{border-color:var(--a-light);}
+.action-btn.a-btn::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:var(--a-light);border-radius:0 16px 0 60px;}
+.action-btn.b-btn{border-color:var(--b-light);}
+.action-btn.b-btn::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:var(--b-light);border-radius:0 16px 0 60px;}
+
+.log-list{display:flex;flex-direction:column;gap:8px;}
+.log-item{background:var(--card);border-radius:var(--radius-sm);padding:13px 15px;display:flex;align-items:flex-start;gap:12px;border-left:3px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.log-item.a-log{border-left-color:var(--a);}
+.log-item.b-log{border-left-color:var(--b);}
+.log-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.log-body{flex:1;min-width:0;}
+.log-who{font-size:11px;font-weight:700;letter-spacing:0.5px;}
+.log-who.a{color:var(--a);}
+.log-who.b{color:var(--b);}
+.log-desc{font-size:14px;font-weight:600;margin-top:1px;}
+.log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
+.log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;}
+.log-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
+.log-del:hover{color:var(--danger);}
+
+.empty-state{text-align:center;padding:32px 20px;color:var(--ink3);}
+.empty-state .e-icon{font-size:40px;margin-bottom:10px;}
+.empty-state p{font-size:14px;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;animation:slideUp 0.28s cubic-bezier(.22,.68,0,1.2);}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 20px;}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:20px;}
+.modal-title span{font-size:22px;margin-right:8px;}
+
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:6px;}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);outline:none;transition:border-color 0.15s;font-family:inherit;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--a);}
+.field textarea{resize:vertical;min-height:70px;}
+
+.seg-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.seg-btn{flex:1;min-width:70px;padding:9px 6px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;}
+.seg-btn.sel-a{border-color:var(--a);background:var(--a-light);color:var(--a);}
+.seg-btn.sel-b{border-color:var(--b);background:var(--b-light);color:var(--b);}
+
+.modal-btns{display:flex;gap:10px;margin-top:20px;}
+.btn-cancel{flex:1;padding:14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:none;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer;}
+.btn-save{flex:2;padding:14px;border-radius:var(--radius-sm);border:none;color:white;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--a),var(--b));}
+.btn-save:disabled{opacity:0.5;cursor:not-allowed;}
+
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-btn{flex:1;padding:12px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink3);transition:color 0.15s;font-size:10px;font-weight:600;}
+.nav-btn.active{color:var(--a);}
+.nav-btn .nav-icon{font-size:22px;}
+.nav-add{flex:1;padding:10px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.nav-add-circle{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:26px;color:white;margin-top:-20px;box-shadow:0 4px 14px rgba(37,99,235,0.4);}
+
+.weight-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1.5px solid var(--border);}
+.weight-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.weight-row:last-child{border-bottom:none;}
+.weight-row .w-date{font-size:13px;color:var(--ink2);}
+.weight-row .w-vals{display:flex;gap:16px;}
+.weight-val{font-size:14px;font-weight:700;}
+.weight-val.a{color:var(--a);}
+.weight-val.b{color:var(--b);}
+.weight-label{font-size:10px;color:var(--ink3);font-weight:500;}
+
+.view{display:none;}
+.view.active{display:block;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-card{background:var(--card);border-radius:var(--radius-sm);padding:14px;border:1.5px solid var(--border);}
+.stat-card .s-label{font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:0.5px;}
+.stat-card .s-val{font-size:22px;font-weight:800;margin-top:4px;}
+.stat-card .s-val.a{color:var(--a);}
+.stat-card .s-val.b{color:var(--b);}
+.stat-card .s-sub{font-size:11px;color:var(--ink2);margin-top:2px;}
+
+/* Loading screen */
+#loadingScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--a),var(--b));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;}
+#loadingScreen .l-icon{font-size:60px;margin-bottom:16px;animation:pulse 1.5s infinite;}
+#loadingScreen .l-text{font-size:18px;font-weight:700;}
+#loadingScreen .l-sub{font-size:14px;opacity:0.7;margin-top:6px;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+  <div class="l-icon">👶</div>
+  <div class="l-text">雙寶日誌</div>
+  <div class="l-sub">連線中…</div>
+</div>
+
+<!-- Sync status bar -->
+<div id="syncBar"></div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>👶👶 雙寶日誌</h1>
+      <p>新生兒照護紀錄</p>
+    </div>
+    <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
+  </div>
+  <div class="date-bar">
+    <button class="date-nav" onclick="changeDay(-1)">‹</button>
+    <span id="dateLabel"></span>
+    <button class="date-nav" onclick="changeDay(1)">›</button>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showView('home',this)"><span class="nav-icon">🏠</span>今日</button>
+  <button class="nav-btn" onclick="showView('logs',this)"><span class="nav-icon">📋</span>紀錄</button>
+  <button class="nav-add" onclick="openAdd()"><div class="nav-add-circle">＋</div></button>
+  <button class="nav-btn" onclick="showView('weight',this)"><span class="nav-icon">⚖️</span>成長</button>
+  <button class="nav-btn" onclick="showView('stats',this)"><span class="nav-icon">📊</span>統計</button>
+</nav>
+
+<!-- HOME VIEW -->
+<div class="view active" id="view-home">
+  <div class="baby-tabs">
+    <div class="baby-tab a active" id="tab-a" onclick="selectBaby('a')">
+      <div class="name" id="name-a-tab">寶寶甲</div>
+      <div class="tag">男寶</div>
+    </div>
+    <div class="baby-tab b" id="tab-b" onclick="selectBaby('b')">
+      <div class="name" id="name-b-tab">寶寶乙</div>
+      <div class="tag">男寶</div>
+    </div>
+  </div>
+  <div class="summary" id="summaryStrip"></div>
+  <div class="section">
+    <div class="section-title">快速紀錄</div>
+    <div class="action-grid" id="quickGrid"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">今日紀錄</div>
+    <div class="log-list" id="todayLog"></div>
+  </div>
+</div>
+
+<!-- LOGS VIEW -->
+<div class="view" id="view-logs">
+  <div class="section" style="padding-top:16px">
+    <div class="section-title">所有紀錄</div>
+    <div class="log-list" id="allLog"></div>
+  </div>
+</div>
+
+<!-- WEIGHT VIEW -->
+<div class="view" id="view-weight">
+  <div class="section" style="padding-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="section-title" style="margin:0">成長紀錄</div>
+      <button onclick="openWeightAdd()" style="background:var(--a);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
+    </div>
+    <div class="weight-card">
+      <div style="display:flex;gap:20px;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--a)">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--a);display:inline-block"></span>
+          <span id="nameA-w">寶寶甲</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--b)">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--b);display:inline-block"></span>
+          <span id="nameB-w">寶寶乙</span>
+        </div>
+      </div>
+      <div id="weightList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS VIEW -->
+<div class="view" id="view-stats">
+  <div class="section" style="padding-top:16px">
+    <div class="section-title">今日統計</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="flex:1;text-align:center;padding:12px;background:var(--a-light);border-radius:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--a);letter-spacing:.5px" id="nameA-s">寶寶甲</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:12px;background:var(--b-light);border-radius:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--b);letter-spacing:.5px" id="nameB-s">寶寶乙</div>
+      </div>
+    </div>
+    <div class="stat-grid" id="statsGrid"></div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span id="modalIcon">📝</span><span id="modalTitleText">新增紀錄</span></div>
+    <div class="field">
+      <label>寶寶</label>
+      <div class="seg-btns" id="babyPicker"></div>
+    </div>
+    <div class="field">
+      <label>類型</label>
+      <select id="typeSelect" onchange="updateForm()">
+        <option value="milk">🍼 餵奶</option>
+        <option value="diaper">👶 換尿布</option>
+        <option value="poop">💩 排便</option>
+        <option value="note">📝 備註</option>
+      </select>
+    </div>
+    <div id="milkFields">
+      <div class="field">
+        <label>方式</label>
+        <div class="seg-btns">
+          <button class="seg-btn sel-a" onclick="pickMilkType('母乳',this)">母乳</button>
+          <button class="seg-btn" onclick="pickMilkType('配方奶',this)">配方奶</button>
+          <button class="seg-btn" onclick="pickMilkType('混合',this)">混合</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>量（ml）</label>
+        <input type="number" id="milkAmount" placeholder="例如：80" min="0">
+      </div>
+    </div>
+    <div id="diaperFields" style="display:none">
+      <div class="field">
+        <label>狀況</label>
+        <div class="seg-btns">
+          <button class="seg-btn" onclick="pickDiaper('濕',this)">💧 濕尿布</button>
+          <button class="seg-btn" onclick="pickDiaper('便便',this)">💩 便便</button>
+          <button class="seg-btn" onclick="pickDiaper('混合',this)">兩者都有</button>
+        </div>
+      </div>
+    </div>
+    <div id="poopFields" style="display:none">
+      <div class="field">
+        <label>顏色</label>
+        <div class="seg-btns">
+          <button class="seg-btn" onclick="pickPoop('黃色',this)">🟡 黃</button>
+          <button class="seg-btn" onclick="pickPoop('綠色',this)">🟢 綠</button>
+          <button class="seg-btn" onclick="pickPoop('棕色',this)">🟤 棕</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>性狀</label>
+        <div class="seg-btns">
+          <button class="seg-btn" onclick="pickPoopType('稀糊',this)">稀糊</button>
+          <button class="seg-btn" onclick="pickPoopType('正常',this)">正常</button>
+          <button class="seg-btn" onclick="pickPoopType('偏硬',this)">偏硬</button>
+        </div>
+      </div>
+    </div>
+    <div id="noteFields" style="display:none">
+      <div class="field">
+        <label>備註內容</label>
+        <textarea id="noteText" placeholder="記下任何觀察、症狀或特別狀況…"></textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label>時間</label>
+      <input type="datetime-local" id="logTime">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('addModal')">取消</button>
+      <button class="btn-save" id="saveLogBtn" onclick="saveLog()">儲存紀錄</button>
+    </div>
+  </div>
+</div>
+
+<!-- WEIGHT MODAL -->
+<div class="overlay" id="weightModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>⚖️</span> 新增成長紀錄</div>
+    <div class="field">
+      <label>日期</label>
+      <input type="date" id="weightDate">
+    </div>
+    <div class="field">
+      <label id="nameA-wf">寶寶甲</label> <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
+      <input type="number" id="weightA" placeholder="例如：3200">
+    </div>
+    <div class="field">
+      <label id="nameB-wf">寶寶乙</label> <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
+      <input type="number" id="weightB" placeholder="例如：3100">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('weightModal')">取消</button>
+      <button class="btn-save" onclick="saveWeight()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP MODAL -->
+<div class="overlay" id="setupModal" style="align-items:center">
+  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:center">👶 歡迎使用雙寶日誌</div>
+    <p style="font-size:14px;color:var(--ink2);text-align:center;margin-bottom:20px">請先為兩個寶寶取個名字</p>
+    <div class="field">
+      <label>🔵 第一個寶寶的名字</label>
+      <input type="text" id="setupNameA" placeholder="例如：小宇">
+    </div>
+    <div class="field">
+      <label>🩵 第二個寶寶的名字</label>
+      <input type="text" id="setupNameB" placeholder="例如：小恩">
+    </div>
+    <button class="btn-save" style="width:100%;margin-top:8px" onclick="saveNames()">開始記錄 🎉</button>
+  </div>
+</div>
+
+<!-- Install Banner -->
+<div id="installBanner" style="display:none;position:fixed;bottom:90px;left:16px;right:16px;z-index:300;background:white;border-radius:18px;padding:16px 18px;box-shadow:0 8px 32px rgba(37,99,235,0.22);border:1.5px solid #DBEAFE;flex-direction:column;gap:10px;">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;background:linear-gradient(135deg,#2563EB,#0891B2);display:flex;align-items:center;justify-content:center;font-size:24px;">👶</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:700;color:#0F172A">新生兒成長紀錄</div>
+      <div style="font-size:12px;color:#64748B;margin-top:2px">加入桌面，隨時快速開啟</div>
+    </div>
+    <button onclick="dismissBanner()" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:4px;">✕</button>
+  </div>
+  <button id="installAndroidBtn" onclick="doInstall()" style="display:none;width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#2563EB,#0891B2);color:white;font-size:15px;font-weight:700;cursor:pointer;">📲 加入主畫面</button>
+  <div id="installIOSMsg" style="display:none;background:#F0F9FF;border-radius:10px;padding:12px 14px;">
+    <div style="font-size:13px;font-weight:700;color:#0891B2;margin-bottom:6px">iPhone / iPad 安裝步驟</div>
+    <div style="font-size:13px;color:#334155;line-height:1.7">1. 點下方 Safari 分享按鈕 ⬆️<br>2. 選擇「<strong>加入主畫面</strong>」<br>3. 點「新增」</div>
+  </div>
+</div>
+
+<script>
+// ─── Firebase Config ──────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAQ9l3cnRi9NuilRnNno5vK_UfFaXjifzw",
+  authDomain: "twin-baby-tracker-ece09.firebaseapp.com",
+  databaseURL: "https://twin-baby-tracker-ece09-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "twin-baby-tracker-ece09",
+  storageBucket: "twin-baby-tracker-ece09.firebasestorage.app",
+  messagingSenderId: "617965681273",
+  appId: "1:617965681273:web:a502a2d7393d9d1fe3b2a8"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ─── State ────────────────────────────────────────────
+let state = { names:{a:'',b:''}, logs:[], weights:[] };
+let currentBaby = 'a';
+let currentDay = new Date(); currentDay.setHours(0,0,0,0);
+let milkType='母乳', diaperType='濕', poopColor='黃色', poopConsistency='正常';
+let selectedBabyInModal='a';
+let isSaving = false;
+
+// ─── Sync indicator ──────────────────────────────────
+function setSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const bar = document.getElementById('syncBar');
+  if(status==='ok') {
+    dot.className='sync-dot';
+    bar.className='syncBar ok show';
+    bar.textContent='✓ 雲端同步成功';
+    setTimeout(()=>bar.classList.remove('show'),2000);
+  } else if(status==='syncing') {
+    dot.className='sync-dot offline';
+    bar.className='syncBar syncing show';
+    bar.textContent='⟳ 同步中…';
+  } else if(status==='error') {
+    dot.className='sync-dot error';
+    bar.className='syncBar err show';
+    bar.textContent='⚠️ 同步失敗，請檢查網路';
+  }
+}
+
+// ─── Firebase listeners (real-time) ──────────────────
+function startListening() {
+  // Names
+  db.ref('names').on('value', snap => {
+    const val = snap.val();
+    if(val) { state.names = val; updateNames(); }
+    renderAll();
+  });
+
+  // Logs
+  db.ref('logs').on('value', snap => {
+    const val = snap.val();
+    state.logs = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    renderAll();
+  });
+
+  // Weights
+  db.ref('weights').on('value', snap => {
+    const val = snap.val();
+    state.weights = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    renderAll();
+  });
+
+  // Hide loading after first data
+  setTimeout(()=>{
+    document.getElementById('loadingScreen').style.display='none';
+  }, 1200);
+}
+
+// ─── Init ─────────────────────────────────────────────
+function init() {
+  startListening();
+  setDefaultTime();
+
+  // Check if names exist after short delay
+  setTimeout(()=>{
+    if(!state.names.a) {
+      document.getElementById('setupModal').classList.add('open');
+    }
+  }, 1500);
+}
+
+function saveNames() {
+  const a = document.getElementById('setupNameA').value.trim();
+  const b = document.getElementById('setupNameB').value.trim();
+  if(!a||!b){alert('請為兩個寶寶都輸入名字');return;}
+  setSyncStatus('syncing');
+  db.ref('names').set({a,b})
+    .then(()=>{ setSyncStatus('ok'); closeModal('setupModal'); })
+    .catch(()=>setSyncStatus('error'));
+}
+
+function updateNames() {
+  const a = state.names.a || '寶寶甲';
+  const b = state.names.b || '寶寶乙';
+  document.querySelectorAll('[id^="name-a-"], [id^="nameA"]').forEach(el=>el.textContent=a);
+  document.querySelectorAll('[id^="name-b-"], [id^="nameB"]').forEach(el=>el.textContent=b);
+  document.getElementById('name-a-tab').textContent = a;
+  document.getElementById('name-b-tab').textContent = b;
+  ['nameA-w','nameB-w','nameA-s','nameB-s','nameA-wf','nameB-wf'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=id.includes('A')?a:b;
+  });
+}
+
+// ─── Date ─────────────────────────────────────────────
+function changeDay(d){currentDay.setDate(currentDay.getDate()+d);renderAll();}
+
+function isSameDay(d1,d2){
+  return d1.getFullYear()===d2.getFullYear()&&d1.getMonth()===d2.getMonth()&&d1.getDate()===d2.getDate();
+}
+function fmtDate(d){
+  const today=new Date();today.setHours(0,0,0,0);
+  const yd=new Date(today);yd.setDate(yd.getDate()-1);
+  if(isSameDay(d,today))return'今天';
+  if(isSameDay(d,yd))return'昨天';
+  return`${d.getMonth()+1}月${d.getDate()}日`;
+}
+function fmtTime(iso){
+  const d=new Date(iso);
+  return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ─── Views ────────────────────────────────────────────
+function showView(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderAll();
+}
+function selectBaby(baby){
+  currentBaby=baby;
+  document.getElementById('tab-a').classList.toggle('active',baby==='a');
+  document.getElementById('tab-b').classList.toggle('active',baby==='b');
+  renderSummary();
+}
+
+// ─── Render ───────────────────────────────────────────
+function renderAll(){
+  updateDateLabel();renderSummary();renderQuickGrid();
+  renderTodayLog();renderAllLog();renderWeight();renderStats();
+}
+function updateDateLabel(){
+  const label=fmtDate(currentDay),d=currentDay;
+  document.getElementById('dateLabel').textContent=
+    label+(label==='今天'||label==='昨天'?` (${d.getMonth()+1}/${d.getDate()})`:' '+`${d.getMonth()+1}/${d.getDate()}`);
+}
+function getDayLogs(baby){
+  return state.logs.filter(l=>l.baby===baby&&isSameDay(new Date(l.time),currentDay))
+    .sort((a,b)=>new Date(b.time)-new Date(a.time));
+}
+function renderSummary(){
+  const logs=getDayLogs(currentBaby);
+  const cls=currentBaby==='a'?'a-chip':'b-chip';
+  const milks=logs.filter(l=>l.type==='milk');
+  const diapers=logs.filter(l=>l.type==='diaper'||l.type==='poop');
+  const totalMl=milks.reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  document.getElementById('summaryStrip').innerHTML=`
+    <div class="sum-chip ${cls}"><span class="icon">🍼</span>${milks.length} 次餵奶${totalMl?' · '+totalMl+'ml':''}</div>
+    <div class="sum-chip ${cls}"><span class="icon">👶</span>${diapers.length} 次換尿布</div>
+    <div class="sum-chip ${cls}"><span class="icon">📝</span>${logs.filter(l=>l.type==='note').length} 則備註</div>`;
+}
+function typeInfo(type){
+  return {milk:{icon:'🍼',label:'餵奶'},diaper:{icon:'👶',label:'換尿布'},poop:{icon:'💩',label:'排便'},note:{icon:'📝',label:'備註'}}[type]||{icon:'📋',label:type};
+}
+function logDetail(log){
+  if(log.type==='milk')return`${log.milkType||'母乳'}${log.amount?' · '+log.amount+'ml':''}`;
+  if(log.type==='diaper')return log.diaperType||'換尿布';
+  if(log.type==='poop')return`${log.poopColor||''} ${log.poopConsistency||''}`.trim();
+  if(log.type==='note')return log.note||'';
+  return'';
+}
+function renderLogItems(logs,container){
+  if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="e-icon">🌙</div><p>還沒有紀錄</p></div>`;return;}
+  container.innerHTML=logs.map(log=>{
+    const info=typeInfo(log.type);
+    const name=state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙');
+    return`<div class="log-item ${log.baby}-log">
+      <div class="log-icon">${info.icon}</div>
+      <div class="log-body">
+        <div class="log-who ${log.baby}">${name}</div>
+        <div class="log-desc">${info.label}</div>
+        <div class="log-detail">${logDetail(log)}</div>
+      </div>
+      <div class="log-time">${fmtTime(log.time)}</div>
+      <button class="log-del" onclick="deleteLog('${log.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function renderTodayLog(){
+  const logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay)).sort((a,b)=>new Date(b.time)-new Date(a.time));
+  renderLogItems(logs,document.getElementById('todayLog'));
+}
+function renderAllLog(){
+  const logs=[...state.logs].sort((a,b)=>new Date(b.time)-new Date(a.time));
+  renderLogItems(logs,document.getElementById('allLog'));
+}
+function renderQuickGrid(){
+  const baby=currentBaby,cls=baby==='a'?'a-btn':'b-btn';
+  const name=state.names[baby]||(baby==='a'?'寶寶甲':'寶寶乙');
+  const items=[{icon:'🍼',label:'餵奶',type:'milk'},{icon:'👶',label:'換尿布',type:'diaper'},{icon:'💩',label:'排便',type:'poop'},{icon:'📝',label:'備註',type:'note'}];
+  document.getElementById('quickGrid').innerHTML=items.map(it=>
+    `<button class="action-btn ${cls}" onclick="openAddType('${it.type}','${baby}')">
+      <span class="icon">${it.icon}</span>
+      <div class="label">${it.label}</div>
+      <div class="sub">為 ${name}</div>
+    </button>`).join('');
+}
+function renderWeight(){
+  const list=document.getElementById('weightList');
+  if(!state.weights.length){list.innerHTML='<div class="empty-state" style="padding:20px 0"><div class="e-icon">⚖️</div><p>尚無成長紀錄</p></div>';return;}
+  const sorted=[...state.weights].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=sorted.map(w=>`
+    <div class="weight-row">
+      <div class="w-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
+      <div class="w-vals">
+        <div><div class="weight-val a">${w.a?w.a+'g':'—'}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
+        <div><div class="weight-val b">${w.b?w.b+'g':'—'}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
+      </div>
+    </div>`).join('');
+}
+function renderStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
+  function calc(logs){
+    const milks=logs.filter(l=>l.type==='milk');
+    return{milk:milks.length,ml:milks.reduce((s,l)=>s+(parseInt(l.amount)||0),0),
+      diaper:logs.filter(l=>l.type==='diaper'||l.type==='poop').length,
+      poop:logs.filter(l=>l.type==='poop').length};
+  }
+  const sa=calc(todayLogs.filter(l=>l.baby==='a'));
+  const sb=calc(todayLogs.filter(l=>l.baby==='b'));
+  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="s-label">餵奶次數</div><div class="s-val a">${sa.milk}</div><div class="s-val b">${sb.milk}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val a">${sa.ml}</div><div class="s-val b">${sb.ml}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">換尿布</div><div class="s-val a">${sa.diaper}</div><div class="s-val b">${sb.diaper}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">排便次數</div><div class="s-val a">${sa.poop}</div><div class="s-val b">${sb.poop}</div><div class="s-sub">${a} / ${b}</div></div>`;
+}
+
+// ─── Modal ────────────────────────────────────────────
+function openAdd(){openAddType('milk',currentBaby);}
+function openAddType(type,baby){
+  selectedBabyInModal=baby;
+  document.getElementById('typeSelect').value=type;
+  updateForm();renderBabyPicker();setDefaultTime();
+  document.getElementById('addModal').classList.add('open');
+}
+function renderBabyPicker(){
+  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
+  document.getElementById('babyPicker').innerHTML=`
+    <button class="seg-btn ${selectedBabyInModal==='a'?'sel-a':''}" onclick="pickBaby('a',this)">🔵 ${a}</button>
+    <button class="seg-btn ${selectedBabyInModal==='b'?'sel-b':''}" onclick="pickBaby('b',this)">🩵 ${b}</button>`;
+}
+function pickBaby(baby,btn){
+  selectedBabyInModal=baby;
+  document.querySelectorAll('#babyPicker .seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));
+  btn.classList.add(baby==='a'?'sel-a':'sel-b');
+}
+function updateForm(){
+  const type=document.getElementById('typeSelect').value;
+  ['milk','diaper','poop','note'].forEach(t=>{
+    document.getElementById(t+'Fields').style.display=t===type?'':'none';
+  });
+}
+function pickMilkType(t,btn){milkType=t;resetSeg(btn,'sel-a');}
+function pickDiaper(t,btn){diaperType=t;resetSeg(btn,'sel-a');}
+function pickPoop(t,btn){poopColor=t;resetSeg(btn,'sel-a');}
+function pickPoopType(t,btn){poopConsistency=t;resetSeg(btn,'sel-a');}
+function resetSeg(btn,cls){btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));btn.classList.add(cls);}
+
+function setDefaultTime(){
+  const now=new Date();
+  const iso=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const el=document.getElementById('logTime');if(el)el.value=iso;
+}
+
+function saveLog(){
+  if(isSaving)return;
+  const type=document.getElementById('typeSelect').value;
+  const time=document.getElementById('logTime').value;
+  if(!time){alert('請選擇時間');return;}
+  const log={baby:selectedBabyInModal,type,time,createdAt:Date.now()};
+  if(type==='milk'){log.milkType=milkType;log.amount=document.getElementById('milkAmount').value||'';}
+  if(type==='diaper'){log.diaperType=diaperType;}
+  if(type==='poop'){log.poopColor=poopColor;log.poopConsistency=poopConsistency;}
+  if(type==='note'){log.note=document.getElementById('noteText').value;}
+  isSaving=true;
+  const btn=document.getElementById('saveLogBtn');
+  btn.disabled=true;btn.textContent='儲存中…';
+  setSyncStatus('syncing');
+  db.ref('logs').push(log)
+    .then(()=>{setSyncStatus('ok');closeModal('addModal');isSaving=false;btn.disabled=false;btn.textContent='儲存紀錄';})
+    .catch(()=>{setSyncStatus('error');isSaving=false;btn.disabled=false;btn.textContent='儲存紀錄';alert('儲存失敗，請確認網路連線');});
+}
+
+function deleteLog(id){
+  if(!confirm('確定要刪除這筆紀錄？'))return;
+  setSyncStatus('syncing');
+  db.ref('logs/'+id).remove()
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+function openWeightAdd(){
+  document.getElementById('weightDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('weightA').value='';
+  document.getElementById('weightB').value='';
+  document.getElementById('weightModal').classList.add('open');
+}
+function saveWeight(){
+  const date=document.getElementById('weightDate').value;
+  const a=document.getElementById('weightA').value;
+  const b=document.getElementById('weightB').value;
+  if(!date||(!a&&!b)){alert('請填入日期及至少一個體重');return;}
+  setSyncStatus('syncing');
+  db.ref('weights').push({date,a:a||null,b:b||null})
+    .then(()=>{setSyncStatus('ok');closeModal('weightModal');})
+    .catch(()=>setSyncStatus('error'));
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='setupModal')closeModal(ov.id);});
+});
+
+// ─── PWA Install ──────────────────────────────────────
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;showInstallBanner('android');
+});
+function isIOS(){return/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;}
+function isInStandaloneMode(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;}
+window.addEventListener('load',()=>{if(isIOS()&&!isInStandaloneMode())showInstallBanner('ios');});
+function showInstallBanner(platform){
+  const b=document.getElementById('installBanner');
+  b.style.display='flex';
+  document.getElementById('installAndroidBtn').style.display=platform==='android'?'block':'none';
+  document.getElementById('installIOSMsg').style.display=platform==='ios'?'block':'none';
+}
+function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});}}
+function dismissBanner(){document.getElementById('installBanner').style.display='none';}
+
+init();
+</script>
+</body>
+</html>
