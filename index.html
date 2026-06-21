@@ -287,7 +287,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <!-- HOME VIEW -->
 <div class="view active" id="view-home">
   <div class="baby-tabs">
-    <div class="baby-tab a active" id="tab-a" onclick="selectBaby('a')">
+    <div class="baby-tab a" id="tab-a" onclick="selectBaby('a')">
       <div class="name" id="name-a-tab">寶寶甲</div>
       <div class="tag">男寶</div>
     </div>
@@ -824,7 +824,7 @@ const db = firebase.database();
 
 // ─── State ────────────────────────────────────────────
 let state = { names:{a:'',b:''}, logs:[], weights:[], inventoryAdjust:0 };
-let currentBaby = 'a';
+let currentBaby = null;
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal='a';
 let isSaving = false;
@@ -1001,10 +1001,11 @@ function showView(name,btn){
   renderAll();
 }
 function selectBaby(baby){
-  currentBaby=baby;
-  document.getElementById('tab-a').classList.toggle('active',baby==='a');
-  document.getElementById('tab-b').classList.toggle('active',baby==='b');
+  currentBaby = (currentBaby===baby) ? null : baby;
+  document.getElementById('tab-a').classList.toggle('active', currentBaby==='a');
+  document.getElementById('tab-b').classList.toggle('active', currentBaby==='b');
   renderSummary();
+  renderTodayLog();
 }
 
 // ─── Render ───────────────────────────────────────────
@@ -1018,12 +1019,17 @@ function updateDateLabel(){
     label+(label==='今天'||label==='昨天'?` (${d.getMonth()+1}/${d.getDate()})`:' '+`${d.getMonth()+1}/${d.getDate()}`);
 }
 function getDayLogs(baby){
-  return state.logs.filter(l=>l.baby===baby&&isSameDay(new Date(l.time),currentDay))
-    .sort((a,b)=>new Date(b.time)-new Date(a.time));
+  let logs = state.logs.filter(l=>isSameDay(new Date(l.time),currentDay));
+  if(baby){
+    logs = logs.filter(l=>l.baby===baby);
+  } else {
+    logs = logs.filter(l=>l.baby==='a'||l.baby==='b');
+  }
+  return logs.sort((a,b)=>new Date(b.time)-new Date(a.time));
 }
 function renderSummary(){
   const logs=getDayLogs(currentBaby);
-  const cls=currentBaby==='a'?'a-chip':'b-chip';
+  const cls=currentBaby==='b'?'b-chip':'a-chip';
   const milks=logs.filter(l=>['nursing','formula','bottlemilk','milk'].includes(l.type));
   const diapers=logs.filter(l=>l.type==='diaper');
   const notes=logs.filter(l=>l.type==='note');
@@ -1083,7 +1089,11 @@ function renderLogItems(logs,container){
   }).join('');
 }
 function renderTodayLog(){
-  const logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay)).sort((a,b)=>new Date(b.time)-new Date(a.time));
+  let logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay));
+  if(currentBaby){
+    logs = logs.filter(l=>l.baby===currentBaby || l.baby==='shared');
+  }
+  logs = logs.sort((a,b)=>new Date(b.time)-new Date(a.time));
   renderLogItems(logs,document.getElementById('todayLog'));
 }
 function renderWeight(){
@@ -1360,7 +1370,7 @@ function updateForm(){
 }
 
 // ─── Modal ────────────────────────────────────────────
-function openAdd(){openAddType('nursing',currentBaby);}
+function openAdd(){openAddType('nursing',currentBaby||'a');}
 function openAddType(type,baby){
   selectedBabyInModal=baby;
   currentType = type;
