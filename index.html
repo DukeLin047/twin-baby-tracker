@@ -134,7 +134,7 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .log-who.b{color:var(--b);}
 .log-desc{font-size:14px;font-weight:600;margin-top:1px;}
 .log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
-.log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;}
+.log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;text-align:right;line-height:1.5;white-space:nowrap;}
 .log-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
 .log-del:hover{color:var(--danger);}
 
@@ -174,6 +174,38 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .nav-add-circle{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:26px;color:white;margin-top:-20px;box-shadow:0 4px 14px rgba(37,99,235,0.4);}
 
 .weight-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1.5px solid var(--border);}
+
+/* Calendar */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month-label{font-size:17px;font-weight:700;color:var(--ink);}
+.cal-nav{background:var(--card);border:1.5px solid var(--border);width:36px;height:36px;border-radius:10px;font-size:18px;color:var(--ink2);cursor:pointer;}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--card);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.cal-cell:active{transform:scale(0.93);}
+.cal-cell.empty{background:none;border:none;cursor:default;}
+.cal-cell.today{border-color:var(--a);border-width:2px;}
+.cal-cell.has-data{background:var(--surface);}
+.cal-cell .cal-daynum{font-size:13px;font-weight:700;color:var(--ink);}
+.cal-cell.today .cal-daynum{color:var(--a);}
+.cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
+.cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
+.dot.a{background:var(--a);}
+.dot.b{background:#0891B2;}
+.dot.c{background:#92400E;}
+.dot.d{background:#7C3AED;}
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding:12px 14px;background:var(--card);border-radius:12px;border:1.5px solid var(--border);}
+.cal-legend span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);font-weight:600;}
+.cal-legend .dot{width:8px;height:8px;}
+
+/* Date picker field */
+.date-picker-display{
+  width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+}
+.date-picker-display .dp-icon{font-size:16px;color:var(--ink3);}
+
 .weight-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
 .weight-row:last-child{border-bottom:none;}
 .weight-row .w-date{font-size:13px;color:var(--ink2);}
@@ -260,11 +292,36 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
-<!-- LOGS VIEW -->
+<!-- LOGS VIEW (Calendar) -->
 <div class="view" id="view-logs">
   <div class="section" style="padding-top:16px">
-    <div class="section-title">所有紀錄</div>
-    <div class="log-list" id="allLog"></div>
+    <div class="cal-header">
+      <button class="cal-nav" onclick="changeCalMonth(-1)">‹</button>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <button class="cal-nav" onclick="changeCalMonth(1)">›</button>
+    </div>
+    <div class="cal-weekdays">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i class="dot a"></i>🍼 餵奶</span>
+      <span><i class="dot b"></i>👶 換尿布</span>
+      <span><i class="dot c"></i>💩 排便</span>
+      <span><i class="dot d"></i>📝 備註</span>
+    </div>
+  </div>
+</div>
+
+<!-- DAY DETAIL MODAL -->
+<div class="overlay" id="dayModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="dayModalTitle">紀錄</div>
+    <div class="log-list" id="dayLogList"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" style="flex:1" onclick="closeModal('dayModal')">關閉</button>
+    </div>
   </div>
 </div>
 
@@ -374,8 +431,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
     <div class="field">
+      <label>日期</label>
+      <input type="date" id="logDate">
+    </div>
+    <div class="field">
       <label>時間</label>
-      <input type="datetime-local" id="logTime">
+      <input type="time" id="logTimeOnly">
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('addModal')">取消</button>
@@ -566,7 +627,9 @@ function fmtDate(d){
 }
 function fmtTime(iso){
   const d=new Date(iso);
-  return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const dateStr=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  const timeStr=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return`${dateStr} ${timeStr}`;
 }
 
 // ─── Views ────────────────────────────────────────────
@@ -641,9 +704,80 @@ function renderTodayLog(){
   renderLogItems(logs,document.getElementById('todayLog'));
 }
 function renderAllLog(){
-  const logs=[...state.logs].sort((a,b)=>new Date(b.time)-new Date(a.time));
-  renderLogItems(logs,document.getElementById('allLog'));
+  renderCalendar();
 }
+
+// ─── Calendar ─────────────────────────────────────────
+let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0);
+let selectedCalDay = null;
+
+function changeCalMonth(d){
+  calMonth.setMonth(calMonth.getMonth()+d);
+  renderCalendar();
+}
+
+function dateKey(d){
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function renderCalendar(){
+  const labelEl = document.getElementById('calMonthLabel');
+  const gridEl = document.getElementById('calGrid');
+  if(!labelEl || !gridEl) return;
+
+  labelEl.textContent = `${calMonth.getFullYear()} 年 ${calMonth.getMonth()+1} 月`;
+
+  // Build map of date -> set of types present
+  const dayTypes = {};
+  state.logs.forEach(l=>{
+    const d = new Date(l.time);
+    const key = dateKey(d);
+    if(!dayTypes[key]) dayTypes[key] = new Set();
+    dayTypes[key].add(l.type);
+  });
+
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let cells = '';
+  for(let i=0;i<startWeekday;i++){
+    cells += `<div class="cal-cell empty"></div>`;
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const cellDate = new Date(year, month, day);
+    const key = dateKey(cellDate);
+    const isToday = isSameDay(cellDate, today);
+    const types = dayTypes[key];
+    let dotsHtml = '';
+    if(types){
+      const typeDotMap = {milk:'a', diaper:'b', poop:'c', note:'d'};
+      dotsHtml = '<div class="cal-dots">' +
+        Array.from(types).map(t=>`<span class="dot ${typeDotMap[t]||'a'}"></span>`).join('') +
+        '</div>';
+    }
+    cells += `<div class="cal-cell ${isToday?'today':''} ${types?'has-data':''}" onclick="openDayDetail(${year},${month},${day})">
+      <div class="cal-daynum">${day}</div>
+      ${dotsHtml}
+    </div>`;
+  }
+  gridEl.innerHTML = cells;
+}
+
+function openDayDetail(year, month, day){
+  const targetDate = new Date(year, month, day);
+  const logs = state.logs.filter(l=>isSameDay(new Date(l.time), targetDate))
+    .sort((a,b)=>new Date(a.time)-new Date(b.time));
+  const label = `${year}/${String(month+1).padStart(2,'0')}/${String(day).padStart(2,'0')}`;
+  document.getElementById('dayModalTitle').textContent = `📅 ${label} 的紀錄`;
+  renderLogItems(logs, document.getElementById('dayLogList'));
+  document.getElementById('dayModal').classList.add('open');
+}
+
 function renderQuickGrid(){
   const baby=currentBaby,cls=baby==='a'?'a-btn':'b-btn';
   const name=state.names[baby]||(baby==='a'?'寶寶甲':'寶寶乙');
@@ -720,15 +854,19 @@ function resetSeg(btn,cls){btn.parentElement.querySelectorAll('.seg-btn').forEac
 
 function setDefaultTime(){
   const now=new Date();
-  const iso=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  const el=document.getElementById('logTime');if(el)el.value=iso;
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const dEl=document.getElementById('logDate');if(dEl)dEl.value=dateStr;
+  const tEl=document.getElementById('logTimeOnly');if(tEl)tEl.value=timeStr;
 }
 
 function saveLog(){
   if(isSaving)return;
   const type=document.getElementById('typeSelect').value;
-  const time=document.getElementById('logTime').value;
-  if(!time){alert('請選擇時間');return;}
+  const dateVal=document.getElementById('logDate').value;
+  const timeVal=document.getElementById('logTimeOnly').value;
+  if(!dateVal||!timeVal){alert('請選擇日期與時間');return;}
+  const time=`${dateVal}T${timeVal}`;
   const log={baby:selectedBabyInModal,type,time,createdAt:Date.now()};
   if(type==='milk'){log.milkType=milkType;log.amount=document.getElementById('milkAmount').value||'';}
   if(type==='diaper'){log.diaperType=diaperType;}
