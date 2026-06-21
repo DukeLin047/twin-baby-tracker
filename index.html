@@ -189,6 +189,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .weight-val.a{color:var(--a);}
 .weight-val.b{color:var(--b);}
 .weight-label{font-size:10px;color:var(--ink3);font-weight:500;}
+.growth-entry{background:var(--surface);border-radius:var(--radius-sm);padding:9px 10px;}
+.growth-entry .ge-date{font-size:11px;color:var(--ink3);font-weight:600;}
+.growth-entry .ge-vals{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px;}
 
 .view{display:none;}
 .view.active{display:block;}
@@ -295,10 +298,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
   <div class="summary" id="summaryStrip"></div>
   <div class="section">
-    <div class="section-title">快速紀錄</div>
-    <div class="action-grid" id="quickGrid"></div>
-  </div>
-  <div class="section">
     <div class="section-title">今日紀錄</div>
     <div class="log-list" id="todayLog"></div>
   </div>
@@ -348,17 +347,23 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <button onclick="openWeightAdd()" style="background:var(--a);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
     </div>
     <div class="weight-card">
-      <div style="display:flex;gap:20px;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--a)">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--a);display:inline-block"></span>
-          <span id="nameA-w">寶寶甲</span>
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--a);margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--a);display:inline-block"></span>
+            <span id="nameA-w">寶寶甲</span>
+          </div>
+          <div id="weightListA" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--b)">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--b);display:inline-block"></span>
-          <span id="nameB-w">寶寶乙</span>
+        <div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--b);margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--b);display:inline-block"></span>
+            <span id="nameB-w">寶寶乙</span>
+          </div>
+          <div id="weightListB" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
-      <div id="weightList"></div>
     </div>
   </div>
 
@@ -976,7 +981,7 @@ function selectBaby(baby){
 
 // ─── Render ───────────────────────────────────────────
 function renderAll(){
-  updateDateLabel();renderSummary();renderQuickGrid();
+  updateDateLabel();renderSummary();
   renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();
 }
 function updateDateLabel(){
@@ -1053,37 +1058,27 @@ function renderTodayLog(){
   const logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay)).sort((a,b)=>new Date(b.time)-new Date(a.time));
   renderLogItems(logs,document.getElementById('todayLog'));
 }
-function renderQuickGrid(){
-  const baby=currentBaby,cls=baby==='a'?'a-btn':'b-btn';
-  const name=state.names[baby]||(baby==='a'?'寶寶甲':'寶寶乙');
-  const items=[
-    {icon:'🤱',label:'哺乳',type:'nursing'},
-    {icon:'🍼',label:'配方奶',type:'formula'},
-    {icon:'👶',label:'換尿片',type:'diaper'},
-    {icon:'📝',label:'備註',type:'note'},
-  ];
-  document.getElementById('quickGrid').innerHTML=items.map(it=>
-    `<button class="action-btn ${cls}" onclick="openAddType('${it.type}','${baby}')">
-      <span class="icon">${it.icon}</span>
-      <div class="label">${it.label}</div>
-      <div class="sub">為 ${name}</div>
-    </button>`).join('') +
-    `<button class="more-btn" onclick="openAddType('bottlemilk','${baby}')">查看更多紀錄類型 ＋</button>`;
-}
 function renderWeight(){
-  const list=document.getElementById('weightList');
-  if(!state.weights.length){list.innerHTML='<div class="empty-state" style="padding:20px 0"><div class="e-icon">⚖️</div><p>尚無成長紀錄</p></div>';return;}
-  const sorted=[...state.weights].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML=sorted.map(w=>{
-    const aText = [w.a?w.a+'g':null, w.ha?w.ha+'cm':null].filter(Boolean).join(' · ') || '—';
-    const bText = [w.b?w.b+'g':null, w.hb?w.hb+'cm':null].filter(Boolean).join(' · ') || '—';
+  renderWeightColumn('a', 'weightListA');
+  renderWeightColumn('b', 'weightListB');
+}
+
+function renderWeightColumn(baby, containerId){
+  const list = document.getElementById(containerId);
+  const wKey = baby;
+  const hKey = baby==='a' ? 'ha' : 'hb';
+  const entries = state.weights.filter(w => w[wKey] || w[hKey]);
+  if(!entries.length){
+    list.innerHTML = `<div class="empty-state" style="padding:16px 0"><div class="e-icon" style="font-size:28px;">⚖️</div><p style="font-size:12px;">尚無紀錄</p></div>`;
+    return;
+  }
+  const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML = sorted.map(w=>{
+    const text = [w[wKey]?w[wKey]+'g':null, w[hKey]?w[hKey]+'cm':null].filter(Boolean).join(' · ') || '—';
     return `
-    <div class="weight-row">
-      <div class="w-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
-      <div class="w-vals">
-        <div><div class="weight-val a">${aText}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
-        <div><div class="weight-val b">${bText}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
-      </div>
+    <div class="growth-entry">
+      <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
+      <div class="ge-vals">${text}</div>
     </div>`;
   }).join('');
 }
