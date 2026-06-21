@@ -432,8 +432,15 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
       <button class="btn-save" style="width:100%" onclick="toggleFeedingReminder()" id="reminderToggleBtn">🔔 開啟喝奶提醒</button>
       <p id="reminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
+      <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">📲 同步到手機鬧鐘</div>
+        <div id="feedingAlarmList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <p style="font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;">
+          點選下方時間會開啟手機「時鐘」APP，名稱已預填為「寶寶喝奶提醒」，請手動確認新增。
+        </p>
+      </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        💡 提醒會在這個瀏覽器分頁開啟時觸發。建議將本 APP 加入主畫面，並保持背景開啟以接收通知。第一次使用需要允許瀏覽器的通知權限。
+        💡 APP 內提醒會在這個瀏覽器分頁開啟時觸發。建議將本 APP 加入主畫面，並保持背景開啟以接收通知。第一次使用需要允許瀏覽器的通知權限。
       </p>
     </div>
   </div>
@@ -453,7 +460,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <button class="btn-save" style="width:100%" onclick="togglePumpReminder()" id="pumpReminderToggleBtn">🔔 開啟擠奶提醒</button>
       <p id="pumpReminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。
+        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。每個時間點旁的「📲」按鈕可同步到手機鬧鐘（名稱為「媽媽擠奶提醒」），需手動確認新增。
       </p>
     </div>
   </div>
@@ -1557,6 +1564,41 @@ function loadReminderState(){
   if(active && Notification && Notification.permission === 'granted'){
     startFeedingReminder(parseInt(hours));
   }
+  renderFeedingAlarmList(parseInt(hours));
+}
+
+// ─── 鬧鐘匯出（開啟手機時鐘 APP 並預填名稱/時間） ──────
+function isAndroidDevice(){ return /android/i.test(navigator.userAgent); }
+
+function exportToClockApp(hh, mm, label){
+  if(isAndroidDevice()){
+    // Android intent for AlarmClock.ACTION_SET_ALARM
+    const intentUrl = `intent://com.android.deskclock/#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};end`;
+    window.location.href = intentUrl;
+  } else {
+    // iOS / others: clock app deep link doesn't support prefill, open Clock app and show instructions
+    alert(`請在「時鐘」APP 手動新增鬧鐘：\n\n名稱：${label}\n時間：${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}\n\n即將為你開啟時鐘 APP…`);
+    window.location.href = 'clock-alarm://';
+  }
+}
+
+function renderFeedingAlarmList(hours){
+  const container = document.getElementById('feedingAlarmList');
+  if(!container) return;
+  const now = new Date();
+  const slots = [];
+  for(let i=1;i<=4;i++){
+    const t = new Date(now.getTime() + i*hours*60*60*1000);
+    slots.push(t);
+  }
+  container.innerHTML = slots.map(t=>{
+    const hh = t.getHours(), mm = t.getMinutes();
+    const label = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+    return `<button onclick="exportToClockApp(${hh},${mm},'寶寶喝奶提醒')" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;cursor:pointer;width:100%;">
+      <span style="font-weight:700;color:var(--ink);">🕐 ${label}</span>
+      <span style="color:var(--a);font-weight:700;font-size:13px;">📲 加入鬧鐘</span>
+    </button>`;
+  }).join('');
 }
 
 function updateReminderUI(active){
@@ -1620,6 +1662,7 @@ function onReminderHoursChange(){
   if(isActive){
     startFeedingReminder(hours);
   }
+  renderFeedingAlarmList(hours);
 }
 
 // ─── 媽媽擠奶提醒 (specific time-of-day slots) ────────
@@ -1645,11 +1688,17 @@ function renderPumpTimesList(){
     list.innerHTML = `<p style="font-size:12px;color:var(--ink3);">尚未新增提醒時間</p>`;
     return;
   }
-  list.innerHTML = times.map(t=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;">
+  list.innerHTML = times.map(t=>{
+    const [hh, mm] = t.split(':').map(Number);
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;gap:8px;">
       <span style="font-weight:700;color:var(--ink);">🕐 ${t}</span>
-      <button onclick="removePumpTime('${t}')" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">✕</button>
-    </div>`).join('');
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="exportToClockApp(${hh},${mm},'媽媽擠奶提醒')" style="background:none;border:none;color:var(--a);font-size:13px;font-weight:700;cursor:pointer;">📲 加入鬧鐘</button>
+        <button onclick="removePumpTime('${t}')" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function addPumpTime(){
