@@ -291,33 +291,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
-<div class="overlay" id="iosAlarmModal" style="align-items:center">
-  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
-    <div class="modal-handle"></div>
-    <div class="modal-title" style="text-align:center"><span>⏰</span>新增鬧鐘</div>
-    <p style="font-size:13px;color:var(--ink2);text-align:center;margin-bottom:16px;line-height:1.6">
-      iPhone 不支援網頁自動跳轉並預填鬧鐘，請依下方資訊手動到「時鐘」APP 新增：
-    </p>
-    <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:13px;color:var(--ink3);font-weight:600;">時間</span>
-        <span id="iosAlarmTime" style="font-size:20px;font-weight:800;color:var(--c1);">--:--</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
-        <span style="font-size:13px;color:var(--ink3);font-weight:600;">名稱</span>
-        <span id="iosAlarmLabel" style="font-size:15px;font-weight:700;color:var(--ink);">--</span>
-      </div>
-    </div>
-    <p style="font-size:12px;color:var(--ink3);line-height:1.7;margin-bottom:16px;">
-      1. 打開手機「<strong>時鐘</strong>」APP<br>
-      2. 點「鬧鐘」➜「＋」新增<br>
-      3. 設定上方時間，標籤輸入上方名稱<br>
-      4. 儲存即可
-    </p>
-    <button class="btn-save" style="width:100%" onclick="closeModal('iosAlarmModal')">知道了</button>
-  </div>
-</div>
-
 <!-- WEIGHT VIEW -->
 <div class="view" id="view-weight">
   <div class="section" style="padding-top:16px">
@@ -401,10 +374,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <button class="btn-save" style="width:100%" onclick="toggleFeedingReminder()" id="reminderToggleBtn">🔔 開啟喝奶提醒</button>
       <p id="reminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
       <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">📲 同步到手機鬧鐘</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">📅 同步到行事曆</div>
         <div id="feedingAlarmList" style="display:flex;flex-direction:column;gap:8px;"></div>
         <p style="font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;">
-          點選下方時間：Android 會嘗試直接開啟新增鬧鐘畫面；iPhone 會顯示時間與名稱供你手動新增到「時鐘」APP。
+          點選下方時間會下載一個行事曆事件檔，開啟後可加入手機「日曆」APP，到時間會自動跳出提醒通知。
         </p>
       </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
@@ -428,7 +401,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <button class="btn-save" style="width:100%" onclick="togglePumpReminder()" id="pumpReminderToggleBtn">🔔 開啟擠奶提醒</button>
       <p id="pumpReminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。每個時間點旁的「📲 加入鬧鐘」：Android 會嘗試直接開啟新增鬧鐘畫面；iPhone 會顯示時間與名稱供你手動新增到「時鐘」APP。
+        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。每個時間點旁的「📅 加入行事曆」會下載一個行事曆事件檔，點開後可加入手機「日曆」APP，並會在當下時間跳出提醒通知。
       </p>
     </div>
   </div>
@@ -1604,22 +1577,56 @@ function loadReminderState(){
   renderFeedingAlarmList(parseInt(hours));
 }
 
-function isAndroidDevice(){ return /android/i.test(navigator.userAgent); }
-function isIOSDevice(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream; }
+// ─── 加入行事曆（.ics 事件，附提醒） ──────────────────
+function pad2(n){ return String(n).padStart(2,'0'); }
 
-function exportToClockApp(hh, mm, label){
-  const timeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-  if(isAndroidDevice()){
-    const intentUrl = `intent://com.android.deskclock/#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};end`;
-    window.location.href = intentUrl;
-  } else {
-    showIOSAlarmHelper(timeStr, label);
-  }
+function formatICSDate(d){
+  return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
 }
-function showIOSAlarmHelper(timeStr, label){
-  document.getElementById('iosAlarmTime').textContent = timeStr;
-  document.getElementById('iosAlarmLabel').textContent = label;
-  document.getElementById('iosAlarmModal').classList.add('open');
+
+function exportToCalendar(targetDate, label, durationMinutes){
+  durationMinutes = durationMinutes || 15;
+  const startDate = new Date(targetDate);
+  const endDate = new Date(startDate.getTime() + durationMinutes*60000);
+  const uid = `twin-tracker-${Date.now()}-${Math.random().toString(36).slice(2)}@twinbaby`;
+  const nowStamp = formatICSDate(new Date());
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//雙寶日誌//提醒//ZH',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${nowStamp}`,
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `SUMMARY:${label}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:提醒',
+    'TRIGGER:-PT0M',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `提醒_${formatICSDate(startDate)}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+
+function exportFeedingTimeToCalendar(hh, mm, label){
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
+  if(target < now) target.setDate(target.getDate()+1);
+  exportToCalendar(target, label);
 }
 
 function renderFeedingAlarmList(hours){
@@ -1633,10 +1640,10 @@ function renderFeedingAlarmList(hours){
   }
   container.innerHTML = slots.map(t=>{
     const hh = t.getHours(), mm = t.getMinutes();
-    const label = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-    return `<button onclick="exportToClockApp(${hh},${mm},'寶寶喝奶提醒')" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;cursor:pointer;width:100%;">
+    const label = `${pad2(hh)}:${pad2(mm)}`;
+    return `<button onclick="exportToCalendar(new Date(${t.getFullYear()},${t.getMonth()},${t.getDate()},${hh},${mm}),'寶寶喝奶提醒')" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;cursor:pointer;width:100%;">
       <span style="font-weight:700;color:var(--ink);">🕐 ${label}</span>
-      <span style="color:var(--c1);font-weight:700;font-size:13px;">📲 加入鬧鐘</span>
+      <span style="color:var(--c1);font-weight:700;font-size:13px;">📅 加入行事曆</span>
     </button>`;
   }).join('');
 }
@@ -1721,7 +1728,7 @@ function renderPumpTimesList(){
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;gap:8px;">
       <span style="font-weight:700;color:var(--ink);">🕐 ${t}</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="exportToClockApp(${hh},${mm},'媽媽擠奶提醒')" style="background:none;border:none;color:var(--c1);font-size:13px;font-weight:700;cursor:pointer;">📲 加入鬧鐘</button>
+        <button onclick="exportFeedingTimeToCalendar(${hh},${mm},'媽媽擠奶提醒')" style="background:none;border:none;color:var(--c1);font-size:13px;font-weight:700;cursor:pointer;">📅 加入行事曆</button>
         <button onclick="removePumpTime('${t}')" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">✕</button>
       </div>
     </div>`;
