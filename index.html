@@ -132,6 +132,7 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
 .log-note{font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;}
 .log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;text-align:right;line-height:1.5;white-space:nowrap;}
+.log-recorder{font-size:10px;color:var(--a);font-weight:600;margin-top:2px;}
 .log-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
 .log-del:hover{color:var(--danger);}
 
@@ -257,7 +258,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <h1>👶👶 雙寶日誌</h1>
       <p>新生兒照護紀錄</p>
     </div>
-    <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
+      <div id="userBadge" onclick="changeUserName()" style="font-size:11px;background:rgba(255,255,255,0.18);padding:4px 10px;border-radius:20px;cursor:pointer;white-space:nowrap;"></div>
+    </div>
   </div>
   <div class="date-bar">
     <button class="date-nav" onclick="changeDay(-1)">‹</button>
@@ -588,6 +592,20 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 </div>
 
 <!-- SETUP MODAL -->
+<!-- USER LOGIN MODAL -->
+<div class="overlay" id="loginModal" style="align-items:center">
+  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:center">👋 你是誰？</div>
+    <p style="font-size:14px;color:var(--ink2);text-align:center;margin-bottom:20px">輸入你的名字，之後每筆紀錄都會標記是你新增的</p>
+    <div class="field">
+      <label>你的名字</label>
+      <input type="text" id="loginName" placeholder="例如：爸爸 / 媽媽 / 阿嬤">
+    </div>
+    <button class="btn-save" style="width:100%;margin-top:8px" onclick="saveLoginName()">開始使用 ✅</button>
+  </div>
+</div>
+
 <div class="overlay" id="setupModal" style="align-items:center">
   <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
     <div class="modal-handle"></div>
@@ -719,13 +737,48 @@ function startListening() {
 }
 
 // ─── Init ─────────────────────────────────────────────
+let currentUserName = '';
+
 function init() {
   startListening();
   setDefaultTime();
   renderTypeGrid();
+  currentUserName = localStorage.getItem('userName') || '';
+  updateUserBadge();
   setTimeout(()=>{
-    if(!state.names.a) { document.getElementById('setupModal').classList.add('open'); }
+    if(!currentUserName){
+      document.getElementById('loginModal').classList.add('open');
+    } else if(!state.names.a) {
+      document.getElementById('setupModal').classList.add('open');
+    }
   }, 1500);
+}
+
+function saveLoginName(){
+  const name = document.getElementById('loginName').value.trim();
+  if(!name){ alert('請輸入你的名字'); return; }
+  currentUserName = name;
+  localStorage.setItem('userName', name);
+  updateUserBadge();
+  closeModal('loginModal');
+  if(!state.names.a){
+    setTimeout(()=>{ document.getElementById('setupModal').classList.add('open'); }, 300);
+  }
+}
+
+function updateUserBadge(){
+  const badge = document.getElementById('userBadge');
+  if(badge) badge.textContent = currentUserName ? `👤 ${currentUserName}` : '';
+}
+
+function changeUserName(){
+  const newName = prompt('輸入你的名字：', currentUserName||'');
+  if(newName === null) return;
+  const trimmed = newName.trim();
+  if(!trimmed) return;
+  currentUserName = trimmed;
+  localStorage.setItem('userName', trimmed);
+  updateUserBadge();
 }
 
 function saveNames() {
@@ -839,6 +892,7 @@ function renderLogItems(logs,container){
     const info=typeInfo(log.type);
     const name=state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙');
     const noteHtml = log.tag ? `<div class="log-note">📌 ${log.tag}</div>` : '';
+    const recorderHtml = log.recordedBy ? `<div class="log-recorder">✍️ ${log.recordedBy}</div>` : '';
     return`<div class="log-item ${log.baby}-log">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
@@ -847,7 +901,7 @@ function renderLogItems(logs,container){
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
       </div>
-      <div class="log-time">${fmtTime(log.time)}</div>
+      <div class="log-time">${fmtTime(log.time)}${recorderHtml}</div>
       <button class="log-del" onclick="deleteLog('${log.id}')">✕</button>
     </div>`;
   }).join('');
@@ -1112,7 +1166,7 @@ function saveLog(){
   const timeVal=document.getElementById('logTimeOnly').value;
   if(!dateVal||!timeVal){alert('請選擇日期與時間');return;}
   const time=`${dateVal}T${timeVal}`;
-  const log={baby:selectedBabyInModal,type:currentType,time,createdAt:Date.now()};
+  const log={baby:selectedBabyInModal,type:currentType,time,createdAt:Date.now(),recordedBy:currentUserName||''};
 
   if(currentType==='nursing'){
     log.nurseLeft = document.getElementById('nurseLeftMin').value || '';
@@ -1183,7 +1237,7 @@ function saveWeight(){
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='setupModal')closeModal(ov.id);});
+  ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='setupModal'&&ov.id!=='loginModal')closeModal(ov.id);});
 });
 
 // ─── PWA Install ──────────────────────────────────────
