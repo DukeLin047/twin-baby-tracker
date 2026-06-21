@@ -12,43 +12,30 @@
 <link rel="manifest" id="pwa-manifest">
 <link rel="apple-touch-icon" id="apple-icon">
 
-<!-- Firebase CDN -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
-// ── PWA Icon ─────────────────────────────────────────
 const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#2563EB"/>
       <stop offset="100%" style="stop-color:#0891B2"/>
     </linearGradient>
-    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#60A5FA"/>
-      <stop offset="100%" style="stop-color:#22D3EE"/>
-    </linearGradient>
   </defs>
   <rect width="512" height="512" rx="110" fill="url(#g)"/>
-  <circle cx="172" cy="185" r="62" fill="url(#g2)" opacity="0.95"/>
-  <ellipse cx="172" cy="185" rx="28" ry="30" fill="white" opacity="0.9"/>
-  <circle cx="162" cy="178" r="6" fill="#1D4ED8"/>
-  <circle cx="182" cy="178" r="6" fill="#1D4ED8"/>
-  <path d="M159 193 q13 12 26 0" stroke="#1D4ED8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-  <circle cx="340" cy="185" r="62" fill="url(#g2)" opacity="0.85"/>
-  <ellipse cx="340" cy="185" rx="28" ry="30" fill="white" opacity="0.9"/>
-  <circle cx="330" cy="178" r="6" fill="#0E7490"/>
-  <circle cx="350" cy="178" r="6" fill="#0E7490"/>
-  <path d="M327 193 q13 12 26 0" stroke="#0E7490" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-  <text x="256" y="202" text-anchor="middle" font-size="36" fill="white" opacity="0.9">♥</text>
-  <text x="256" y="310" text-anchor="middle" font-family="sans-serif" font-size="38" font-weight="700" fill="white">新生兒成長紀錄</text>
-  <text x="256" y="355" text-anchor="middle" font-family="sans-serif" font-size="24" fill="rgba(255,255,255,0.7)">雙寶日誌</text>
+  <circle cx="256" cy="190" r="80" fill="white" opacity="0.92"/>
+  <circle cx="232" cy="180" r="8" fill="#1D4ED8"/>
+  <circle cx="280" cy="180" r="8" fill="#1D4ED8"/>
+  <path d="M225 205 q31 26 62 0" stroke="#1D4ED8" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <text x="256" y="330" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="700" fill="white">新生兒成長紀錄</text>
+  <text x="256" y="375" text-anchor="middle" font-family="sans-serif" font-size="24" fill="rgba(255,255,255,0.7)">多寶日誌</text>
 </svg>`;
 const iconBlob = new Blob([iconSVG], {type:'image/svg+xml'});
 const iconURL = URL.createObjectURL(iconBlob);
 document.getElementById('apple-icon').href = iconURL;
 const manifest = {
-  name:"新生兒成長紀錄", short_name:"雙寶日誌",
+  name:"新生兒成長紀錄", short_name:"多寶日誌",
   start_url:"./", display:"standalone",
   background_color:"#0891B2", theme_color:"#0891B2",
   icons:[{src:iconURL,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]
@@ -59,6 +46,11 @@ document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
 
 <style>
 :root {
+  --c1:#2563EB; --c1-light:#DBEAFE; --c1-mid:#93C5FD;
+  --c2:#0891B2; --c2-light:#CFFAFE; --c2-mid:#67E8F9;
+  --c3:#059669; --c3-light:#D1FAE5; --c3-mid:#6EE7B7;
+  --c4:#D97706; --c4-light:#FEF3C7; --c4-mid:#FCD34D;
+  --c5:#DB2777; --c5-light:#FCE7F3; --c5-mid:#F9A8D4;
   --a:#2563EB; --a-light:#DBEAFE; --a-mid:#93C5FD;
   --b:#0891B2; --b-light:#CFFAFE; --b-mid:#67E8F9;
   --ink:#0F172A; --ink2:#475569; --ink3:#94A3B8;
@@ -75,7 +67,7 @@ body{font-family:-apple-system,'Noto Sans TC',sans-serif;background:var(--surfac
 #syncBar.ok{background:#D1FAE5;color:#065F46;}
 #syncBar.err{background:#FEE2E2;color:#991B1B;}
 
-header{background:linear-gradient(135deg,var(--a) 0%,var(--b) 100%);color:white;padding:20px 20px 28px;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(37,99,235,0.25);}
+header{background:linear-gradient(135deg,var(--c1) 0%,var(--c2) 100%);color:white;padding:20px 20px 28px;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(37,99,235,0.25);}
 .header-top{display:flex;justify-content:space-between;align-items:flex-start;}
 header h1{font-size:22px;font-weight:700;letter-spacing:0.5px;}
 header p{font-size:13px;opacity:0.8;margin-top:2px;}
@@ -86,55 +78,30 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .date-bar span{font-size:14px;font-weight:600;}
 .date-nav{background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 6px;}
 
-.baby-tabs{display:flex;gap:10px;padding:16px 20px 8px;}
-.baby-tab{flex:1;padding:14px 10px;border-radius:var(--radius);border:2px solid transparent;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--card);}
-.baby-tab.a{border-color:var(--a-mid);}
-.baby-tab.a.active{background:var(--a);color:white;border-color:var(--a);}
-.baby-tab.b{border-color:var(--b-mid);}
-.baby-tab.b.active{background:var(--b);color:white;border-color:var(--b);}
-.baby-tab .name{font-size:15px;font-weight:700;}
-.baby-tab .tag{font-size:11px;opacity:0.65;margin-top:2px;}
-.baby-tab.a:not(.active) .name{color:var(--a);}
-.baby-tab.b:not(.active) .name{color:var(--b);}
+.baby-tabs{display:flex;gap:8px;padding:16px 20px 8px;flex-wrap:wrap;}
+.baby-tab{flex:1;min-width:80px;padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s;background:var(--card);}
+.baby-tab.active{color:white;border-color:transparent;}
+.baby-tab .name{font-size:14px;font-weight:700;}
+.baby-tab .tag{font-size:10px;opacity:0.65;margin-top:2px;}
 
 .summary{display:flex;gap:8px;padding:4px 20px 12px;overflow-x:auto;scrollbar-width:none;}
 .summary::-webkit-scrollbar{display:none;}
 .sum-chip{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;font-size:13px;white-space:nowrap;font-weight:600;background:var(--card);border:1.5px solid var(--border);}
 .sum-chip .icon{font-size:15px;}
-.sum-chip.a-chip{border-color:var(--a-mid);color:var(--a);}
-.sum-chip.b-chip{border-color:var(--b-mid);color:var(--b);}
 
 .section{padding:0 20px 16px;}
 .section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;margin-top:4px;}
 
-.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;text-align:left;transition:all 0.15s;position:relative;overflow:hidden;}
-.action-btn:active{transform:scale(0.97);}
-.action-btn .icon{font-size:24px;margin-bottom:5px;display:block;}
-.action-btn .label{font-size:13px;font-weight:700;color:var(--ink);}
-.action-btn .sub{font-size:11px;color:var(--ink3);margin-top:1px;}
-.action-btn.a-btn{border-color:var(--a-light);}
-.action-btn.a-btn::before{content:'';position:absolute;top:0;right:0;width:50px;height:50px;background:var(--a-light);border-radius:0 16px 0 50px;}
-.action-btn.b-btn{border-color:var(--b-light);}
-.action-btn.b-btn::before{content:'';position:absolute;top:0;right:0;width:50px;height:50px;background:var(--b-light);border-radius:0 16px 0 50px;}
-.more-btn{grid-column:1/-1;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;}
-
 .log-list{display:flex;flex-direction:column;gap:8px;}
 .log-item{background:var(--card);border-radius:var(--radius-sm);padding:13px 15px;display:flex;align-items:flex-start;gap:12px;border-left:3px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
-.log-item.a-log{border-left-color:var(--a);}
-.log-item.b-log{border-left-color:var(--b);}
-.log-item.shared-log{border-left-color:#A855F7;}
 .log-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
 .log-body{flex:1;min-width:0;}
 .log-who{font-size:11px;font-weight:700;letter-spacing:0.5px;}
-.log-who.a{color:var(--a);}
-.log-who.b{color:var(--b);}
-.log-who.shared{color:#A855F7;}
 .log-desc{font-size:14px;font-weight:600;margin-top:1px;}
 .log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
 .log-note{font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;}
 .log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;text-align:right;line-height:1.5;white-space:nowrap;}
-.log-recorder{font-size:10px;color:var(--a);font-weight:600;margin-top:2px;}
+.log-recorder{font-size:10px;color:var(--c1);font-weight:600;margin-top:2px;}
 .log-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
 .log-del:hover{color:var(--danger);}
 
@@ -153,42 +120,34 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .field{margin-bottom:16px;}
 .field label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:6px;}
 .field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);outline:none;transition:border-color 0.15s;font-family:inherit;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--a);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--c1);}
 .field textarea{resize:vertical;min-height:60px;}
 .field-row{display:flex;gap:10px;}
 .field-row .field{flex:1;}
 
 .seg-btns{display:flex;gap:8px;flex-wrap:wrap;}
 .seg-btn{flex:1;min-width:60px;padding:9px 6px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;}
-.seg-btn.sel-a{border-color:var(--a);background:var(--a-light);color:var(--a);}
-.seg-btn.sel-b{border-color:var(--b);background:var(--b-light);color:var(--b);}
+.seg-btn.selected{border-color:var(--c1);background:var(--c1-light);color:var(--c1);}
 
 .timer-row{display:flex;align-items:center;gap:8px;}
 .timer-row input{flex:1;}
-.timer-btn{flex-shrink:0;padding:11px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--a);background:var(--a-light);color:var(--a);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.timer-btn.running{background:var(--a);color:white;}
+.timer-btn{flex-shrink:0;padding:11px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--c1);background:var(--c1-light);color:var(--c1);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.timer-btn.running{background:var(--c1);color:white;}
 
 .modal-btns{display:flex;gap:10px;margin-top:20px;}
 .btn-cancel{flex:1;padding:14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:none;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer;}
-.btn-save{flex:2;padding:14px;border-radius:var(--radius-sm);border:none;color:white;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--a),var(--b));}
+.btn-save{flex:2;padding:14px;border-radius:var(--radius-sm);border:none;color:white;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--c1),var(--c2));}
 .btn-save:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-danger{padding:14px;border-radius:var(--radius-sm);border:1.5px solid var(--danger);background:#FEF2F2;color:var(--danger);font-size:14px;font-weight:700;cursor:pointer;}
 
 nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
 .nav-btn{flex:1;padding:12px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink3);transition:color 0.15s;font-size:10px;font-weight:600;}
-.nav-btn.active{color:var(--a);}
+.nav-btn.active{color:var(--c1);}
 .nav-btn .nav-icon{font-size:22px;}
 .nav-add{flex:1;padding:10px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.nav-add-circle{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:26px;color:white;margin-top:-20px;box-shadow:0 4px 14px rgba(37,99,235,0.4);}
+.nav-add-circle{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center;font-size:26px;color:white;margin-top:-20px;box-shadow:0 4px 14px rgba(37,99,235,0.4);}
 
 .weight-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1.5px solid var(--border);}
-.weight-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
-.weight-row:last-child{border-bottom:none;}
-.weight-row .w-date{font-size:13px;color:var(--ink2);}
-.weight-row .w-vals{display:flex;gap:16px;}
-.weight-val{font-size:14px;font-weight:700;}
-.weight-val.a{color:var(--a);}
-.weight-val.b{color:var(--b);}
-.weight-label{font-size:10px;color:var(--ink3);font-weight:500;}
 .growth-entry{background:var(--surface);border-radius:var(--radius-sm);padding:9px 10px;}
 .growth-entry .ge-date{font-size:11px;color:var(--ink3);font-weight:600;}
 .growth-entry .ge-vals{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px;}
@@ -200,11 +159,8 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .stat-card{background:var(--card);border-radius:var(--radius-sm);padding:14px;border:1.5px solid var(--border);}
 .stat-card .s-label{font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:0.5px;}
 .stat-card .s-val{font-size:22px;font-weight:800;margin-top:4px;}
-.stat-card .s-val.a{color:var(--a);}
-.stat-card .s-val.b{color:var(--b);}
 .stat-card .s-sub{font-size:11px;color:var(--ink2);margin-top:2px;}
 
-/* Calendar */
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cal-month-label{font-size:17px;font-weight:700;color:var(--ink);}
 .cal-nav{background:var(--card);border:1.5px solid var(--border);width:36px;height:36px;border-radius:10px;font-size:18px;color:var(--ink2);cursor:pointer;}
@@ -213,13 +169,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--card);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .cal-cell:active{transform:scale(0.93);}
 .cal-cell.empty{background:none;border:none;cursor:default;}
-.cal-cell.today{border-color:var(--a);border-width:2px;}
+.cal-cell.today{border-color:var(--c1);border-width:2px;}
 .cal-cell.has-data{background:var(--surface);}
 .cal-cell .cal-daynum{font-size:13px;font-weight:700;color:var(--ink);}
-.cal-cell.today .cal-daynum{color:var(--a);}
+.cal-cell.today .cal-daynum{color:var(--c1);}
 .cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
 .cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
-.dot.milk,.dot.bottlemilk,.dot.formula{background:var(--a);}
+.dot.milk{background:var(--c1);}
 .dot.pump{background:#A855F7;}
 .dot.diaper{background:#0891B2;}
 .dot.bath{background:#0EA5E9;}
@@ -230,18 +186,22 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .cal-legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);font-weight:600;}
 .cal-legend .dot{width:8px;height:8px;}
 
-.date-picker-display{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
-.date-picker-display .dp-icon{font-size:16px;color:var(--ink3);}
-
-/* Type picker grid (in add modal) */
 .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .type-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s;}
-.type-cell.active{background:var(--a-light);border-color:var(--a);}
+.type-cell.active{background:var(--c1-light);border-color:var(--c1);}
 .type-cell .tc-icon{font-size:22px;display:block;margin-bottom:3px;}
 .type-cell .tc-label{font-size:11px;font-weight:600;color:var(--ink2);}
-.type-cell.active .tc-label{color:var(--a);}
+.type-cell.active .tc-label{color:var(--c1);}
 
-#loadingScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--a),var(--b));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;}
+.babycount-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.babycount-cell{aspect-ratio:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--ink2);cursor:pointer;background:var(--surface);}
+.babycount-cell.active{background:linear-gradient(135deg,var(--c1),var(--c2));color:white;border-color:transparent;}
+
+.setting-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;}
+.setting-row input{flex:1;border:none;background:none;font-size:15px;font-weight:600;color:var(--ink);outline:none;}
+.setting-row .dot-color{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+
+#loadingScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;}
 #loadingScreen .l-icon{font-size:60px;margin-bottom:16px;animation:pulse 1.5s infinite;}
 #loadingScreen .l-text{font-size:18px;font-weight:700;}
 #loadingScreen .l-sub{font-size:14px;opacity:0.7;margin-top:6px;}
@@ -249,10 +209,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 </style>
 </head>
 <body>
-
 <div id="loadingScreen">
   <div class="l-icon">👶</div>
-  <div class="l-text">雙寶日誌</div>
+  <div class="l-text">多寶日誌</div>
   <div class="l-sub">連線中…</div>
 </div>
 
@@ -261,7 +220,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <header>
   <div class="header-top">
     <div>
-      <h1>👶👶 雙寶日誌</h1>
+      <h1 id="appTitle">👶 多寶日誌</h1>
       <p>新生兒照護紀錄</p>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
@@ -286,20 +245,14 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 
 <!-- HOME VIEW -->
 <div class="view active" id="view-home">
-  <div class="baby-tabs">
-    <div class="baby-tab a" id="tab-a" onclick="selectBaby('a')">
-      <div class="name" id="name-a-tab">寶寶甲</div>
-      <div class="tag">男寶</div>
-    </div>
-    <div class="baby-tab b" id="tab-b" onclick="selectBaby('b')">
-      <div class="name" id="name-b-tab">寶寶乙</div>
-      <div class="tag">男寶</div>
-    </div>
-  </div>
+  <div class="baby-tabs" id="babyTabs"></div>
   <div class="summary" id="summaryStrip"></div>
   <div class="section">
-    <div class="section-title">今日紀錄</div>
-    <div class="log-list" id="todayLog"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="section-title" style="margin:0">今日紀錄</div>
+      <button onclick="showView('settings')" style="background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;">⚙️ 寶寶設定</button>
+    </div>
+    <div class="log-list" id="todayLog" style="margin-top:10px;"></div>
   </div>
 </div>
 
@@ -327,7 +280,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
-<!-- DAY DETAIL MODAL -->
 <div class="overlay" id="dayModal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -339,7 +291,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
-<!-- iOS ALARM HELPER MODAL -->
 <div class="overlay" id="iosAlarmModal" style="align-items:center">
   <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
     <div class="modal-handle"></div>
@@ -350,7 +301,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
         <span style="font-size:13px;color:var(--ink3);font-weight:600;">時間</span>
-        <span id="iosAlarmTime" style="font-size:20px;font-weight:800;color:var(--a);">--:--</span>
+        <span id="iosAlarmTime" style="font-size:20px;font-weight:800;color:var(--c1);">--:--</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
         <span style="font-size:13px;color:var(--ink3);font-weight:600;">名稱</span>
@@ -372,26 +323,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   <div class="section" style="padding-top:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="section-title" style="margin:0">成長紀錄</div>
-      <button onclick="openWeightAdd()" style="background:var(--a);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
+      <button onclick="openWeightAdd()" style="background:var(--c1);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
     </div>
     <div class="weight-card">
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--a);margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
-            <span style="width:10px;height:10px;border-radius:50%;background:var(--a);display:inline-block"></span>
-            <span id="nameA-w">寶寶甲</span>
-          </div>
-          <div id="weightListA" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-        <div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--b);margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
-            <span style="width:10px;height:10px;border-radius:50%;background:var(--b);display:inline-block"></span>
-            <span id="nameB-w">寶寶乙</span>
-          </div>
-          <div id="weightListB" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-      </div>
+      <div id="weightColumns" style="display:flex;gap:12px;overflow-x:auto;"></div>
     </div>
   </div>
 
@@ -401,7 +336,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div class="weight-card">
       <div style="text-align:center;padding:10px 0 16px;">
         <div style="font-size:12px;color:var(--ink2);font-weight:600;">目前庫存</div>
-        <div style="font-size:36px;font-weight:800;color:var(--a);margin-top:4px;" id="inventoryTotal">0 ml</div>
+        <div style="font-size:36px;font-weight:800;color:var(--c1);margin-top:4px;" id="inventoryTotal">0 ml</div>
         <div style="font-size:11px;color:var(--ink3);margin-top:4px;">擠奶會自動加入 · 瓶餵母乳會自動扣除</div>
       </div>
       <div style="display:flex;gap:16px;justify-content:center;padding-top:12px;border-top:1.5px solid var(--border);">
@@ -411,7 +346,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         </div>
         <div style="text-align:center;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">🍼 累計喝掉</div>
-          <div style="font-size:16px;font-weight:700;color:var(--a);margin-top:2px;" id="inventoryUsedTotal">0 ml</div>
+          <div style="font-size:16px;font-weight:700;color:var(--c1);margin-top:2px;" id="inventoryUsedTotal">0 ml</div>
         </div>
       </div>
       <button class="btn-cancel" style="width:100%;margin-top:14px;" onclick="adjustInventory()">✏️ 手動調整庫存</button>
@@ -439,11 +374,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
           <input type="number" id="calcFeeds" placeholder="例如：8" min="1" value="8" oninput="calcMilk()">
         </div>
       </div>
-      <div id="calcResult" style="display:none;margin-top:6px;padding:14px;background:var(--a-light);border-radius:12px;text-align:center;">
+      <div id="calcResult" style="display:none;margin-top:6px;padding:14px;background:var(--c1-light);border-radius:12px;text-align:center;">
         <div style="font-size:12px;color:var(--ink2);font-weight:600;">建議每日總奶量</div>
-        <div style="font-size:24px;font-weight:800;color:var(--a);margin-top:4px;" id="calcTotalMl">--</div>
+        <div style="font-size:24px;font-weight:800;color:var(--c1);margin-top:4px;" id="calcTotalMl">--</div>
         <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-top:10px;">建議每次奶量</div>
-        <div style="font-size:20px;font-weight:800;color:var(--b);margin-top:2px;" id="calcPerFeedMl">--</div>
+        <div style="font-size:20px;font-weight:800;color:var(--c2);margin-top:2px;" id="calcPerFeedMl">--</div>
       </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:12px;line-height:1.5;">
         ⚠️ 此公式僅供參考，每個寶寶食量不同，請依寶寶實際反應（飽足、體重增長）調整，或諮詢兒科醫師、兒科護理師意見。
@@ -487,7 +422,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         <div id="pumpTimesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
         <div style="display:flex;gap:8px;">
           <input type="time" id="newPumpTime" style="flex:1;">
-          <button onclick="addPumpTime()" style="background:var(--a-light);color:var(--a);border:1.5px solid var(--a);border-radius:var(--radius-sm);padding:0 16px;font-weight:700;cursor:pointer;">＋ 新增</button>
+          <button onclick="addPumpTime()" style="background:var(--c1-light);color:var(--c1);border:1.5px solid var(--c1);border-radius:var(--radius-sm);padding:0 16px;font-weight:700;cursor:pointer;">＋ 新增</button>
         </div>
       </div>
       <button class="btn-save" style="width:100%" onclick="togglePumpReminder()" id="pumpReminderToggleBtn">🔔 開啟擠奶提醒</button>
@@ -503,16 +438,8 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <div class="view" id="view-stats">
   <div class="section" style="padding-top:16px">
     <div class="section-title">今日統計</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px">
-      <div class="baby-tab a" id="stat-tab-a" onclick="selectStatBaby('a')" style="flex:1;padding:12px 10px;">
-        <div class="name" id="nameA-s">寶寶甲</div>
-      </div>
-      <div class="baby-tab b" id="stat-tab-b" onclick="selectStatBaby('b')" style="flex:1;padding:12px 10px;">
-        <div class="name" id="nameB-s">寶寶乙</div>
-      </div>
-    </div>
+    <div class="baby-tabs" id="statBabyTabs" style="padding:0;margin-bottom:14px;"></div>
 
-    <!-- 最新身高體重 -->
     <div class="weight-card" style="margin-bottom:14px;">
       <div class="section-title" style="margin-bottom:10px;">📏 最新身高體重</div>
       <div style="display:flex;gap:16px;">
@@ -530,7 +457,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 
     <div class="stat-grid" id="statsGrid"></div>
 
-    <!-- 餵奶目標設定 -->
     <div class="weight-card" style="margin-top:14px;">
       <div class="section-title" style="margin-bottom:10px;">🎯 每日餵奶目標</div>
       <div class="field-row">
@@ -547,7 +473,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         <label>每餐最少奶量（ml，選填）</label>
         <input type="number" id="goalMinPerFeed" placeholder="例如：60" min="0" oninput="saveFeedingGoal()">
       </div>
-      <div id="goalResultBox" style="display:none;margin-top:14px;padding:14px;background:var(--a-light);border-radius:12px;">
+      <div id="goalResultBox" style="display:none;margin-top:14px;padding:14px;background:var(--c1-light);border-radius:12px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;">
           <span>今日目標</span><span id="goalTargetMl">-- ml</span>
         </div>
@@ -555,13 +481,31 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
           <span>今日已喝</span><span id="goalActualMl">-- ml</span>
         </div>
         <div style="height:8px;background:rgba(255,255,255,0.6);border-radius:4px;margin-top:10px;overflow:hidden;">
-          <div id="goalProgressBar" style="height:100%;background:var(--a);border-radius:4px;width:0%;transition:width 0.3s;"></div>
+          <div id="goalProgressBar" style="height:100%;background:var(--c1);border-radius:4px;width:0%;transition:width 0.3s;"></div>
         </div>
         <div style="text-align:center;margin-top:10px;font-size:15px;font-weight:800;" id="goalDiffText"></div>
       </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
         ⚠️ 公式：每日總奶量 = 體重(kg) × 150ml，僅供參考，請依寶寶實際狀況調整。
       </p>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS VIEW -->
+<div class="view" id="view-settings">
+  <div class="section" style="padding-top:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <button onclick="showView('home')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink2);">←</button>
+      <div class="section-title" style="margin:0;">寶寶設定</div>
+    </div>
+    <div class="weight-card">
+      <div class="field" style="margin-bottom:14px;">
+        <label>寶寶人數</label>
+        <div class="babycount-grid" id="babyCountGrid"></div>
+      </div>
+      <div id="babyNameFields"></div>
+      <button class="btn-save" style="width:100%;margin-top:10px;" onclick="saveBabySettings()">儲存設定</button>
     </div>
   </div>
 </div>
@@ -582,7 +526,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <div class="type-grid" id="typeGrid"></div>
     </div>
 
-    <!-- 哺乳 -->
     <div id="fields-nursing" style="display:none">
       <div class="field-row">
         <div class="field">
@@ -602,7 +545,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 配方奶 / 瓶餵母乳 -->
     <div id="fields-bottlemilk" style="display:none">
       <div class="field">
         <label id="bottleLabel">配方奶量（ml）</label>
@@ -610,7 +552,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 擠奶 -->
     <div id="fields-pump" style="display:none">
       <div class="field">
         <label>擠奶量（ml）</label>
@@ -618,12 +559,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 換尿片 -->
     <div id="fields-diaper" style="display:none">
       <div class="field">
         <label>狀況</label>
         <div class="seg-btns">
-          <button class="seg-btn sel-a" onclick="pickDiaperType('小便',this)">小便</button>
+          <button class="seg-btn selected" onclick="pickDiaperType('小便',this)">小便</button>
           <button class="seg-btn" onclick="pickDiaperType('大便',this)">大便</button>
           <button class="seg-btn" onclick="pickDiaperType('都有',this)">都有</button>
         </div>
@@ -654,7 +594,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 洗澡 -->
     <div id="fields-bath" style="display:none">
       <div class="field">
         <label>洗澡時長（秒）</label>
@@ -665,7 +604,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 成長記錄 -->
     <div id="fields-growth" style="display:none">
       <div class="field-row">
         <div class="field">
@@ -679,7 +617,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 體溫 -->
     <div id="fields-temp" style="display:none">
       <div class="field">
         <label>體溫（°C）</label>
@@ -687,7 +624,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- 備註 -->
     <div id="fields-note" style="display:none">
       <div class="field">
         <label>備註內容</label>
@@ -695,7 +631,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </div>
     </div>
 
-    <!-- Common: tag/note for all types except note -->
     <div class="field" id="commonTagField">
       <label>標註（選填）</label>
       <textarea id="commonTag" placeholder="輸入文字"></textarea>
@@ -725,32 +660,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <label>日期</label>
       <input type="date" id="weightDate">
     </div>
-    <div class="field">
-      <label id="nameA-wf">寶寶甲</label>
-      <div class="field-row">
-        <div class="field" style="margin-bottom:0">
-          <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
-          <input type="number" id="weightA" placeholder="例如：3200">
-        </div>
-        <div class="field" style="margin-bottom:0">
-          <span style="font-size:12px;color:var(--ink3)">身高 (cm)</span>
-          <input type="number" id="heightA" placeholder="例如：50" step="0.1">
-        </div>
-      </div>
-    </div>
-    <div class="field">
-      <label id="nameB-wf">寶寶乙</label>
-      <div class="field-row">
-        <div class="field" style="margin-bottom:0">
-          <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
-          <input type="number" id="weightB" placeholder="例如：3100">
-        </div>
-        <div class="field" style="margin-bottom:0">
-          <span style="font-size:12px;color:var(--ink3)">身高 (cm)</span>
-          <input type="number" id="heightB" placeholder="例如：50" step="0.1">
-        </div>
-      </div>
-    </div>
+    <div id="weightModalFields"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('weightModal')">取消</button>
       <button class="btn-save" onclick="saveWeight()">儲存</button>
@@ -758,7 +668,21 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
-<!-- SETUP MODAL -->
+<!-- SETUP MODAL (first-time) -->
+<div class="overlay" id="setupModal" style="align-items:center">
+  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:center">👶 歡迎使用多寶日誌</div>
+    <p style="font-size:14px;color:var(--ink2);text-align:center;margin-bottom:20px">請先選擇寶寶人數並命名</p>
+    <div class="field" style="margin-bottom:14px;">
+      <label>寶寶人數</label>
+      <div class="babycount-grid" id="setupCountGrid"></div>
+    </div>
+    <div id="setupNameFields"></div>
+    <button class="btn-save" style="width:100%;margin-top:8px" onclick="saveInitialSetup()">開始記錄 🎉</button>
+  </div>
+</div>
+
 <!-- USER LOGIN MODAL -->
 <div class="overlay" id="loginModal" style="align-items:center">
   <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
@@ -770,23 +694,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <input type="text" id="loginName" placeholder="例如：爸爸 / 媽媽 / 阿嬤">
     </div>
     <button class="btn-save" style="width:100%;margin-top:8px" onclick="saveLoginName()">開始使用 ✅</button>
-  </div>
-</div>
-
-<div class="overlay" id="setupModal" style="align-items:center">
-  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
-    <div class="modal-handle"></div>
-    <div class="modal-title" style="text-align:center">👶 歡迎使用雙寶日誌</div>
-    <p style="font-size:14px;color:var(--ink2);text-align:center;margin-bottom:20px">請先為兩個寶寶取個名字</p>
-    <div class="field">
-      <label>🔵 第一個寶寶的名字</label>
-      <input type="text" id="setupNameA" placeholder="例如：小宇">
-    </div>
-    <div class="field">
-      <label>🩵 第二個寶寶的名字</label>
-      <input type="text" id="setupNameB" placeholder="例如：小恩">
-    </div>
-    <button class="btn-save" style="width:100%;margin-top:8px" onclick="saveNames()">開始記錄 🎉</button>
   </div>
 </div>
 
@@ -806,7 +713,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div style="font-size:13px;color:#334155;line-height:1.7">1. 點下方 Safari 分享按鈕 ⬆️<br>2. 選擇「<strong>加入主畫面</strong>」<br>3. 點「新增」</div>
   </div>
 </div>
-
 <script>
 // ─── Firebase Config ──────────────────────────────────
 const firebaseConfig = {
@@ -818,24 +724,32 @@ const firebaseConfig = {
   messagingSenderId: "617965681273",
   appId: "1:617965681273:web:a502a2d7393d9d1fe3b2a8"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// ─── Color palette per baby slot ──────────────────────
+const BABY_COLORS = [
+  {key:'c1', main:'#2563EB', light:'#DBEAFE', mid:'#93C5FD'},
+  {key:'c2', main:'#0891B2', light:'#CFFAFE', mid:'#67E8F9'},
+  {key:'c3', main:'#059669', light:'#D1FAE5', mid:'#6EE7B7'},
+  {key:'c4', main:'#D97706', light:'#FEF3C7', mid:'#FCD34D'},
+  {key:'c5', main:'#DB2777', light:'#FCE7F3', mid:'#F9A8D4'},
+];
+const BABY_IDS = ['b1','b2','b3','b4','b5'];
+
 // ─── State ────────────────────────────────────────────
-let state = { names:{a:'',b:''}, logs:[], weights:[], inventoryAdjust:0 };
-let currentBaby = null;
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0 };
+let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
-let selectedBabyInModal='a';
+let selectedBabyInModal = 'b1';
 let isSaving = false;
 let currentType = 'nursing';
-
-// Diaper picks
 let diaperType = '小便';
-
-// Timers
 let nurseTimers = { left:null, right:null };
 let bathTimer = null;
+let currentUserName = '';
+let currentStatBaby = 'b1';
+let setupBabyCount = 2;
 
 const TYPE_DEFS = [
   {key:'nursing', icon:'🤱', label:'哺乳'},
@@ -860,9 +774,19 @@ function typeInfo(type){
     growth:{icon:'📏',label:'成長記錄'},
     temp:{icon:'🌡️',label:'體溫'},
     note:{icon:'📝',label:'備註'},
-    milk:{icon:'🍼',label:'餵奶'}, // legacy
   };
   return map[type] || {icon:'📋',label:type};
+}
+
+function activeBabyIds(){
+  return BABY_IDS.slice(0, state.babyCount || 2);
+}
+function babyName(id){
+  return (state.babies && state.babies[id]) || id;
+}
+function babyColor(id){
+  const idx = BABY_IDS.indexOf(id);
+  return BABY_COLORS[idx] || BABY_COLORS[0];
 }
 
 // ─── Sync indicator ──────────────────────────────────
@@ -885,11 +809,11 @@ function setSyncStatus(status) {
   }
 }
 
-// ─── Firebase listeners (real-time) ──────────────────
+// ─── Firebase listeners ──────────────────────────────
 function startListening() {
-  db.ref('names').on('value', snap => {
+  db.ref('babies').on('value', snap => {
     const val = snap.val();
-    if(val) { state.names = val; updateNames(); }
+    if(val) { state.babies = val.names || {}; state.babyCount = val.count || 2; }
     renderAll();
   });
   db.ref('logs').on('value', snap => {
@@ -910,18 +834,17 @@ function startListening() {
 }
 
 // ─── Init ─────────────────────────────────────────────
-let currentUserName = '';
-
 function init() {
   startListening();
   setDefaultTime();
   renderTypeGrid();
+  renderSetupNameFields();
   currentUserName = localStorage.getItem('userName') || '';
   updateUserBadge();
   setTimeout(()=>{
     if(!currentUserName){
       document.getElementById('loginModal').classList.add('open');
-    } else if(!state.names.a) {
+    } else if(!state.babies || !Object.keys(state.babies).length) {
       document.getElementById('setupModal').classList.add('open');
     }
   }, 1500);
@@ -934,7 +857,7 @@ function saveLoginName(){
   localStorage.setItem('userName', name);
   updateUserBadge();
   closeModal('loginModal');
-  if(!state.names.a){
+  if(!state.babies || !Object.keys(state.babies).length){
     setTimeout(()=>{ document.getElementById('setupModal').classList.add('open'); }, 300);
   }
 }
@@ -954,25 +877,85 @@ function changeUserName(){
   updateUserBadge();
 }
 
-function saveNames() {
-  const a = document.getElementById('setupNameA').value.trim();
-  const b = document.getElementById('setupNameB').value.trim();
-  if(!a||!b){alert('請為兩個寶寶都輸入名字');return;}
+// ─── Baby count selector grid (shared by setup + settings) ──
+// Simpler approach: re-render via global handler functions
+function renderSetupNameFields(){
+  renderBabyCountGridSimple('setupCountGrid', setupBabyCount, 'setup');
+  const container = document.getElementById('setupNameFields');
+  const ids = BABY_IDS.slice(0, setupBabyCount);
+  container.innerHTML = ids.map((id,i)=>{
+    const c = BABY_COLORS[i];
+    return `<div class="field">
+      <label><span class="dot-color" style="background:${c.main};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;"></span>寶寶 ${i+1} 的名字</label>
+      <input type="text" id="setupName_${id}" placeholder="例如：小宇">
+    </div>`;
+  }).join('');
+}
+
+function renderBabyCountGridSimple(containerId, selectedCount, mode){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = [1,2,3,4,5].map(n=>
+    `<div class="babycount-cell ${n===selectedCount?'active':''}" onclick="onBabyCountPick('${mode}',${n})">${n}</div>`
+  ).join('');
+}
+
+function onBabyCountPick(mode, n){
+  if(mode==='setup'){
+    setupBabyCount = n;
+    renderSetupNameFields();
+  } else if(mode==='settings'){
+    settingsBabyCount = n;
+    renderSettingsNameFields();
+  }
+}
+
+function saveInitialSetup(){
+  const ids = BABY_IDS.slice(0, setupBabyCount);
+  const names = {};
+  for(const id of ids){
+    const val = document.getElementById('setupName_'+id).value.trim();
+    if(!val){ alert('請為每個寶寶輸入名字'); return; }
+    names[id] = val;
+  }
   setSyncStatus('syncing');
-  db.ref('names').set({a,b})
+  db.ref('babies').set({ count: setupBabyCount, names })
     .then(()=>{ setSyncStatus('ok'); closeModal('setupModal'); })
     .catch(()=>setSyncStatus('error'));
 }
 
-function updateNames() {
-  const a = state.names.a || '寶寶甲';
-  const b = state.names.b || '寶寶乙';
-  document.getElementById('name-a-tab').textContent = a;
-  document.getElementById('name-b-tab').textContent = b;
-  ['nameA-w','nameB-w','nameA-s','nameB-s','nameA-wf','nameB-wf'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.textContent=id.includes('A')?a:b;
-  });
+// ─── Settings view (change baby count / names later) ──
+let settingsBabyCount = 2;
+function renderSettingsView(){
+  settingsBabyCount = state.babyCount || 2;
+  renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
+  renderSettingsNameFields();
+}
+function renderSettingsNameFields(){
+  renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
+  const container = document.getElementById('babyNameFields');
+  const ids = BABY_IDS.slice(0, settingsBabyCount);
+  container.innerHTML = ids.map((id,i)=>{
+    const c = BABY_COLORS[i];
+    const existing = (state.babies && state.babies[id]) || '';
+    return `<div class="field">
+      <label><span class="dot-color" style="background:${c.main};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;"></span>寶寶 ${i+1} 的名字</label>
+      <input type="text" id="settingsName_${id}" placeholder="例如：小宇" value="${existing}">
+    </div>`;
+  }).join('');
+}
+function saveBabySettings(){
+  const ids = BABY_IDS.slice(0, settingsBabyCount);
+  const names = {};
+  for(const id of ids){
+    const val = document.getElementById('settingsName_'+id).value.trim();
+    if(!val){ alert('請為每個寶寶輸入名字'); return; }
+    names[id] = val;
+  }
+  setSyncStatus('syncing');
+  db.ref('babies').set({ count: settingsBabyCount, names })
+    .then(()=>{ setSyncStatus('ok'); showView('home'); })
+    .catch(()=>setSyncStatus('error'));
 }
 
 // ─── Date ─────────────────────────────────────────────
@@ -996,48 +979,81 @@ function fmtTime(iso){
 function showView(name,btn){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('nav .nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+  if(name==='settings') renderSettingsView();
   renderAll();
 }
 function selectBaby(baby){
   currentBaby = (currentBaby===baby) ? null : baby;
-  document.getElementById('tab-a').classList.toggle('active', currentBaby==='a');
-  document.getElementById('tab-b').classList.toggle('active', currentBaby==='b');
+  renderBabyTabs();
   renderSummary();
   renderTodayLog();
 }
 
 // ─── Render ───────────────────────────────────────────
 function renderAll(){
+  renderBabyTabs();
   updateDateLabel();renderSummary();
   renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();
+  renderBabyPicker();
 }
+
+function renderBabyTabs(){
+  const ids = activeBabyIds();
+  const container = document.getElementById('babyTabs');
+  if(container){
+    container.innerHTML = ids.map(id=>{
+      const c = babyColor(id);
+      const isActive = currentBaby===id;
+      const style = isActive ? `background:${c.main};border-color:${c.main};` : `border-color:${c.mid};color:${c.main};`;
+      return `<div class="baby-tab ${isActive?'active':''}" style="${style}" onclick="selectBaby('${id}')">
+        <div class="name">${babyName(id)}</div>
+      </div>`;
+    }).join('');
+  }
+  const statContainer = document.getElementById('statBabyTabs');
+  if(statContainer){
+    if(!ids.includes(currentStatBaby)) currentStatBaby = ids[0];
+    statContainer.innerHTML = ids.map(id=>{
+      const c = babyColor(id);
+      const isActive = currentStatBaby===id;
+      const style = isActive ? `background:${c.main};border-color:${c.main};` : `border-color:${c.mid};color:${c.main};`;
+      return `<div class="baby-tab ${isActive?'active':''}" style="${style};flex:1;" onclick="selectStatBaby('${id}')">
+        <div class="name">${babyName(id)}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
 function updateDateLabel(){
   const label=fmtDate(currentDay),d=currentDay;
   document.getElementById('dateLabel').textContent=
     label+(label==='今天'||label==='昨天'?` (${d.getMonth()+1}/${d.getDate()})`:' '+`${d.getMonth()+1}/${d.getDate()}`);
 }
+
 function getDayLogs(baby){
   let logs = state.logs.filter(l=>isSameDay(new Date(l.time),currentDay));
+  const ids = activeBabyIds();
   if(baby){
     logs = logs.filter(l=>l.baby===baby);
   } else {
-    logs = logs.filter(l=>l.baby==='a'||l.baby==='b');
+    logs = logs.filter(l=>ids.includes(l.baby));
   }
   return logs.sort((a,b)=>new Date(b.time)-new Date(a.time));
 }
+
 function renderSummary(){
   const logs=getDayLogs(currentBaby);
-  const cls=currentBaby==='b'?'b-chip':'a-chip';
-  const milks=logs.filter(l=>['nursing','formula','bottlemilk','milk'].includes(l.type));
+  const milks=logs.filter(l=>['nursing','formula','bottlemilk'].includes(l.type));
   const diapers=logs.filter(l=>l.type==='diaper');
   const notes=logs.filter(l=>l.type==='note');
   document.getElementById('summaryStrip').innerHTML=`
-    <div class="sum-chip ${cls}"><span class="icon">🍼</span>${milks.length} 次餵食</div>
-    <div class="sum-chip ${cls}"><span class="icon">👶</span>${diapers.length} 次換尿片</div>
-    <div class="sum-chip ${cls}"><span class="icon">📝</span>${notes.length} 則備註</div>`;
+    <div class="sum-chip"><span class="icon">🍼</span>${milks.length} 次餵食</div>
+    <div class="sum-chip"><span class="icon">👶</span>${diapers.length} 次換尿片</div>
+    <div class="sum-chip"><span class="icon">📝</span>${notes.length} 則備註</div>`;
 }
+
 function logDetail(log){
   if(log.type==='nursing'){
     const parts=[];
@@ -1048,7 +1064,6 @@ function logDetail(log){
   if(log.type==='formula') return `配方奶 · ${log.amount||0}ml`;
   if(log.type==='bottlemilk') return `瓶餵母乳 · ${log.amount||0}ml`;
   if(log.type==='pump') return `擠奶 · ${log.amount||0}ml`;
-  if(log.type==='milk') return `${log.milkType||'母乳'}${log.amount?' · '+log.amount+'ml':''}`; // legacy
   if(log.type==='diaper'){
     const parts=[log.diaperType||''];
     if(log.diaperTexture) parts.push(log.diaperTexture);
@@ -1066,19 +1081,20 @@ function logDetail(log){
   if(log.type==='note') return log.note||'';
   return '';
 }
+
 function renderLogItems(logs,container){
   if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="e-icon">🌙</div><p>還沒有紀錄</p></div>`;return;}
   container.innerHTML=logs.map(log=>{
     const info=typeInfo(log.type);
     const isShared = log.baby==='shared';
-    const name = isShared ? '媽媽' : (state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙'));
-    const babyClass = isShared ? 'shared' : log.baby;
+    const name = isShared ? '媽媽' : babyName(log.baby);
+    const c = isShared ? {main:'#A855F7'} : babyColor(log.baby);
     const noteHtml = log.tag ? `<div class="log-note">📌 ${log.tag}</div>` : '';
     const recorderHtml = log.recordedBy ? `<div class="log-recorder">✍️ ${log.recordedBy}</div>` : '';
-    return`<div class="log-item ${babyClass}-log">
+    return`<div class="log-item" style="border-left-color:${c.main};">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
-        <div class="log-who ${babyClass}">${name}</div>
+        <div class="log-who" style="color:${c.main};">${name}</div>
         <div class="log-desc">${info.label}</div>
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
@@ -1088,111 +1104,84 @@ function renderLogItems(logs,container){
     </div>`;
   }).join('');
 }
+
 function renderTodayLog(){
   let logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay));
+  const ids = activeBabyIds();
   if(currentBaby){
     logs = logs.filter(l=>l.baby===currentBaby || l.baby==='shared');
+  } else {
+    logs = logs.filter(l=>ids.includes(l.baby) || l.baby==='shared');
   }
   logs = logs.sort((a,b)=>new Date(b.time)-new Date(a.time));
   renderLogItems(logs,document.getElementById('todayLog'));
 }
+
 function renderWeight(){
-  renderWeightColumn('a', 'weightListA');
-  renderWeightColumn('b', 'weightListB');
-}
-
-function renderWeightColumn(baby, containerId){
-  const list = document.getElementById(containerId);
-  const wKey = baby;
-  const hKey = baby==='a' ? 'ha' : 'hb';
-  const entries = state.weights.filter(w => w[wKey] || w[hKey]);
-  if(!entries.length){
-    list.innerHTML = `<div class="empty-state" style="padding:16px 0"><div class="e-icon" style="font-size:28px;">⚖️</div><p style="font-size:12px;">尚無紀錄</p></div>`;
-    return;
-  }
-  const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML = sorted.map(w=>{
-    const text = [w[wKey]?w[wKey]+'g':null, w[hKey]?w[hKey]+'cm':null].filter(Boolean).join(' · ') || '—';
-    return `
-    <div class="growth-entry">
-      <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
-      <div class="ge-vals">${text}</div>
+  const ids = activeBabyIds();
+  const container = document.getElementById('weightColumns');
+  if(!container) return;
+  container.innerHTML = ids.map((id,i)=>{
+    const c = BABY_COLORS[i];
+    const entries = state.weights.filter(w => w[id] || w[id+'_h']);
+    let listHtml;
+    if(!entries.length){
+      listHtml = `<div class="empty-state" style="padding:16px 0"><div class="e-icon" style="font-size:28px;">⚖️</div><p style="font-size:12px;">尚無紀錄</p></div>`;
+    } else {
+      const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+      listHtml = sorted.map(w=>{
+        const text = [w[id]?w[id]+'g':null, w[id+'_h']?w[id+'_h']+'cm':null].filter(Boolean).join(' · ') || '—';
+        return `<div class="growth-entry">
+          <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
+          <div class="ge-vals">${text}</div>
+        </div>`;
+      }).join('');
+    }
+    return `<div style="flex:1;min-width:140px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+        <span>${babyName(id)}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">${listHtml}</div>
     </div>`;
-  }).join('');
+  }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
 }
 
-// ─── 母乳庫存 ──────────────────────────────────────────
-function renderInventory(){
-  const totalEl = document.getElementById('inventoryTotal');
-  if(!totalEl) return;
-  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
-  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
-  const adjust = state.inventoryAdjust || 0;
-  const total = pumped - used + adjust;
-  totalEl.textContent = `${total} ml`;
-  document.getElementById('inventoryPumpedTotal').textContent = `${pumped} ml`;
-  document.getElementById('inventoryUsedTotal').textContent = `${used} ml`;
-}
-
-function adjustInventory(){
-  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
-  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
-  const currentTotal = pumped - used + (state.inventoryAdjust||0);
-  const input = prompt(`目前庫存為 ${currentTotal} ml\n請輸入實際庫存數量（ml）：`, currentTotal);
-  if(input === null) return;
-  const newTotal = parseInt(input);
-  if(isNaN(newTotal) || newTotal < 0){ alert('請輸入有效的數字'); return; }
-  const newAdjust = newTotal - (pumped - used);
-  setSyncStatus('syncing');
-  db.ref('inventoryAdjust').set(newAdjust)
-    .then(()=>setSyncStatus('ok'))
-    .catch(()=>setSyncStatus('error'));
-}
-
-let currentStatBaby = 'a';
 function selectStatBaby(baby){
   currentStatBaby = baby;
-  document.getElementById('stat-tab-a').classList.toggle('active', baby==='a');
-  document.getElementById('stat-tab-b').classList.toggle('active', baby==='b');
+  renderBabyTabs();
   renderStats();
 }
 
 function renderStats(){
-  const tabA = document.getElementById('stat-tab-a');
-  const tabB = document.getElementById('stat-tab-b');
-  if(tabA) tabA.classList.toggle('active', currentStatBaby==='a');
-  if(tabB) tabB.classList.toggle('active', currentStatBaby==='b');
-
+  const baby = currentStatBaby;
   const today=new Date();today.setHours(0,0,0,0);
   const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
   function calc(logs){
-    const milks=logs.filter(l=>['nursing','formula','bottlemilk','milk'].includes(l.type));
-    const ml = logs.filter(l=>['formula','bottlemilk','milk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+    const milks=logs.filter(l=>['nursing','formula','bottlemilk'].includes(l.type));
+    const ml = logs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
     return{
       milk:milks.length, ml,
       diaper:logs.filter(l=>l.type==='diaper').length,
       bath:logs.filter(l=>l.type==='bath').length,
     };
   }
-  const baby = currentStatBaby;
-  const cls = baby==='a' ? 'a' : 'b';
+  const c = babyColor(baby);
   const s = calc(todayLogs.filter(l=>l.baby===baby));
   document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val ${cls}">${s.milk}</div></div>
-    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val ${cls}">${s.ml}</div></div>
-    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val ${cls}">${s.diaper}</div></div>
-    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val ${cls}">${s.bath}</div></div>`;
+    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val" style="color:${c.main}">${s.milk}</div></div>
+    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val" style="color:${c.main}">${s.ml}</div></div>
+    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val" style="color:${c.main}">${s.diaper}</div></div>
+    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val" style="color:${c.main}">${s.bath}</div></div>`;
 
   renderLatestGrowth(baby);
   loadFeedingGoalInputs(baby);
   renderFeedingGoalProgress(baby, s.ml);
 }
 
-// ─── 最新身高體重 ──────────────────────────────────────
 function renderLatestGrowth(baby){
-  const wKey = baby; // 'a' or 'b'
-  const hKey = baby==='a' ? 'ha' : 'hb';
-  const entries = state.weights.filter(w => w[wKey] || w[hKey]);
+  const hKey = baby+'_h';
+  const entries = state.weights.filter(w => w[baby] || w[hKey]);
   if(!entries.length){
     document.getElementById('statLatestWeight').textContent = '—';
     document.getElementById('statLatestHeight').textContent = '—';
@@ -1201,14 +1190,12 @@ function renderLatestGrowth(baby){
   }
   const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
   const latest = sorted[0];
-  document.getElementById('statLatestWeight').textContent = latest[wKey] ? `${latest[wKey]} g` : '—';
+  document.getElementById('statLatestWeight').textContent = latest[baby] ? `${latest[baby]} g` : '—';
   document.getElementById('statLatestHeight').textContent = latest[hKey] ? `${latest[hKey]} cm` : '—';
   document.getElementById('statLatestDate').textContent = `更新於 ${new Date(latest.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}`;
 }
 
-// ─── 餵奶目標設定（每個寶寶各自儲存於本機） ───────────
 function feedingGoalKey(baby){ return `feedingGoal_${baby}`; }
-
 function loadFeedingGoalInputs(baby){
   let goal = {};
   try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
@@ -1216,7 +1203,6 @@ function loadFeedingGoalInputs(baby){
   document.getElementById('goalFeeds').value = goal.feeds || 8;
   document.getElementById('goalMinPerFeed').value = goal.minPerFeed || '';
 }
-
 function saveFeedingGoal(){
   const baby = currentStatBaby;
   const weight = document.getElementById('goalWeight').value;
@@ -1225,29 +1211,23 @@ function saveFeedingGoal(){
   localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds, minPerFeed}));
   const today=new Date();today.setHours(0,0,0,0);
   const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today) && l.baby===baby);
-  const ml = todayLogs.filter(l=>['formula','bottlemilk','milk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const ml = todayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
   renderFeedingGoalProgress(baby, ml);
 }
-
 function renderFeedingGoalProgress(baby, actualMl){
   let goal = {};
   try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
   const box = document.getElementById('goalResultBox');
   const weightG = parseFloat(goal.weight);
-  if(!weightG || weightG<=0){
-    box.style.display = 'none';
-    return;
-  }
+  if(!weightG || weightG<=0){ box.style.display = 'none'; return; }
   const weightKg = weightG/1000;
   const targetMl = Math.round(weightKg * 150);
   const diff = targetMl - actualMl;
   const pct = Math.min(100, Math.round((actualMl/targetMl)*100));
-
   document.getElementById('goalTargetMl').textContent = `${targetMl} ml`;
   document.getElementById('goalActualMl').textContent = `${actualMl} ml`;
   document.getElementById('goalProgressBar').style.width = `${pct}%`;
-  document.getElementById('goalProgressBar').style.background = diff>0 ? 'var(--a)' : 'var(--success)';
-
+  document.getElementById('goalProgressBar').style.background = diff>0 ? 'var(--c1)' : 'var(--success)';
   const diffEl = document.getElementById('goalDiffText');
   if(diff > 0){
     diffEl.textContent = `還差 ${diff} ml 達標`;
@@ -1259,15 +1239,12 @@ function renderFeedingGoalProgress(baby, actualMl){
   box.style.display = 'block';
 }
 
-
 // ─── Calendar ─────────────────────────────────────────
 let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0);
-
 function changeCalMonth(d){ calMonth.setMonth(calMonth.getMonth()+d); renderCalendar(); }
 function dateKey(d){ return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
-
 function calDotClass(type){
-  if(['nursing','formula','bottlemilk','milk'].includes(type)) return 'milk';
+  if(['nursing','formula','bottlemilk'].includes(type)) return 'milk';
   if(type==='pump') return 'pump';
   if(type==='diaper') return 'diaper';
   if(type==='bath') return 'bath';
@@ -1276,14 +1253,11 @@ function calDotClass(type){
   if(type==='note') return 'note';
   return 'milk';
 }
-
 function renderCalendar(){
   const labelEl = document.getElementById('calMonthLabel');
   const gridEl = document.getElementById('calGrid');
   if(!labelEl || !gridEl) return;
-
   labelEl.textContent = `${calMonth.getFullYear()} 年 ${calMonth.getMonth()+1} 月`;
-
   const dayTypes = {};
   state.logs.forEach(l=>{
     const d = new Date(l.time);
@@ -1291,14 +1265,12 @@ function renderCalendar(){
     if(!dayTypes[key]) dayTypes[key] = new Set();
     dayTypes[key].add(calDotClass(l.type));
   });
-
   const year = calMonth.getFullYear();
   const month = calMonth.getMonth();
   const firstDay = new Date(year, month, 1);
   const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
-
   let cells = '';
   for(let i=0;i<startWeekday;i++){ cells += `<div class="cal-cell empty"></div>`; }
   for(let day=1; day<=daysInMonth; day++){
@@ -1317,7 +1289,6 @@ function renderCalendar(){
   }
   gridEl.innerHTML = cells;
 }
-
 function openDayDetail(year, month, day){
   const targetDate = new Date(year, month, day);
   const logs = state.logs.filter(l=>isSameDay(new Date(l.time), targetDate))
@@ -1370,7 +1341,7 @@ function updateForm(){
 }
 
 // ─── Modal ────────────────────────────────────────────
-function openAdd(){openAddType('nursing',currentBaby||'a');}
+function openAdd(){openAddType('nursing',currentBaby||activeBabyIds()[0]);}
 function openAddType(type,baby){
   selectedBabyInModal=baby;
   currentType = type;
@@ -1379,7 +1350,6 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  // reset fields
   ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
@@ -1387,25 +1357,30 @@ function openAddType(type,baby){
   document.getElementById('diaperAmount').value='';
   diaperType='小便';
   document.querySelectorAll('#fields-diaper .seg-btns .seg-btn').forEach((b,i)=>{
-    b.classList.toggle('sel-a', i===0);
+    b.classList.toggle('selected', i===0);
   });
   document.getElementById('addModal').classList.add('open');
 }
 function renderBabyPicker(){
-  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
-  document.getElementById('babyPicker').innerHTML=`
-    <button class="seg-btn ${selectedBabyInModal==='a'?'sel-a':''}" onclick="pickBaby('a',this)">🔵 ${a}</button>
-    <button class="seg-btn ${selectedBabyInModal==='b'?'sel-b':''}" onclick="pickBaby('b',this)">🩵 ${b}</button>`;
+  const container = document.getElementById('babyPicker');
+  if(!container) return;
+  const ids = activeBabyIds();
+  if(!ids.includes(selectedBabyInModal)) selectedBabyInModal = ids[0];
+  container.innerHTML = ids.map(id=>{
+    const c = babyColor(id);
+    const isSel = selectedBabyInModal===id;
+    const style = isSel ? `border-color:${c.main};background:${c.light};color:${c.main};` : '';
+    return `<button class="seg-btn ${isSel?'selected':''}" style="${style}" onclick="pickBaby('${id}',this)">${babyName(id)}</button>`;
+  }).join('');
 }
 function pickBaby(baby,btn){
   selectedBabyInModal=baby;
-  document.querySelectorAll('#babyPicker .seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));
-  btn.classList.add(baby==='a'?'sel-a':'sel-b');
+  renderBabyPicker();
 }
 function pickDiaperType(t,btn){
   diaperType=t;
-  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));
-  btn.classList.add('sel-a');
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
 }
 
 // ─── Timers ───────────────────────────────────────────
@@ -1504,11 +1479,10 @@ function saveLog(){
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
       btn.disabled=false;btn.textContent='儲存紀錄';
       resetTimers();
-      // also save growth into weights collection for the 成長 view if weight or height provided
       if(currentType==='growth' && (log.weight || log.height)){
         const wEntry = { date: dateVal };
         if(log.weight) wEntry[selectedBabyInModal] = log.weight;
-        if(log.height) wEntry[selectedBabyInModal==='a'?'ha':'hb'] = log.height;
+        if(log.height) wEntry[selectedBabyInModal+'_h'] = log.height;
         db.ref('weights').push(wEntry).catch(()=>{});
       }
     })
@@ -1525,56 +1499,86 @@ function deleteLog(id){
 
 function openWeightAdd(){
   document.getElementById('weightDate').value=new Date().toISOString().slice(0,10);
-  document.getElementById('weightA').value='';
-  document.getElementById('weightB').value='';
-  document.getElementById('heightA').value='';
-  document.getElementById('heightB').value='';
+  const ids = activeBabyIds();
+  document.getElementById('weightModalFields').innerHTML = ids.map((id,i)=>{
+    const c = BABY_COLORS[i];
+    return `<div class="field">
+      <label style="color:${c.main}">${babyName(id)}</label>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
+          <input type="number" id="weightInput_${id}" placeholder="例如：3200">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">身高 (cm)</span>
+          <input type="number" id="heightInput_${id}" placeholder="例如：50" step="0.1">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
   document.getElementById('weightModal').classList.add('open');
 }
 function saveWeight(){
   const date=document.getElementById('weightDate').value;
-  const a=document.getElementById('weightA').value;
-  const b=document.getElementById('weightB').value;
-  const ha=document.getElementById('heightA').value;
-  const hb=document.getElementById('heightB').value;
-  if(!date||(!a&&!b&&!ha&&!hb)){alert('請填入日期及至少一項數值');return;}
+  if(!date){alert('請選擇日期');return;}
+  const ids = activeBabyIds();
+  const entry = { date };
+  let hasAny = false;
+  ids.forEach(id=>{
+    const w = document.getElementById('weightInput_'+id).value;
+    const h = document.getElementById('heightInput_'+id).value;
+    if(w){ entry[id]=w; hasAny=true; }
+    if(h){ entry[id+'_h']=h; hasAny=true; }
+  });
+  if(!hasAny){alert('請至少填入一項數值');return;}
   setSyncStatus('syncing');
-  db.ref('weights').push({date,a:a||null,b:b||null,ha:ha||null,hb:hb||null})
+  db.ref('weights').push(entry)
     .then(()=>{setSyncStatus('ok');closeModal('weightModal');})
     .catch(()=>setSyncStatus('error'));
 }
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='setupModal'&&ov.id!=='loginModal')closeModal(ov.id);});
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('.overlay').forEach(ov=>{
+    ov.addEventListener('click',e=>{
+      if(e.target===ov && ov.id!=='setupModal' && ov.id!=='loginModal') closeModal(ov.id);
+    });
+  });
 });
 
-// ─── PWA Install ──────────────────────────────────────
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();deferredPrompt=e;showInstallBanner('android');
-});
-function isIOS(){return/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;}
-function isInStandaloneMode(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;}
-window.addEventListener('load',()=>{if(isIOS()&&!isInStandaloneMode())showInstallBanner('ios');});
-function showInstallBanner(platform){
-  const b=document.getElementById('installBanner');
-  b.style.display='flex';
-  document.getElementById('installAndroidBtn').style.display=platform==='android'?'block':'none';
-  document.getElementById('installIOSMsg').style.display=platform==='ios'?'block':'none';
+// ─── 母乳庫存 ──────────────────────────────────────────
+function renderInventory(){
+  const totalEl = document.getElementById('inventoryTotal');
+  if(!totalEl) return;
+  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const adjust = state.inventoryAdjust || 0;
+  const total = pumped - used + adjust;
+  totalEl.textContent = `${total} ml`;
+  document.getElementById('inventoryPumpedTotal').textContent = `${pumped} ml`;
+  document.getElementById('inventoryUsedTotal').textContent = `${used} ml`;
 }
-function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});}}
-function dismissBanner(){document.getElementById('installBanner').style.display='none';}
+function adjustInventory(){
+  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const currentTotal = pumped - used + (state.inventoryAdjust||0);
+  const input = prompt(`目前庫存為 ${currentTotal} ml\n請輸入實際庫存數量（ml）：`, currentTotal);
+  if(input === null) return;
+  const newTotal = parseInt(input);
+  if(isNaN(newTotal) || newTotal < 0){ alert('請輸入有效的數字'); return; }
+  const newAdjust = newTotal - (pumped - used);
+  setSyncStatus('syncing');
+  db.ref('inventoryAdjust').set(newAdjust)
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
 
 // ─── 奶量計算器 ────────────────────────────────────────
 function calcMilk(){
   const weightG = parseFloat(document.getElementById('calcWeight').value);
   const feeds = parseInt(document.getElementById('calcFeeds').value) || 8;
   const resultBox = document.getElementById('calcResult');
-  if(!weightG || weightG<=0){
-    resultBox.style.display='none';
-    return;
-  }
+  if(!weightG || weightG<=0){ resultBox.style.display='none'; return; }
   const weightKg = weightG/1000;
   const totalMl = Math.round(weightKg * 150);
   const perFeedMl = Math.round(totalMl / feeds);
@@ -1600,32 +1604,23 @@ function loadReminderState(){
   renderFeedingAlarmList(parseInt(hours));
 }
 
-// ─── 鬧鐘匯出（開啟手機時鐘 APP 並預填名稱/時間） ──────
 function isAndroidDevice(){ return /android/i.test(navigator.userAgent); }
 function isIOSDevice(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream; }
 
 function exportToClockApp(hh, mm, label){
   const timeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
   if(isAndroidDevice()){
-    // Android intent for AlarmClock.ACTION_SET_ALARM
     const intentUrl = `intent://com.android.deskclock/#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};end`;
     window.location.href = intentUrl;
-  } else if(isIOSDevice()){
-    // iOS has no public URL scheme to open Clock app with prefilled values.
-    // Show clear copyable info instead of attempting an invalid deep link.
-    showIOSAlarmHelper(timeStr, label);
   } else {
     showIOSAlarmHelper(timeStr, label);
   }
 }
-
 function showIOSAlarmHelper(timeStr, label){
-  const modal = document.getElementById('iosAlarmModal');
   document.getElementById('iosAlarmTime').textContent = timeStr;
   document.getElementById('iosAlarmLabel').textContent = label;
-  modal.classList.add('open');
+  document.getElementById('iosAlarmModal').classList.add('open');
 }
-
 
 function renderFeedingAlarmList(hours){
   const container = document.getElementById('feedingAlarmList');
@@ -1641,7 +1636,7 @@ function renderFeedingAlarmList(hours){
     const label = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
     return `<button onclick="exportToClockApp(${hh},${mm},'寶寶喝奶提醒')" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;cursor:pointer;width:100%;">
       <span style="font-weight:700;color:var(--ink);">🕐 ${label}</span>
-      <span style="color:var(--a);font-weight:700;font-size:13px;">📲 加入鬧鐘</span>
+      <span style="color:var(--c1);font-weight:700;font-size:13px;">📲 加入鬧鐘</span>
     </button>`;
   }).join('');
 }
@@ -1658,7 +1653,6 @@ function updateReminderUI(active){
     status.textContent = '';
   }
 }
-
 function toggleFeedingReminder(){
   const isActive = localStorage.getItem(REMINDER_KEY) === 'true';
   if(isActive){
@@ -1667,10 +1661,7 @@ function toggleFeedingReminder(){
     updateReminderUI(false);
     return;
   }
-  if(!('Notification' in window)){
-    alert('此瀏覽器不支援通知功能');
-    return;
-  }
+  if(!('Notification' in window)){ alert('此瀏覽器不支援通知功能'); return; }
   Notification.requestPermission().then(permission=>{
     if(permission === 'granted'){
       const hours = parseInt(document.getElementById('reminderHours').value);
@@ -1684,7 +1675,6 @@ function toggleFeedingReminder(){
     }
   });
 }
-
 function startFeedingReminder(hours){
   if(feedingReminderTimer) clearInterval(feedingReminderTimer);
   const ms = hours * 60 * 60 * 1000;
@@ -1694,36 +1684,28 @@ function startFeedingReminder(hours){
     }
   }, ms);
 }
-
 function stopFeedingReminder(){
   if(feedingReminderTimer) clearInterval(feedingReminderTimer);
   feedingReminderTimer = null;
 }
-
 function onReminderHoursChange(){
   const hours = parseInt(document.getElementById('reminderHours').value);
   localStorage.setItem(REMINDER_HOURS_KEY, hours);
   const isActive = localStorage.getItem(REMINDER_KEY) === 'true';
-  if(isActive){
-    startFeedingReminder(hours);
-  }
+  if(isActive){ startFeedingReminder(hours); }
   renderFeedingAlarmList(hours);
 }
 
-// ─── 媽媽擠奶提醒 (specific time-of-day slots) ────────
+// ─── 媽媽擠奶提醒 ──────────────────────────────────────
 let pumpReminderCheckTimer = null;
 let lastPumpFiredKey = null;
 const PUMP_TIMES_KEY = 'pumpReminderTimes';
 const PUMP_ACTIVE_KEY = 'pumpReminderActive';
 
 function getPumpTimes(){
-  try {
-    return JSON.parse(localStorage.getItem(PUMP_TIMES_KEY) || '[]');
-  } catch(e){ return []; }
+  try { return JSON.parse(localStorage.getItem(PUMP_TIMES_KEY) || '[]'); } catch(e){ return []; }
 }
-function savePumpTimes(times){
-  localStorage.setItem(PUMP_TIMES_KEY, JSON.stringify(times));
-}
+function savePumpTimes(times){ localStorage.setItem(PUMP_TIMES_KEY, JSON.stringify(times)); }
 
 function renderPumpTimesList(){
   const times = getPumpTimes().sort();
@@ -1739,13 +1721,12 @@ function renderPumpTimesList(){
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;gap:8px;">
       <span style="font-weight:700;color:var(--ink);">🕐 ${t}</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="exportToClockApp(${hh},${mm},'媽媽擠奶提醒')" style="background:none;border:none;color:var(--a);font-size:13px;font-weight:700;cursor:pointer;">📲 加入鬧鐘</button>
+        <button onclick="exportToClockApp(${hh},${mm},'媽媽擠奶提醒')" style="background:none;border:none;color:var(--c1);font-size:13px;font-weight:700;cursor:pointer;">📲 加入鬧鐘</button>
         <button onclick="removePumpTime('${t}')" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">✕</button>
       </div>
     </div>`;
   }).join('');
 }
-
 function addPumpTime(){
   const input = document.getElementById('newPumpTime');
   const val = input.value;
@@ -1757,14 +1738,12 @@ function addPumpTime(){
   input.value = '';
   renderPumpTimesList();
 }
-
 function removePumpTime(t){
   let times = getPumpTimes();
   times = times.filter(x=>x!==t);
   savePumpTimes(times);
   renderPumpTimesList();
 }
-
 function updatePumpReminderUI(active){
   const btn = document.getElementById('pumpReminderToggleBtn');
   const status = document.getElementById('pumpReminderStatus');
@@ -1777,7 +1756,6 @@ function updatePumpReminderUI(active){
     status.textContent = '';
   }
 }
-
 function togglePumpReminder(){
   const isActive = localStorage.getItem(PUMP_ACTIVE_KEY) === 'true';
   if(isActive){
@@ -1786,14 +1764,8 @@ function togglePumpReminder(){
     updatePumpReminderUI(false);
     return;
   }
-  if(!getPumpTimes().length){
-    alert('請先新增至少一個提醒時間點');
-    return;
-  }
-  if(!('Notification' in window)){
-    alert('此瀏覽器不支援通知功能');
-    return;
-  }
+  if(!getPumpTimes().length){ alert('請先新增至少一個提醒時間點'); return; }
+  if(!('Notification' in window)){ alert('此瀏覽器不支援通知功能'); return; }
   Notification.requestPermission().then(permission=>{
     if(permission === 'granted'){
       localStorage.setItem(PUMP_ACTIVE_KEY, 'true');
@@ -1805,7 +1777,6 @@ function togglePumpReminder(){
     }
   });
 }
-
 function startPumpReminder(){
   if(pumpReminderCheckTimer) clearInterval(pumpReminderCheckTimer);
   pumpReminderCheckTimer = setInterval(()=>{
@@ -1823,12 +1794,10 @@ function startPumpReminder(){
     }
   }, 20000);
 }
-
 function stopPumpReminder(){
   if(pumpReminderCheckTimer) clearInterval(pumpReminderCheckTimer);
   pumpReminderCheckTimer = null;
 }
-
 function loadPumpReminderState(){
   renderPumpTimesList();
   const active = localStorage.getItem(PUMP_ACTIVE_KEY) === 'true';
@@ -1837,6 +1806,23 @@ function loadPumpReminderState(){
     startPumpReminder();
   }
 }
+
+// ─── PWA Install ──────────────────────────────────────
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;showInstallBanner('android');
+});
+function isIOS(){return/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;}
+function isInStandaloneMode(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;}
+window.addEventListener('load',()=>{if(isIOS()&&!isInStandaloneMode())showInstallBanner('ios');});
+function showInstallBanner(platform){
+  const b=document.getElementById('installBanner');
+  b.style.display='flex';
+  document.getElementById('installAndroidBtn').style.display=platform==='android'?'block':'none';
+  document.getElementById('installIOSMsg').style.display=platform==='ios'?'block':'none';
+}
+function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});}}
+function dismissBanner(){document.getElementById('installBanner').style.display='none';}
 
 init();
 loadReminderState();
