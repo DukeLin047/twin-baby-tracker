@@ -215,6 +215,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
 .cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
 .dot.milk,.dot.bottlemilk,.dot.formula{background:var(--a);}
+.dot.pump{background:#A855F7;}
 .dot.diaper{background:#0891B2;}
 .dot.bath{background:#0EA5E9;}
 .dot.growth{background:#059669;}
@@ -315,6 +316,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
       <span><i class="dot milk"></i>🍼 奶</span>
+      <span><i class="dot pump"></i>🤲 擠奶</span>
       <span><i class="dot diaper"></i>👶 尿布</span>
       <span><i class="dot bath"></i>🛁 洗澡</span>
       <span><i class="dot growth"></i>📏 成長</span>
@@ -407,6 +409,26 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       </p>
     </div>
   </div>
+
+  <!-- 媽媽擠奶提醒設定 -->
+  <div class="section">
+    <div class="section-title">🤲 媽媽擠奶提醒</div>
+    <div class="weight-card">
+      <div class="field" style="margin-bottom:10px">
+        <label>提醒時間點（可新增多個）</label>
+        <div id="pumpTimesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="time" id="newPumpTime" style="flex:1;">
+          <button onclick="addPumpTime()" style="background:var(--a-light);color:var(--a);border:1.5px solid var(--a);border-radius:var(--radius-sm);padding:0 16px;font-weight:700;cursor:pointer;">＋ 新增</button>
+        </div>
+      </div>
+      <button class="btn-save" style="width:100%" onclick="togglePumpReminder()" id="pumpReminderToggleBtn">🔔 開啟擠奶提醒</button>
+      <p id="pumpReminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。
+      </p>
+    </div>
+  </div>
 </div>
 
 <!-- STATS VIEW -->
@@ -466,6 +488,14 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <div class="field">
         <label id="bottleLabel">配方奶量（ml）</label>
         <input type="number" id="bottleAmount" placeholder="例如：120" min="0">
+      </div>
+    </div>
+
+    <!-- 擠奶 -->
+    <div id="fields-pump" style="display:none">
+      <div class="field">
+        <label>擠奶量（ml）</label>
+        <input type="number" id="pumpAmount" placeholder="例如：90" min="0">
       </div>
     </div>
 
@@ -577,12 +607,30 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <input type="date" id="weightDate">
     </div>
     <div class="field">
-      <label id="nameA-wf">寶寶甲</label> <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
-      <input type="number" id="weightA" placeholder="例如：3200">
+      <label id="nameA-wf">寶寶甲</label>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
+          <input type="number" id="weightA" placeholder="例如：3200">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">身高 (cm)</span>
+          <input type="number" id="heightA" placeholder="例如：50" step="0.1">
+        </div>
+      </div>
     </div>
     <div class="field">
-      <label id="nameB-wf">寶寶乙</label> <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
-      <input type="number" id="weightB" placeholder="例如：3100">
+      <label id="nameB-wf">寶寶乙</label>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">體重 (g)</span>
+          <input type="number" id="weightB" placeholder="例如：3100">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">身高 (cm)</span>
+          <input type="number" id="heightB" placeholder="例如：50" step="0.1">
+        </div>
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('weightModal')">取消</button>
@@ -674,6 +722,7 @@ const TYPE_DEFS = [
   {key:'nursing', icon:'🤱', label:'哺乳'},
   {key:'formula', icon:'🍼', label:'配方奶'},
   {key:'bottlemilk', icon:'🍼', label:'瓶餵母乳'},
+  {key:'pump', icon:'🤲', label:'擠奶'},
   {key:'diaper', icon:'👶', label:'換尿片'},
   {key:'bath', icon:'🦆', label:'洗澡'},
   {key:'growth', icon:'📏', label:'成長記錄'},
@@ -686,6 +735,7 @@ function typeInfo(type){
     nursing:{icon:'🤱',label:'哺乳'},
     formula:{icon:'🍼',label:'配方奶'},
     bottlemilk:{icon:'🍼',label:'瓶餵母乳'},
+    pump:{icon:'🤲',label:'擠奶'},
     diaper:{icon:'👶',label:'換尿片'},
     bath:{icon:'🦆',label:'洗澡'},
     growth:{icon:'📏',label:'成長記錄'},
@@ -868,6 +918,7 @@ function logDetail(log){
   }
   if(log.type==='formula') return `配方奶 · ${log.amount||0}ml`;
   if(log.type==='bottlemilk') return `瓶餵母乳 · ${log.amount||0}ml`;
+  if(log.type==='pump') return `擠奶 · ${log.amount||0}ml`;
   if(log.type==='milk') return `${log.milkType||'母乳'}${log.amount?' · '+log.amount+'ml':''}`; // legacy
   if(log.type==='diaper'){
     const parts=[log.diaperType||''];
@@ -931,14 +982,18 @@ function renderWeight(){
   const list=document.getElementById('weightList');
   if(!state.weights.length){list.innerHTML='<div class="empty-state" style="padding:20px 0"><div class="e-icon">⚖️</div><p>尚無成長紀錄</p></div>';return;}
   const sorted=[...state.weights].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML=sorted.map(w=>`
+  list.innerHTML=sorted.map(w=>{
+    const aText = [w.a?w.a+'g':null, w.ha?w.ha+'cm':null].filter(Boolean).join(' · ') || '—';
+    const bText = [w.b?w.b+'g':null, w.hb?w.hb+'cm':null].filter(Boolean).join(' · ') || '—';
+    return `
     <div class="weight-row">
       <div class="w-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
       <div class="w-vals">
-        <div><div class="weight-val a">${w.a?w.a+'g':'—'}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
-        <div><div class="weight-val b">${w.b?w.b+'g':'—'}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
+        <div><div class="weight-val a">${aText}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
+        <div><div class="weight-val b">${bText}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function renderStats(){
   const today=new Date();today.setHours(0,0,0,0);
@@ -970,6 +1025,7 @@ function dateKey(d){ return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 function calDotClass(type){
   if(['nursing','formula','bottlemilk','milk'].includes(type)) return 'milk';
+  if(type==='pump') return 'pump';
   if(type==='diaper') return 'diaper';
   if(type==='bath') return 'bath';
   if(type==='growth') return 'growth';
@@ -1043,7 +1099,7 @@ function selectType(key){
   updateForm();
 }
 function updateForm(){
-  const allFieldGroups = ['nursing','bottlemilk','diaper','bath','growth','temp','note'];
+  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','note'];
   allFieldGroups.forEach(g=>{
     const el = document.getElementById('fields-'+g);
     if(el) el.style.display='none';
@@ -1053,6 +1109,8 @@ function updateForm(){
   } else if(currentType==='formula' || currentType==='bottlemilk'){
     document.getElementById('fields-bottlemilk').style.display='';
     document.getElementById('bottleLabel').textContent = currentType==='formula' ? '配方奶量（ml）' : '瓶餵母乳量（ml）';
+  } else if(currentType==='pump'){
+    document.getElementById('fields-pump').style.display='';
   } else if(currentType==='diaper'){
     document.getElementById('fields-diaper').style.display='';
   } else if(currentType==='bath'){
@@ -1078,7 +1136,7 @@ function openAddType(type,baby){
   renderBabyPicker();
   setDefaultTime();
   // reset fields
-  ['nurseLeftMin','nurseRightMin','bottleAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('diaperTexture').value='';
@@ -1173,6 +1231,8 @@ function saveLog(){
     log.nurseRight = document.getElementById('nurseRightMin').value || '';
   } else if(currentType==='formula' || currentType==='bottlemilk'){
     log.amount = document.getElementById('bottleAmount').value || '';
+  } else if(currentType==='pump'){
+    log.amount = document.getElementById('pumpAmount').value || '';
   } else if(currentType==='diaper'){
     log.diaperType = diaperType;
     log.diaperTexture = document.getElementById('diaperTexture').value || '';
@@ -1200,10 +1260,11 @@ function saveLog(){
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
       btn.disabled=false;btn.textContent='儲存紀錄';
       resetTimers();
-      // also save growth into weights collection for the 成長 view if weight provided
-      if(currentType==='growth' && log.weight){
+      // also save growth into weights collection for the 成長 view if weight or height provided
+      if(currentType==='growth' && (log.weight || log.height)){
         const wEntry = { date: dateVal };
-        wEntry[selectedBabyInModal] = log.weight;
+        if(log.weight) wEntry[selectedBabyInModal] = log.weight;
+        if(log.height) wEntry[selectedBabyInModal==='a'?'ha':'hb'] = log.height;
         db.ref('weights').push(wEntry).catch(()=>{});
       }
     })
@@ -1222,15 +1283,19 @@ function openWeightAdd(){
   document.getElementById('weightDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('weightA').value='';
   document.getElementById('weightB').value='';
+  document.getElementById('heightA').value='';
+  document.getElementById('heightB').value='';
   document.getElementById('weightModal').classList.add('open');
 }
 function saveWeight(){
   const date=document.getElementById('weightDate').value;
   const a=document.getElementById('weightA').value;
   const b=document.getElementById('weightB').value;
-  if(!date||(!a&&!b)){alert('請填入日期及至少一個體重');return;}
+  const ha=document.getElementById('heightA').value;
+  const hb=document.getElementById('heightB').value;
+  if(!date||(!a&&!b&&!ha&&!hb)){alert('請填入日期及至少一項數值');return;}
   setSyncStatus('syncing');
-  db.ref('weights').push({date,a:a||null,b:b||null})
+  db.ref('weights').push({date,a:a||null,b:b||null,ha:ha||null,hb:hb||null})
     .then(()=>{setSyncStatus('ok');closeModal('weightModal');})
     .catch(()=>setSyncStatus('error'));
 }
@@ -1353,8 +1418,131 @@ function onReminderHoursChange(){
   }
 }
 
+// ─── 媽媽擠奶提醒 (specific time-of-day slots) ────────
+let pumpReminderCheckTimer = null;
+let lastPumpFiredKey = null;
+const PUMP_TIMES_KEY = 'pumpReminderTimes';
+const PUMP_ACTIVE_KEY = 'pumpReminderActive';
+
+function getPumpTimes(){
+  try {
+    return JSON.parse(localStorage.getItem(PUMP_TIMES_KEY) || '[]');
+  } catch(e){ return []; }
+}
+function savePumpTimes(times){
+  localStorage.setItem(PUMP_TIMES_KEY, JSON.stringify(times));
+}
+
+function renderPumpTimesList(){
+  const times = getPumpTimes().sort();
+  const list = document.getElementById('pumpTimesList');
+  if(!list) return;
+  if(!times.length){
+    list.innerHTML = `<p style="font-size:12px;color:var(--ink3);">尚未新增提醒時間</p>`;
+    return;
+  }
+  list.innerHTML = times.map(t=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;">
+      <span style="font-weight:700;color:var(--ink);">🕐 ${t}</span>
+      <button onclick="removePumpTime('${t}')" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+
+function addPumpTime(){
+  const input = document.getElementById('newPumpTime');
+  const val = input.value;
+  if(!val){ alert('請選擇時間'); return; }
+  const times = getPumpTimes();
+  if(times.includes(val)){ alert('這個時間已經新增過了'); return; }
+  times.push(val);
+  savePumpTimes(times);
+  input.value = '';
+  renderPumpTimesList();
+}
+
+function removePumpTime(t){
+  let times = getPumpTimes();
+  times = times.filter(x=>x!==t);
+  savePumpTimes(times);
+  renderPumpTimesList();
+}
+
+function updatePumpReminderUI(active){
+  const btn = document.getElementById('pumpReminderToggleBtn');
+  const status = document.getElementById('pumpReminderStatus');
+  if(!btn) return;
+  if(active){
+    btn.textContent = '🔕 關閉擠奶提醒';
+    status.textContent = '提醒已開啟，將於設定時間點推送通知';
+  } else {
+    btn.textContent = '🔔 開啟擠奶提醒';
+    status.textContent = '';
+  }
+}
+
+function togglePumpReminder(){
+  const isActive = localStorage.getItem(PUMP_ACTIVE_KEY) === 'true';
+  if(isActive){
+    stopPumpReminder();
+    localStorage.setItem(PUMP_ACTIVE_KEY, 'false');
+    updatePumpReminderUI(false);
+    return;
+  }
+  if(!getPumpTimes().length){
+    alert('請先新增至少一個提醒時間點');
+    return;
+  }
+  if(!('Notification' in window)){
+    alert('此瀏覽器不支援通知功能');
+    return;
+  }
+  Notification.requestPermission().then(permission=>{
+    if(permission === 'granted'){
+      localStorage.setItem(PUMP_ACTIVE_KEY, 'true');
+      startPumpReminder();
+      updatePumpReminderUI(true);
+      new Notification('🤲 擠奶提醒已開啟', { body: `已設定 ${getPumpTimes().length} 個提醒時間點` });
+    } else {
+      alert('請允許通知權限才能使用提醒功能');
+    }
+  });
+}
+
+function startPumpReminder(){
+  if(pumpReminderCheckTimer) clearInterval(pumpReminderCheckTimer);
+  pumpReminderCheckTimer = setInterval(()=>{
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const nowKey = `${now.toDateString()}_${hh}:${mm}`;
+    const currentTimeStr = `${hh}:${mm}`;
+    const times = getPumpTimes();
+    if(times.includes(currentTimeStr) && lastPumpFiredKey !== nowKey){
+      lastPumpFiredKey = nowKey;
+      if(Notification.permission === 'granted'){
+        new Notification('🤲 該擠奶囉！', { body: `現在是 ${currentTimeStr}，記得安排時間擠奶～` });
+      }
+    }
+  }, 20000);
+}
+
+function stopPumpReminder(){
+  if(pumpReminderCheckTimer) clearInterval(pumpReminderCheckTimer);
+  pumpReminderCheckTimer = null;
+}
+
+function loadPumpReminderState(){
+  renderPumpTimesList();
+  const active = localStorage.getItem(PUMP_ACTIVE_KEY) === 'true';
+  updatePumpReminderUI(active);
+  if(active && Notification && Notification.permission === 'granted'){
+    startPumpReminder();
+  }
+}
+
 init();
 loadReminderState();
+loadPumpReminderState();
 </script>
 </body>
 </html>
