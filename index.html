@@ -339,6 +339,34 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   </div>
 </div>
 
+<!-- iOS ALARM HELPER MODAL -->
+<div class="overlay" id="iosAlarmModal" style="align-items:center">
+  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:center"><span>⏰</span>新增鬧鐘</div>
+    <p style="font-size:13px;color:var(--ink2);text-align:center;margin-bottom:16px;line-height:1.6">
+      iPhone 不支援網頁自動跳轉並預填鬧鐘，請依下方資訊手動到「時鐘」APP 新增：
+    </p>
+    <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--ink3);font-weight:600;">時間</span>
+        <span id="iosAlarmTime" style="font-size:20px;font-weight:800;color:var(--a);">--:--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+        <span style="font-size:13px;color:var(--ink3);font-weight:600;">名稱</span>
+        <span id="iosAlarmLabel" style="font-size:15px;font-weight:700;color:var(--ink);">--</span>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--ink3);line-height:1.7;margin-bottom:16px;">
+      1. 打開手機「<strong>時鐘</strong>」APP<br>
+      2. 點「鬧鐘」➜「＋」新增<br>
+      3. 設定上方時間，標籤輸入上方名稱<br>
+      4. 儲存即可
+    </p>
+    <button class="btn-save" style="width:100%" onclick="closeModal('iosAlarmModal')">知道了</button>
+  </div>
+</div>
+
 <!-- WEIGHT VIEW -->
 <div class="view" id="view-weight">
   <div class="section" style="padding-top:16px">
@@ -441,7 +469,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">📲 同步到手機鬧鐘</div>
         <div id="feedingAlarmList" style="display:flex;flex-direction:column;gap:8px;"></div>
         <p style="font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;">
-          點選下方時間會開啟手機「時鐘」APP，名稱已預填為「寶寶喝奶提醒」，請手動確認新增。
+          點選下方時間：Android 會嘗試直接開啟新增鬧鐘畫面；iPhone 會顯示時間與名稱供你手動新增到「時鐘」APP。
         </p>
       </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
@@ -465,7 +493,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <button class="btn-save" style="width:100%" onclick="togglePumpReminder()" id="pumpReminderToggleBtn">🔔 開啟擠奶提醒</button>
       <p id="pumpReminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。每個時間點旁的「📲」按鈕可同步到手機鬧鐘（名稱為「媽媽擠奶提醒」），需手動確認新增。
+        💡 例如可設定 8:00、12:00、16:00、20:00 四個時間點。提醒只在本分頁／已安裝的 APP 保持開啟時才會觸發。每個時間點旁的「📲 加入鬧鐘」：Android 會嘗試直接開啟新增鬧鐘畫面；iPhone 會顯示時間與名稱供你手動新增到「時鐘」APP。
       </p>
     </div>
   </div>
@@ -1564,18 +1592,30 @@ function loadReminderState(){
 
 // ─── 鬧鐘匯出（開啟手機時鐘 APP 並預填名稱/時間） ──────
 function isAndroidDevice(){ return /android/i.test(navigator.userAgent); }
+function isIOSDevice(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream; }
 
 function exportToClockApp(hh, mm, label){
+  const timeStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
   if(isAndroidDevice()){
     // Android intent for AlarmClock.ACTION_SET_ALARM
     const intentUrl = `intent://com.android.deskclock/#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};end`;
     window.location.href = intentUrl;
+  } else if(isIOSDevice()){
+    // iOS has no public URL scheme to open Clock app with prefilled values.
+    // Show clear copyable info instead of attempting an invalid deep link.
+    showIOSAlarmHelper(timeStr, label);
   } else {
-    // iOS / others: clock app deep link doesn't support prefill, open Clock app and show instructions
-    alert(`請在「時鐘」APP 手動新增鬧鐘：\n\n名稱：${label}\n時間：${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}\n\n即將為你開啟時鐘 APP…`);
-    window.location.href = 'clock-alarm://';
+    showIOSAlarmHelper(timeStr, label);
   }
 }
+
+function showIOSAlarmHelper(timeStr, label){
+  const modal = document.getElementById('iosAlarmModal');
+  document.getElementById('iosAlarmTime').textContent = timeStr;
+  document.getElementById('iosAlarmLabel').textContent = label;
+  modal.classList.add('open');
+}
+
 
 function renderFeedingAlarmList(hours){
   const container = document.getElementById('feedingAlarmList');
