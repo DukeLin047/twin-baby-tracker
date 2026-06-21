@@ -250,7 +250,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   <div class="section">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div class="section-title" style="margin:0">今日紀錄</div>
-      <button onclick="showView('settings')" style="background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;">⚙️ 寶寶設定</button>
+      <button onclick="showView('settings')" style="background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;">⚙️ 設定</button>
     </div>
     <div class="log-list" id="todayLog" style="margin-top:10px;"></div>
   </div>
@@ -442,13 +442,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
           <input type="number" id="goalFeeds" placeholder="例如：8" min="1" value="8" oninput="saveFeedingGoal()">
         </div>
       </div>
-      <div class="field" style="margin-bottom:0">
-        <label>每餐最少奶量（ml，選填）</label>
-        <input type="number" id="goalMinPerFeed" placeholder="例如：60" min="0" oninput="saveFeedingGoal()">
-      </div>
       <div id="goalResultBox" style="display:none;margin-top:14px;padding:14px;background:var(--c1-light);border-radius:12px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;">
           <span>今日目標</span><span id="goalTargetMl">-- ml</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
+          <span>每餐建議奶量</span><span id="goalPerFeedMl">-- ml</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
           <span>今日已喝</span><span id="goalActualMl">-- ml</span>
@@ -459,7 +458,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         <div style="text-align:center;margin-top:10px;font-size:15px;font-weight:800;" id="goalDiffText"></div>
       </div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        ⚠️ 公式：每日總奶量 = 體重(kg) × 150ml，僅供參考，請依寶寶實際狀況調整。
+        ⚠️ 公式：每日總奶量 = 體重(kg) × 150ml，每餐建議奶量 = 每日總奶量 ÷ 每日餐數，僅供參考，請依寶寶實際狀況調整。
       </p>
     </div>
   </div>
@@ -470,8 +469,21 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
   <div class="section" style="padding-top:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
       <button onclick="showView('home')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink2);">←</button>
-      <div class="section-title" style="margin:0;">寶寶設定</div>
+      <div class="section-title" style="margin:0;">設定</div>
     </div>
+
+    <div class="weight-card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:10px;">👤 目前使用者</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;">
+        <span style="font-size:16px;font-weight:700;color:var(--ink);" id="settingsCurrentUser">--</span>
+        <button class="btn-danger" onclick="logoutUser()">登出</button>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        登出後會清除這支裝置記住的名字，下次新增紀錄前需要重新輸入身份。
+      </p>
+    </div>
+
+    <div class="section-title">寶寶設定</div>
     <div class="weight-card">
       <div class="field" style="margin-bottom:14px;">
         <label>寶寶人數</label>
@@ -850,6 +862,15 @@ function changeUserName(){
   updateUserBadge();
 }
 
+function logoutUser(){
+  if(!confirm('確定要登出嗎？這支裝置記住的名字會被清除。')) return;
+  currentUserName = '';
+  localStorage.removeItem('userName');
+  updateUserBadge();
+  showView('home');
+  setTimeout(()=>{ document.getElementById('loginModal').classList.add('open'); }, 250);
+}
+
 // ─── Baby count selector grid (shared by setup + settings) ──
 // Simpler approach: re-render via global handler functions
 function renderSetupNameFields(){
@@ -900,6 +921,8 @@ function saveInitialSetup(){
 // ─── Settings view (change baby count / names later) ──
 let settingsBabyCount = 2;
 function renderSettingsView(){
+  const userEl = document.getElementById('settingsCurrentUser');
+  if(userEl) userEl.textContent = currentUserName ? `👤 ${currentUserName}` : '尚未設定';
   settingsBabyCount = state.babyCount || 2;
   renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
   renderSettingsNameFields();
@@ -1174,14 +1197,12 @@ function loadFeedingGoalInputs(baby){
   try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
   document.getElementById('goalWeight').value = goal.weight || '';
   document.getElementById('goalFeeds').value = goal.feeds || 8;
-  document.getElementById('goalMinPerFeed').value = goal.minPerFeed || '';
 }
 function saveFeedingGoal(){
   const baby = currentStatBaby;
   const weight = document.getElementById('goalWeight').value;
   const feeds = document.getElementById('goalFeeds').value || 8;
-  const minPerFeed = document.getElementById('goalMinPerFeed').value;
-  localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds, minPerFeed}));
+  localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds}));
   const today=new Date();today.setHours(0,0,0,0);
   const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today) && l.baby===baby);
   const ml = todayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
@@ -1195,9 +1216,12 @@ function renderFeedingGoalProgress(baby, actualMl){
   if(!weightG || weightG<=0){ box.style.display = 'none'; return; }
   const weightKg = weightG/1000;
   const targetMl = Math.round(weightKg * 150);
+  const feeds = parseInt(goal.feeds) || 8;
+  const perFeedMl = Math.round(targetMl / feeds);
   const diff = targetMl - actualMl;
   const pct = Math.min(100, Math.round((actualMl/targetMl)*100));
   document.getElementById('goalTargetMl').textContent = `${targetMl} ml`;
+  document.getElementById('goalPerFeedMl').textContent = `${perFeedMl} ml`;
   document.getElementById('goalActualMl').textContent = `${actualMl} ml`;
   document.getElementById('goalProgressBar').style.width = `${pct}%`;
   document.getElementById('goalProgressBar').style.background = diff>0 ? 'var(--c1)' : 'var(--success)';
