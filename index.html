@@ -463,12 +463,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <div class="view" id="view-stats">
   <div class="section" style="padding-top:16px">
     <div class="section-title">今日統計</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <div style="flex:1;text-align:center;padding:12px;background:var(--a-light);border-radius:12px;">
-        <div style="font-size:11px;font-weight:700;color:var(--a);letter-spacing:.5px" id="nameA-s">寶寶甲</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div class="baby-tab a" id="stat-tab-a" onclick="selectStatBaby('a')" style="flex:1;padding:12px 10px;">
+        <div class="name" id="nameA-s">寶寶甲</div>
       </div>
-      <div style="flex:1;text-align:center;padding:12px;background:var(--b-light);border-radius:12px;">
-        <div style="font-size:11px;font-weight:700;color:var(--b);letter-spacing:.5px" id="nameB-s">寶寶乙</div>
+      <div class="baby-tab b" id="stat-tab-b" onclick="selectStatBaby('b')" style="flex:1;padding:12px 10px;">
+        <div class="name" id="nameB-s">寶寶乙</div>
       </div>
     </div>
     <div class="stat-grid" id="statsGrid"></div>
@@ -1058,7 +1058,20 @@ function adjustInventory(){
     .catch(()=>setSyncStatus('error'));
 }
 
+let currentStatBaby = 'a';
+function selectStatBaby(baby){
+  currentStatBaby = baby;
+  document.getElementById('stat-tab-a').classList.toggle('active', baby==='a');
+  document.getElementById('stat-tab-b').classList.toggle('active', baby==='b');
+  renderStats();
+}
+
 function renderStats(){
+  const tabA = document.getElementById('stat-tab-a');
+  const tabB = document.getElementById('stat-tab-b');
+  if(tabA) tabA.classList.toggle('active', currentStatBaby==='a');
+  if(tabB) tabB.classList.toggle('active', currentStatBaby==='b');
+
   const today=new Date();today.setHours(0,0,0,0);
   const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
   function calc(logs){
@@ -1070,14 +1083,14 @@ function renderStats(){
       bath:logs.filter(l=>l.type==='bath').length,
     };
   }
-  const sa=calc(todayLogs.filter(l=>l.baby==='a'));
-  const sb=calc(todayLogs.filter(l=>l.baby==='b'));
-  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
+  const baby = currentStatBaby;
+  const cls = baby==='a' ? 'a' : 'b';
+  const s = calc(todayLogs.filter(l=>l.baby===baby));
   document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val a">${sa.milk}</div><div class="s-val b">${sb.milk}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val a">${sa.ml}</div><div class="s-val b">${sb.ml}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val a">${sa.diaper}</div><div class="s-val b">${sb.diaper}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val a">${sa.bath}</div><div class="s-val b">${sb.bath}</div><div class="s-sub">${a} / ${b}</div></div>`;
+    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val ${cls}">${s.milk}</div></div>
+    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val ${cls}">${s.ml}</div></div>
+    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val ${cls}">${s.diaper}</div></div>
+    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val ${cls}">${s.bath}</div></div>`;
 }
 
 // ─── Calendar ─────────────────────────────────────────
