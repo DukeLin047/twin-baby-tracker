@@ -123,11 +123,13 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .log-item{background:var(--card);border-radius:var(--radius-sm);padding:13px 15px;display:flex;align-items:flex-start;gap:12px;border-left:3px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
 .log-item.a-log{border-left-color:var(--a);}
 .log-item.b-log{border-left-color:var(--b);}
+.log-item.shared-log{border-left-color:#A855F7;}
 .log-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
 .log-body{flex:1;min-width:0;}
 .log-who{font-size:11px;font-weight:700;letter-spacing:0.5px;}
 .log-who.a{color:var(--a);}
 .log-who.b{color:var(--b);}
+.log-who.shared{color:#A855F7;}
 .log-desc{font-size:14px;font-weight:600;margin-top:1px;}
 .log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
 .log-note{font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;}
@@ -479,7 +481,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitleText">新增紀錄</div>
 
-    <div class="field">
+    <div class="field" id="babyPickerField">
       <label>寶寶</label>
       <div class="seg-btns" id="babyPicker"></div>
     </div>
@@ -971,13 +973,15 @@ function renderLogItems(logs,container){
   if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="e-icon">🌙</div><p>還沒有紀錄</p></div>`;return;}
   container.innerHTML=logs.map(log=>{
     const info=typeInfo(log.type);
-    const name=state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙');
+    const isShared = log.baby==='shared';
+    const name = isShared ? '媽媽' : (state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙'));
+    const babyClass = isShared ? 'shared' : log.baby;
     const noteHtml = log.tag ? `<div class="log-note">📌 ${log.tag}</div>` : '';
     const recorderHtml = log.recordedBy ? `<div class="log-recorder">✍️ ${log.recordedBy}</div>` : '';
-    return`<div class="log-item ${log.baby}-log">
+    return`<div class="log-item ${babyClass}-log">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
-        <div class="log-who ${log.baby}">${name}</div>
+        <div class="log-who ${babyClass}">${name}</div>
         <div class="log-desc">${info.label}</div>
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
@@ -1182,6 +1186,7 @@ function updateForm(){
     document.getElementById('fields-note').style.display='';
   }
   document.getElementById('commonTagField').style.display = currentType==='note' ? 'none' : '';
+  document.getElementById('babyPickerField').style.display = currentType==='pump' ? 'none' : '';
 }
 
 // ─── Modal ────────────────────────────────────────────
@@ -1283,7 +1288,7 @@ function saveLog(){
   const timeVal=document.getElementById('logTimeOnly').value;
   if(!dateVal||!timeVal){alert('請選擇日期與時間');return;}
   const time=`${dateVal}T${timeVal}`;
-  const log={baby:selectedBabyInModal,type:currentType,time,createdAt:Date.now(),recordedBy:currentUserName||''};
+  const log={baby: currentType==='pump' ? 'shared' : selectedBabyInModal, type:currentType,time,createdAt:Date.now(),recordedBy:currentUserName||''};
 
   if(currentType==='nursing'){
     log.nurseLeft = document.getElementById('nurseLeftMin').value || '';
