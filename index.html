@@ -471,7 +471,58 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
         <div class="name" id="nameB-s">寶寶乙</div>
       </div>
     </div>
+
+    <!-- 最新身高體重 -->
+    <div class="weight-card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:10px;">📏 最新身高體重</div>
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">體重</div>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:2px;" id="statLatestWeight">—</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">身高</div>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:2px;" id="statLatestHeight">—</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:8px;" id="statLatestDate"></div>
+    </div>
+
     <div class="stat-grid" id="statsGrid"></div>
+
+    <!-- 餵奶目標設定 -->
+    <div class="weight-card" style="margin-top:14px;">
+      <div class="section-title" style="margin-bottom:10px;">🎯 每日餵奶目標</div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:10px">
+          <label>體重（克）</label>
+          <input type="number" id="goalWeight" placeholder="例如：3500" min="0" oninput="saveFeedingGoal()">
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>每日餐數</label>
+          <input type="number" id="goalFeeds" placeholder="例如：8" min="1" value="8" oninput="saveFeedingGoal()">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>每餐最少奶量（ml，選填）</label>
+        <input type="number" id="goalMinPerFeed" placeholder="例如：60" min="0" oninput="saveFeedingGoal()">
+      </div>
+      <div id="goalResultBox" style="display:none;margin-top:14px;padding:14px;background:var(--a-light);border-radius:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;">
+          <span>今日目標</span><span id="goalTargetMl">-- ml</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
+          <span>今日已喝</span><span id="goalActualMl">-- ml</span>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,0.6);border-radius:4px;margin-top:10px;overflow:hidden;">
+          <div id="goalProgressBar" style="height:100%;background:var(--a);border-radius:4px;width:0%;transition:width 0.3s;"></div>
+        </div>
+        <div style="text-align:center;margin-top:10px;font-size:15px;font-weight:800;" id="goalDiffText"></div>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        ⚠️ 公式：每日總奶量 = 體重(kg) × 150ml，僅供參考，請依寶寶實際狀況調整。
+      </p>
+    </div>
   </div>
 </div>
 
@@ -1091,7 +1142,83 @@ function renderStats(){
     <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val ${cls}">${s.ml}</div></div>
     <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val ${cls}">${s.diaper}</div></div>
     <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val ${cls}">${s.bath}</div></div>`;
+
+  renderLatestGrowth(baby);
+  loadFeedingGoalInputs(baby);
+  renderFeedingGoalProgress(baby, s.ml);
 }
+
+// ─── 最新身高體重 ──────────────────────────────────────
+function renderLatestGrowth(baby){
+  const wKey = baby; // 'a' or 'b'
+  const hKey = baby==='a' ? 'ha' : 'hb';
+  const entries = state.weights.filter(w => w[wKey] || w[hKey]);
+  if(!entries.length){
+    document.getElementById('statLatestWeight').textContent = '—';
+    document.getElementById('statLatestHeight').textContent = '—';
+    document.getElementById('statLatestDate').textContent = '尚無紀錄';
+    return;
+  }
+  const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const latest = sorted[0];
+  document.getElementById('statLatestWeight').textContent = latest[wKey] ? `${latest[wKey]} g` : '—';
+  document.getElementById('statLatestHeight').textContent = latest[hKey] ? `${latest[hKey]} cm` : '—';
+  document.getElementById('statLatestDate').textContent = `更新於 ${new Date(latest.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}`;
+}
+
+// ─── 餵奶目標設定（每個寶寶各自儲存於本機） ───────────
+function feedingGoalKey(baby){ return `feedingGoal_${baby}`; }
+
+function loadFeedingGoalInputs(baby){
+  let goal = {};
+  try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
+  document.getElementById('goalWeight').value = goal.weight || '';
+  document.getElementById('goalFeeds').value = goal.feeds || 8;
+  document.getElementById('goalMinPerFeed').value = goal.minPerFeed || '';
+}
+
+function saveFeedingGoal(){
+  const baby = currentStatBaby;
+  const weight = document.getElementById('goalWeight').value;
+  const feeds = document.getElementById('goalFeeds').value || 8;
+  const minPerFeed = document.getElementById('goalMinPerFeed').value;
+  localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds, minPerFeed}));
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today) && l.baby===baby);
+  const ml = todayLogs.filter(l=>['formula','bottlemilk','milk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  renderFeedingGoalProgress(baby, ml);
+}
+
+function renderFeedingGoalProgress(baby, actualMl){
+  let goal = {};
+  try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
+  const box = document.getElementById('goalResultBox');
+  const weightG = parseFloat(goal.weight);
+  if(!weightG || weightG<=0){
+    box.style.display = 'none';
+    return;
+  }
+  const weightKg = weightG/1000;
+  const targetMl = Math.round(weightKg * 150);
+  const diff = targetMl - actualMl;
+  const pct = Math.min(100, Math.round((actualMl/targetMl)*100));
+
+  document.getElementById('goalTargetMl').textContent = `${targetMl} ml`;
+  document.getElementById('goalActualMl').textContent = `${actualMl} ml`;
+  document.getElementById('goalProgressBar').style.width = `${pct}%`;
+  document.getElementById('goalProgressBar').style.background = diff>0 ? 'var(--a)' : 'var(--success)';
+
+  const diffEl = document.getElementById('goalDiffText');
+  if(diff > 0){
+    diffEl.textContent = `還差 ${diff} ml 達標`;
+    diffEl.style.color = 'var(--danger)';
+  } else {
+    diffEl.textContent = `✅ 已達標（超出 ${Math.abs(diff)} ml）`;
+    diffEl.style.color = 'var(--success)';
+  }
+  box.style.display = 'block';
+}
+
 
 // ─── Calendar ─────────────────────────────────────────
 let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0);
