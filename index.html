@@ -360,6 +360,32 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     </div>
   </div>
 
+  <!-- 母乳庫存 -->
+  <div class="section">
+    <div class="section-title">🧊 母乳庫存</div>
+    <div class="weight-card">
+      <div style="text-align:center;padding:10px 0 16px;">
+        <div style="font-size:12px;color:var(--ink2);font-weight:600;">目前庫存</div>
+        <div style="font-size:36px;font-weight:800;color:var(--a);margin-top:4px;" id="inventoryTotal">0 ml</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;">擠奶會自動加入 · 瓶餵母乳會自動扣除</div>
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;padding-top:12px;border-top:1.5px solid var(--border);">
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">🤲 累計擠奶</div>
+          <div style="font-size:16px;font-weight:700;color:#A855F7;margin-top:2px;" id="inventoryPumpedTotal">0 ml</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">🍼 累計喝掉</div>
+          <div style="font-size:16px;font-weight:700;color:var(--a);margin-top:2px;" id="inventoryUsedTotal">0 ml</div>
+        </div>
+      </div>
+      <button class="btn-cancel" style="width:100%;margin-top:14px;" onclick="adjustInventory()">✏️ 手動調整庫存</button>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        💡 庫存依「擠奶」與「瓶餵母乳」紀錄自動加總／扣除。若實際庫存與顯示不同（例如丟棄或提前解凍），可用上方按鈕手動調整。
+      </p>
+    </div>
+  </div>
+
   <!-- 奶量計算器 -->
   <div class="section">
     <div class="section-title">🍼 奶量計算器</div>
@@ -704,7 +730,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // ─── State ────────────────────────────────────────────
-let state = { names:{a:'',b:''}, logs:[], weights:[] };
+let state = { names:{a:'',b:''}, logs:[], weights:[], inventoryAdjust:0 };
 let currentBaby = 'a';
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal='a';
@@ -781,6 +807,10 @@ function startListening() {
   db.ref('weights').on('value', snap => {
     const val = snap.val();
     state.weights = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    renderAll();
+  });
+  db.ref('inventoryAdjust').on('value', snap => {
+    state.inventoryAdjust = snap.val() || 0;
     renderAll();
   });
   setTimeout(()=>{ document.getElementById('loadingScreen').style.display='none'; }, 1200);
@@ -887,7 +917,7 @@ function selectBaby(baby){
 // ─── Render ───────────────────────────────────────────
 function renderAll(){
   updateDateLabel();renderSummary();renderQuickGrid();
-  renderTodayLog();renderCalendar();renderWeight();renderStats();
+  renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();
 }
 function updateDateLabel(){
   const label=fmtDate(currentDay),d=currentDay;
@@ -995,6 +1025,35 @@ function renderWeight(){
     </div>`;
   }).join('');
 }
+
+// ─── 母乳庫存 ──────────────────────────────────────────
+function renderInventory(){
+  const totalEl = document.getElementById('inventoryTotal');
+  if(!totalEl) return;
+  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const adjust = state.inventoryAdjust || 0;
+  const total = pumped - used + adjust;
+  totalEl.textContent = `${total} ml`;
+  document.getElementById('inventoryPumpedTotal').textContent = `${pumped} ml`;
+  document.getElementById('inventoryUsedTotal').textContent = `${used} ml`;
+}
+
+function adjustInventory(){
+  const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const used = state.logs.filter(l=>l.type==='bottlemilk').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const currentTotal = pumped - used + (state.inventoryAdjust||0);
+  const input = prompt(`目前庫存為 ${currentTotal} ml\n請輸入實際庫存數量（ml）：`, currentTotal);
+  if(input === null) return;
+  const newTotal = parseInt(input);
+  if(isNaN(newTotal) || newTotal < 0){ alert('請輸入有效的數字'); return; }
+  const newAdjust = newTotal - (pumped - used);
+  setSyncStatus('syncing');
+  db.ref('inventoryAdjust').set(newAdjust)
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
 function renderStats(){
   const today=new Date();today.setHours(0,0,0,0);
   const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
