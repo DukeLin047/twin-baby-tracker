@@ -353,6 +353,56 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
       <div id="weightList"></div>
     </div>
   </div>
+
+  <!-- 奶量計算器 -->
+  <div class="section">
+    <div class="section-title">🍼 奶量計算器</div>
+    <div class="weight-card">
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:14px;line-height:1.6">
+        採用常見新生兒每日總奶量估算公式：<br>
+        <strong style="color:var(--ink2)">每日總奶量 = 體重(kg) × 150ml</strong>
+      </p>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:10px">
+          <label>體重（克）</label>
+          <input type="number" id="calcWeight" placeholder="例如：3500" min="0" oninput="calcMilk()">
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>每日餵食次數</label>
+          <input type="number" id="calcFeeds" placeholder="例如：8" min="1" value="8" oninput="calcMilk()">
+        </div>
+      </div>
+      <div id="calcResult" style="display:none;margin-top:6px;padding:14px;background:var(--a-light);border-radius:12px;text-align:center;">
+        <div style="font-size:12px;color:var(--ink2);font-weight:600;">建議每日總奶量</div>
+        <div style="font-size:24px;font-weight:800;color:var(--a);margin-top:4px;" id="calcTotalMl">--</div>
+        <div style="font-size:12px;color:var(--ink2);font-weight:600;margin-top:10px;">建議每次奶量</div>
+        <div style="font-size:20px;font-weight:800;color:var(--b);margin-top:2px;" id="calcPerFeedMl">--</div>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:12px;line-height:1.5;">
+        ⚠️ 此公式僅供參考，每個寶寶食量不同，請依寶寶實際反應（飽足、體重增長）調整，或諮詢兒科醫師、兒科護理師意見。
+      </p>
+    </div>
+  </div>
+
+  <!-- 喝奶提醒設定 -->
+  <div class="section">
+    <div class="section-title">⏰ 喝奶提醒</div>
+    <div class="weight-card">
+      <div class="field" style="margin-bottom:12px">
+        <label>每隔幾小時提醒一次</label>
+        <select id="reminderHours" onchange="onReminderHoursChange()">
+          <option value="2">每 2 小時</option>
+          <option value="3" selected>每 3 小時</option>
+          <option value="4">每 4 小時</option>
+        </select>
+      </div>
+      <button class="btn-save" style="width:100%" onclick="toggleFeedingReminder()" id="reminderToggleBtn">🔔 開啟喝奶提醒</button>
+      <p id="reminderStatus" style="font-size:12px;color:var(--ink3);margin-top:10px;text-align:center;"></p>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        💡 提醒會在這個瀏覽器分頁開啟時觸發。建議將本 APP 加入主畫面，並保持背景開啟以接收通知。第一次使用需要允許瀏覽器的通知權限。
+      </p>
+    </div>
+  </div>
 </div>
 
 <!-- STATS VIEW -->
@@ -391,14 +441,14 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <div id="fields-nursing" style="display:none">
       <div class="field-row">
         <div class="field">
-          <label>左乳（分鐘）</label>
+          <label>左乳（秒）</label>
           <div class="timer-row">
             <input type="number" id="nurseLeftMin" placeholder="0" min="0">
             <button class="timer-btn" id="nurseLeftTimerBtn" onclick="toggleNurseTimer('left')">▶ 開始</button>
           </div>
         </div>
         <div class="field">
-          <label>右乳（分鐘）</label>
+          <label>右乳（秒）</label>
           <div class="timer-row">
             <input type="number" id="nurseRightMin" placeholder="0" min="0">
             <button class="timer-btn" id="nurseRightTimerBtn" onclick="toggleNurseTimer('right')">▶ 開始</button>
@@ -454,7 +504,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     <!-- 洗澡 -->
     <div id="fields-bath" style="display:none">
       <div class="field">
-        <label>洗澡時長（分鐘）</label>
+        <label>洗澡時長（秒）</label>
         <div class="timer-row">
           <input type="number" id="bathMin" placeholder="0" min="0">
           <button class="timer-btn" id="bathTimerBtn" onclick="toggleBathTimer()">▶ 開始</button>
@@ -759,8 +809,8 @@ function renderSummary(){
 function logDetail(log){
   if(log.type==='nursing'){
     const parts=[];
-    if(log.nurseLeft) parts.push(`左 ${log.nurseLeft} 分`);
-    if(log.nurseRight) parts.push(`右 ${log.nurseRight} 分`);
+    if(log.nurseLeft) parts.push(`左 ${log.nurseLeft} 秒`);
+    if(log.nurseRight) parts.push(`右 ${log.nurseRight} 秒`);
     return parts.join(' · ') || '哺乳';
   }
   if(log.type==='formula') return `配方奶 · ${log.amount||0}ml`;
@@ -772,7 +822,7 @@ function logDetail(log){
     if(log.diaperAmount) parts.push(log.diaperAmount);
     return parts.filter(Boolean).join(' · ');
   }
-  if(log.type==='bath') return `洗澡 ${log.bathMin||0} 分鐘`;
+  if(log.type==='bath') return `洗澡 ${log.bathMin||0} 秒`;
   if(log.type==='growth'){
     const parts=[];
     if(log.weight) parts.push(`體重 ${log.weight}g`);
@@ -1021,11 +1071,11 @@ function toggleNurseTimer(side){
     nurseTimers[side].running = false;
     btn.textContent='▶ 開始'; btn.classList.remove('running');
   } else {
-    const startVal = parseFloat(input.value)||0;
-    const startTime = Date.now() - startVal*60000;
+    const startVal = parseInt(input.value)||0;
+    const startTime = Date.now() - startVal*1000;
     nurseTimers[side] = { running:true, interval: setInterval(()=>{
-      const mins = (Date.now()-startTime)/60000;
-      input.value = mins.toFixed(1);
+      const secs = Math.round((Date.now()-startTime)/1000);
+      input.value = secs;
     }, 1000) };
     btn.textContent='⏸ 計時中'; btn.classList.add('running');
   }
@@ -1038,11 +1088,11 @@ function toggleBathTimer(){
     bathTimer.running = false;
     btn.textContent='▶ 開始'; btn.classList.remove('running');
   } else {
-    const startVal = parseFloat(input.value)||0;
-    const startTime = Date.now() - startVal*60000;
+    const startVal = parseInt(input.value)||0;
+    const startTime = Date.now() - startVal*1000;
     bathTimer = { running:true, interval: setInterval(()=>{
-      const mins = (Date.now()-startTime)/60000;
-      input.value = mins.toFixed(1);
+      const secs = Math.round((Date.now()-startTime)/1000);
+      input.value = secs;
     }, 1000) };
     btn.textContent='⏸ 計時中'; btn.classList.add('running');
   }
@@ -1153,7 +1203,104 @@ function showInstallBanner(platform){
 function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});}}
 function dismissBanner(){document.getElementById('installBanner').style.display='none';}
 
+// ─── 奶量計算器 ────────────────────────────────────────
+function calcMilk(){
+  const weightG = parseFloat(document.getElementById('calcWeight').value);
+  const feeds = parseInt(document.getElementById('calcFeeds').value) || 8;
+  const resultBox = document.getElementById('calcResult');
+  if(!weightG || weightG<=0){
+    resultBox.style.display='none';
+    return;
+  }
+  const weightKg = weightG/1000;
+  const totalMl = Math.round(weightKg * 150);
+  const perFeedMl = Math.round(totalMl / feeds);
+  document.getElementById('calcTotalMl').textContent = `${totalMl} ml / 天`;
+  document.getElementById('calcPerFeedMl').textContent = `${perFeedMl} ml / 次`;
+  resultBox.style.display='block';
+}
+
+// ─── 喝奶提醒 ──────────────────────────────────────────
+let feedingReminderTimer = null;
+const REMINDER_KEY = 'feedingReminderActive';
+const REMINDER_HOURS_KEY = 'feedingReminderHours';
+
+function loadReminderState(){
+  const active = localStorage.getItem(REMINDER_KEY) === 'true';
+  const hours = localStorage.getItem(REMINDER_HOURS_KEY) || '3';
+  const sel = document.getElementById('reminderHours');
+  if(sel) sel.value = hours;
+  updateReminderUI(active);
+  if(active && Notification && Notification.permission === 'granted'){
+    startFeedingReminder(parseInt(hours));
+  }
+}
+
+function updateReminderUI(active){
+  const btn = document.getElementById('reminderToggleBtn');
+  const status = document.getElementById('reminderStatus');
+  if(!btn) return;
+  if(active){
+    btn.textContent = '🔕 關閉喝奶提醒';
+    status.textContent = '提醒已開啟，將定時推送通知';
+  } else {
+    btn.textContent = '🔔 開啟喝奶提醒';
+    status.textContent = '';
+  }
+}
+
+function toggleFeedingReminder(){
+  const isActive = localStorage.getItem(REMINDER_KEY) === 'true';
+  if(isActive){
+    stopFeedingReminder();
+    localStorage.setItem(REMINDER_KEY, 'false');
+    updateReminderUI(false);
+    return;
+  }
+  if(!('Notification' in window)){
+    alert('此瀏覽器不支援通知功能');
+    return;
+  }
+  Notification.requestPermission().then(permission=>{
+    if(permission === 'granted'){
+      const hours = parseInt(document.getElementById('reminderHours').value);
+      localStorage.setItem(REMINDER_KEY, 'true');
+      localStorage.setItem(REMINDER_HOURS_KEY, hours);
+      startFeedingReminder(hours);
+      updateReminderUI(true);
+      new Notification('🍼 喝奶提醒已開啟', { body: `將每 ${hours} 小時提醒一次` });
+    } else {
+      alert('請允許通知權限才能使用提醒功能');
+    }
+  });
+}
+
+function startFeedingReminder(hours){
+  if(feedingReminderTimer) clearInterval(feedingReminderTimer);
+  const ms = hours * 60 * 60 * 1000;
+  feedingReminderTimer = setInterval(()=>{
+    if(Notification.permission === 'granted'){
+      new Notification('🍼 該餵奶囉！', { body: '距離上次提醒已經過了設定時間，記得餵寶寶喝奶～' });
+    }
+  }, ms);
+}
+
+function stopFeedingReminder(){
+  if(feedingReminderTimer) clearInterval(feedingReminderTimer);
+  feedingReminderTimer = null;
+}
+
+function onReminderHoursChange(){
+  const hours = parseInt(document.getElementById('reminderHours').value);
+  localStorage.setItem(REMINDER_HOURS_KEY, hours);
+  const isActive = localStorage.getItem(REMINDER_KEY) === 'true';
+  if(isActive){
+    startFeedingReminder(hours);
+  }
+}
+
 init();
+loadReminderState();
 </script>
 </body>
 </html>
