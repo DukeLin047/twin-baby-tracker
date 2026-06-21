@@ -69,12 +69,7 @@ document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,'Noto Sans TC',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;padding-bottom:90px;}
 
-/* Sync status bar */
-#syncBar{
-  position:fixed;top:0;left:0;right:0;z-index:999;
-  padding:6px 16px;font-size:12px;font-weight:600;
-  text-align:center;transition:all 0.3s;transform:translateY(-100%);
-}
+#syncBar{position:fixed;top:0;left:0;right:0;z-index:999;padding:6px 16px;font-size:12px;font-weight:600;text-align:center;transition:all 0.3s;transform:translateY(-100%);}
 #syncBar.show{transform:translateY(0);}
 #syncBar.syncing{background:#FEF3C7;color:#92400E;}
 #syncBar.ok{background:#D1FAE5;color:#065F46;}
@@ -113,15 +108,16 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;margin-top:4px;}
 
 .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px;cursor:pointer;text-align:left;transition:all 0.15s;position:relative;overflow:hidden;}
+.action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;text-align:left;transition:all 0.15s;position:relative;overflow:hidden;}
 .action-btn:active{transform:scale(0.97);}
-.action-btn .icon{font-size:26px;margin-bottom:6px;display:block;}
-.action-btn .label{font-size:14px;font-weight:700;color:var(--ink);}
-.action-btn .sub{font-size:12px;color:var(--ink3);margin-top:2px;}
+.action-btn .icon{font-size:24px;margin-bottom:5px;display:block;}
+.action-btn .label{font-size:13px;font-weight:700;color:var(--ink);}
+.action-btn .sub{font-size:11px;color:var(--ink3);margin-top:1px;}
 .action-btn.a-btn{border-color:var(--a-light);}
-.action-btn.a-btn::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:var(--a-light);border-radius:0 16px 0 60px;}
+.action-btn.a-btn::before{content:'';position:absolute;top:0;right:0;width:50px;height:50px;background:var(--a-light);border-radius:0 16px 0 50px;}
 .action-btn.b-btn{border-color:var(--b-light);}
-.action-btn.b-btn::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:var(--b-light);border-radius:0 16px 0 60px;}
+.action-btn.b-btn::before{content:'';position:absolute;top:0;right:0;width:50px;height:50px;background:var(--b-light);border-radius:0 16px 0 50px;}
+.more-btn{grid-column:1/-1;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;}
 
 .log-list{display:flex;flex-direction:column;gap:8px;}
 .log-item{background:var(--card);border-radius:var(--radius-sm);padding:13px 15px;display:flex;align-items:flex-start;gap:12px;border-left:3px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
@@ -134,6 +130,7 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .log-who.b{color:var(--b);}
 .log-desc{font-size:14px;font-weight:600;margin-top:1px;}
 .log-detail{font-size:12px;color:var(--ink2);margin-top:2px;}
+.log-note{font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;}
 .log-time{font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px;text-align:right;line-height:1.5;white-space:nowrap;}
 .log-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
 .log-del:hover{color:var(--danger);}
@@ -144,7 +141,7 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:200;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;animation:slideUp 0.28s cubic-bezier(.22,.68,0,1.2);}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;max-height:88vh;overflow-y:auto;animation:slideUp 0.28s cubic-bezier(.22,.68,0,1.2);}
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 20px;}
 .modal-title{font-size:18px;font-weight:700;margin-bottom:20px;}
@@ -154,12 +151,19 @@ header p{font-size:13px;opacity:0.8;margin-top:2px;}
 .field label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:6px;}
 .field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);outline:none;transition:border-color 0.15s;font-family:inherit;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--a);}
-.field textarea{resize:vertical;min-height:70px;}
+.field textarea{resize:vertical;min-height:60px;}
+.field-row{display:flex;gap:10px;}
+.field-row .field{flex:1;}
 
 .seg-btns{display:flex;gap:8px;flex-wrap:wrap;}
-.seg-btn{flex:1;min-width:70px;padding:9px 6px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;}
+.seg-btn{flex:1;min-width:60px;padding:9px 6px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;}
 .seg-btn.sel-a{border-color:var(--a);background:var(--a-light);color:var(--a);}
 .seg-btn.sel-b{border-color:var(--b);background:var(--b-light);color:var(--b);}
+
+.timer-row{display:flex;align-items:center;gap:8px;}
+.timer-row input{flex:1;}
+.timer-btn{flex-shrink:0;padding:11px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--a);background:var(--a-light);color:var(--a);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.timer-btn.running{background:var(--a);color:white;}
 
 .modal-btns{display:flex;gap:10px;margin-top:20px;}
 .btn-cancel{flex:1;padding:14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:none;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer;}
@@ -174,38 +178,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .nav-add-circle{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:26px;color:white;margin-top:-20px;box-shadow:0 4px 14px rgba(37,99,235,0.4);}
 
 .weight-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1.5px solid var(--border);}
-
-/* Calendar */
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.cal-month-label{font-size:17px;font-weight:700;color:var(--ink);}
-.cal-nav{background:var(--card);border:1.5px solid var(--border);width:36px;height:36px;border-radius:10px;font-size:18px;color:var(--ink2);cursor:pointer;}
-.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--card);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
-.cal-cell:active{transform:scale(0.93);}
-.cal-cell.empty{background:none;border:none;cursor:default;}
-.cal-cell.today{border-color:var(--a);border-width:2px;}
-.cal-cell.has-data{background:var(--surface);}
-.cal-cell .cal-daynum{font-size:13px;font-weight:700;color:var(--ink);}
-.cal-cell.today .cal-daynum{color:var(--a);}
-.cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
-.cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
-.dot.a{background:var(--a);}
-.dot.b{background:#0891B2;}
-.dot.c{background:#92400E;}
-.dot.d{background:#7C3AED;}
-.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding:12px 14px;background:var(--card);border-radius:12px;border:1.5px solid var(--border);}
-.cal-legend span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);font-weight:600;}
-.cal-legend .dot{width:8px;height:8px;}
-
-/* Date picker field */
-.date-picker-display{
-  width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
-  padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);
-  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
-}
-.date-picker-display .dp-icon{font-size:16px;color:var(--ink3);}
-
 .weight-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
 .weight-row:last-child{border-bottom:none;}
 .weight-row .w-date{font-size:13px;color:var(--ink2);}
@@ -226,7 +198,42 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 .stat-card .s-val.b{color:var(--b);}
 .stat-card .s-sub{font-size:11px;color:var(--ink2);margin-top:2px;}
 
-/* Loading screen */
+/* Calendar */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month-label{font-size:17px;font-weight:700;color:var(--ink);}
+.cal-nav{background:var(--card);border:1.5px solid var(--border);width:36px;height:36px;border-radius:10px;font-size:18px;color:var(--ink2);cursor:pointer;}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--card);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.cal-cell:active{transform:scale(0.93);}
+.cal-cell.empty{background:none;border:none;cursor:default;}
+.cal-cell.today{border-color:var(--a);border-width:2px;}
+.cal-cell.has-data{background:var(--surface);}
+.cal-cell .cal-daynum{font-size:13px;font-weight:700;color:var(--ink);}
+.cal-cell.today .cal-daynum{color:var(--a);}
+.cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
+.cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
+.dot.milk,.dot.bottlemilk,.dot.formula{background:var(--a);}
+.dot.diaper{background:#0891B2;}
+.dot.bath{background:#0EA5E9;}
+.dot.growth{background:#059669;}
+.dot.temp{background:#DC2626;}
+.dot.note{background:#7C3AED;}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:12px 14px;background:var(--card);border-radius:12px;border:1.5px solid var(--border);}
+.cal-legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);font-weight:600;}
+.cal-legend .dot{width:8px;height:8px;}
+
+.date-picker-display{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;color:var(--ink);background:var(--surface);display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.date-picker-display .dp-icon{font-size:16px;color:var(--ink3);}
+
+/* Type picker grid (in add modal) */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.type-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s;}
+.type-cell.active{background:var(--a-light);border-color:var(--a);}
+.type-cell .tc-icon{font-size:22px;display:block;margin-bottom:3px;}
+.type-cell .tc-label{font-size:11px;font-weight:600;color:var(--ink2);}
+.type-cell.active .tc-label{color:var(--a);}
+
 #loadingScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--a),var(--b));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;}
 #loadingScreen .l-icon{font-size:60px;margin-bottom:16px;animation:pulse 1.5s infinite;}
 #loadingScreen .l-text{font-size:18px;font-weight:700;}
@@ -236,14 +243,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 </head>
 <body>
 
-<!-- Loading Screen -->
 <div id="loadingScreen">
   <div class="l-icon">👶</div>
   <div class="l-text">雙寶日誌</div>
   <div class="l-sub">連線中…</div>
 </div>
 
-<!-- Sync status bar -->
 <div id="syncBar"></div>
 
 <header>
@@ -305,10 +310,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
-      <span><i class="dot a"></i>🍼 餵奶</span>
-      <span><i class="dot b"></i>👶 換尿布</span>
-      <span><i class="dot c"></i>💩 排便</span>
-      <span><i class="dot d"></i>📝 備註</span>
+      <span><i class="dot milk"></i>🍼 奶</span>
+      <span><i class="dot diaper"></i>👶 尿布</span>
+      <span><i class="dot bath"></i>🛁 洗澡</span>
+      <span><i class="dot growth"></i>📏 成長</span>
+      <span><i class="dot temp"></i>🌡️ 體溫</span>
+      <span><i class="dot note"></i>📝 備註</span>
     </div>
   </div>
 </div>
@@ -368,68 +375,129 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px
 <div class="overlay" id="addModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title"><span id="modalIcon">📝</span><span id="modalTitleText">新增紀錄</span></div>
+    <div class="modal-title" id="modalTitleText">新增紀錄</div>
+
     <div class="field">
       <label>寶寶</label>
       <div class="seg-btns" id="babyPicker"></div>
     </div>
+
     <div class="field">
       <label>類型</label>
-      <select id="typeSelect" onchange="updateForm()">
-        <option value="milk">🍼 餵奶</option>
-        <option value="diaper">👶 換尿布</option>
-        <option value="poop">💩 排便</option>
-        <option value="note">📝 備註</option>
-      </select>
+      <div class="type-grid" id="typeGrid"></div>
     </div>
-    <div id="milkFields">
-      <div class="field">
-        <label>方式</label>
-        <div class="seg-btns">
-          <button class="seg-btn sel-a" onclick="pickMilkType('母乳',this)">母乳</button>
-          <button class="seg-btn" onclick="pickMilkType('配方奶',this)">配方奶</button>
-          <button class="seg-btn" onclick="pickMilkType('混合',this)">混合</button>
+
+    <!-- 哺乳 -->
+    <div id="fields-nursing" style="display:none">
+      <div class="field-row">
+        <div class="field">
+          <label>左乳（分鐘）</label>
+          <div class="timer-row">
+            <input type="number" id="nurseLeftMin" placeholder="0" min="0">
+            <button class="timer-btn" id="nurseLeftTimerBtn" onclick="toggleNurseTimer('left')">▶ 開始</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>右乳（分鐘）</label>
+          <div class="timer-row">
+            <input type="number" id="nurseRightMin" placeholder="0" min="0">
+            <button class="timer-btn" id="nurseRightTimerBtn" onclick="toggleNurseTimer('right')">▶ 開始</button>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- 配方奶 / 瓶餵母乳 -->
+    <div id="fields-bottlemilk" style="display:none">
       <div class="field">
-        <label>量（ml）</label>
-        <input type="number" id="milkAmount" placeholder="例如：80" min="0">
+        <label id="bottleLabel">配方奶量（ml）</label>
+        <input type="number" id="bottleAmount" placeholder="例如：120" min="0">
       </div>
     </div>
-    <div id="diaperFields" style="display:none">
+
+    <!-- 換尿片 -->
+    <div id="fields-diaper" style="display:none">
       <div class="field">
         <label>狀況</label>
         <div class="seg-btns">
-          <button class="seg-btn" onclick="pickDiaper('濕',this)">💧 濕尿布</button>
-          <button class="seg-btn" onclick="pickDiaper('便便',this)">💩 便便</button>
-          <button class="seg-btn" onclick="pickDiaper('混合',this)">兩者都有</button>
+          <button class="seg-btn sel-a" onclick="pickDiaperType('小便',this)">小便</button>
+          <button class="seg-btn" onclick="pickDiaperType('大便',this)">大便</button>
+          <button class="seg-btn" onclick="pickDiaperType('都有',this)">都有</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>性狀</label>
+          <select id="diaperTexture">
+            <option value="">請選擇</option>
+            <option value="淡黃">淡黃</option>
+            <option value="黃">黃</option>
+            <option value="結晶尿">結晶尿</option>
+            <option value="血尿">血尿</option>
+            <option value="稀糊">稀糊</option>
+            <option value="正常">正常</option>
+            <option value="偏硬">偏硬</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>量</label>
+          <select id="diaperAmount">
+            <option value="">請選擇</option>
+            <option value="S(少)">S(少)</option>
+            <option value="M(中)">M(中)</option>
+            <option value="L(多)">L(多)</option>
+          </select>
         </div>
       </div>
     </div>
-    <div id="poopFields" style="display:none">
+
+    <!-- 洗澡 -->
+    <div id="fields-bath" style="display:none">
       <div class="field">
-        <label>顏色</label>
-        <div class="seg-btns">
-          <button class="seg-btn" onclick="pickPoop('黃色',this)">🟡 黃</button>
-          <button class="seg-btn" onclick="pickPoop('綠色',this)">🟢 綠</button>
-          <button class="seg-btn" onclick="pickPoop('棕色',this)">🟤 棕</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>性狀</label>
-        <div class="seg-btns">
-          <button class="seg-btn" onclick="pickPoopType('稀糊',this)">稀糊</button>
-          <button class="seg-btn" onclick="pickPoopType('正常',this)">正常</button>
-          <button class="seg-btn" onclick="pickPoopType('偏硬',this)">偏硬</button>
+        <label>洗澡時長（分鐘）</label>
+        <div class="timer-row">
+          <input type="number" id="bathMin" placeholder="0" min="0">
+          <button class="timer-btn" id="bathTimerBtn" onclick="toggleBathTimer()">▶ 開始</button>
         </div>
       </div>
     </div>
-    <div id="noteFields" style="display:none">
+
+    <!-- 成長記錄 -->
+    <div id="fields-growth" style="display:none">
+      <div class="field-row">
+        <div class="field">
+          <label>體重（克）</label>
+          <input type="number" id="growthWeight" placeholder="例如：3200" min="0">
+        </div>
+        <div class="field">
+          <label>身長（公分）</label>
+          <input type="number" id="growthHeight" placeholder="例如：50" min="0" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <!-- 體溫 -->
+    <div id="fields-temp" style="display:none">
+      <div class="field">
+        <label>體溫（°C）</label>
+        <input type="number" id="tempValue" placeholder="例如：36.8" min="30" max="45" step="0.1">
+      </div>
+    </div>
+
+    <!-- 備註 -->
+    <div id="fields-note" style="display:none">
       <div class="field">
         <label>備註內容</label>
         <textarea id="noteText" placeholder="記下任何觀察、症狀或特別狀況…"></textarea>
       </div>
     </div>
+
+    <!-- Common: tag/note for all types except note -->
+    <div class="field" id="commonTagField">
+      <label>標註（選填）</label>
+      <textarea id="commonTag" placeholder="輸入文字"></textarea>
+    </div>
+
     <div class="field">
       <label>日期</label>
       <input type="date" id="logDate">
@@ -523,9 +591,42 @@ const db = firebase.database();
 let state = { names:{a:'',b:''}, logs:[], weights:[] };
 let currentBaby = 'a';
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
-let milkType='母乳', diaperType='濕', poopColor='黃色', poopConsistency='正常';
 let selectedBabyInModal='a';
 let isSaving = false;
+let currentType = 'nursing';
+
+// Diaper picks
+let diaperType = '小便';
+
+// Timers
+let nurseTimers = { left:null, right:null };
+let bathTimer = null;
+
+const TYPE_DEFS = [
+  {key:'nursing', icon:'🤱', label:'哺乳'},
+  {key:'formula', icon:'🍼', label:'配方奶'},
+  {key:'bottlemilk', icon:'🍼', label:'瓶餵母乳'},
+  {key:'diaper', icon:'👶', label:'換尿片'},
+  {key:'bath', icon:'🦆', label:'洗澡'},
+  {key:'growth', icon:'📏', label:'成長記錄'},
+  {key:'temp', icon:'🌡️', label:'體溫'},
+  {key:'note', icon:'📝', label:'備註'},
+];
+
+function typeInfo(type){
+  const map = {
+    nursing:{icon:'🤱',label:'哺乳'},
+    formula:{icon:'🍼',label:'配方奶'},
+    bottlemilk:{icon:'🍼',label:'瓶餵母乳'},
+    diaper:{icon:'👶',label:'換尿片'},
+    bath:{icon:'🦆',label:'洗澡'},
+    growth:{icon:'📏',label:'成長記錄'},
+    temp:{icon:'🌡️',label:'體溫'},
+    note:{icon:'📝',label:'備註'},
+    milk:{icon:'🍼',label:'餵奶'}, // legacy
+  };
+  return map[type] || {icon:'📋',label:type};
+}
 
 // ─── Sync indicator ──────────────────────────────────
 function setSyncStatus(status) {
@@ -549,43 +650,31 @@ function setSyncStatus(status) {
 
 // ─── Firebase listeners (real-time) ──────────────────
 function startListening() {
-  // Names
   db.ref('names').on('value', snap => {
     const val = snap.val();
     if(val) { state.names = val; updateNames(); }
     renderAll();
   });
-
-  // Logs
   db.ref('logs').on('value', snap => {
     const val = snap.val();
     state.logs = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
     renderAll();
   });
-
-  // Weights
   db.ref('weights').on('value', snap => {
     const val = snap.val();
     state.weights = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
     renderAll();
   });
-
-  // Hide loading after first data
-  setTimeout(()=>{
-    document.getElementById('loadingScreen').style.display='none';
-  }, 1200);
+  setTimeout(()=>{ document.getElementById('loadingScreen').style.display='none'; }, 1200);
 }
 
 // ─── Init ─────────────────────────────────────────────
 function init() {
   startListening();
   setDefaultTime();
-
-  // Check if names exist after short delay
+  renderTypeGrid();
   setTimeout(()=>{
-    if(!state.names.a) {
-      document.getElementById('setupModal').classList.add('open');
-    }
+    if(!state.names.a) { document.getElementById('setupModal').classList.add('open'); }
   }, 1500);
 }
 
@@ -602,8 +691,6 @@ function saveNames() {
 function updateNames() {
   const a = state.names.a || '寶寶甲';
   const b = state.names.b || '寶寶乙';
-  document.querySelectorAll('[id^="name-a-"], [id^="nameA"]').forEach(el=>el.textContent=a);
-  document.querySelectorAll('[id^="name-b-"], [id^="nameB"]').forEach(el=>el.textContent=b);
   document.getElementById('name-a-tab').textContent = a;
   document.getElementById('name-b-tab').textContent = b;
   ['nameA-w','nameB-w','nameA-s','nameB-s','nameA-wf','nameB-wf'].forEach(id=>{
@@ -614,10 +701,7 @@ function updateNames() {
 
 // ─── Date ─────────────────────────────────────────────
 function changeDay(d){currentDay.setDate(currentDay.getDate()+d);renderAll();}
-
-function isSameDay(d1,d2){
-  return d1.getFullYear()===d2.getFullYear()&&d1.getMonth()===d2.getMonth()&&d1.getDate()===d2.getDate();
-}
+function isSameDay(d1,d2){return d1.getFullYear()===d2.getFullYear()&&d1.getMonth()===d2.getMonth()&&d1.getDate()===d2.getDate();}
 function fmtDate(d){
   const today=new Date();today.setHours(0,0,0,0);
   const yd=new Date(today);yd.setDate(yd.getDate()-1);
@@ -650,7 +734,7 @@ function selectBaby(baby){
 // ─── Render ───────────────────────────────────────────
 function renderAll(){
   updateDateLabel();renderSummary();renderQuickGrid();
-  renderTodayLog();renderAllLog();renderWeight();renderStats();
+  renderTodayLog();renderCalendar();renderWeight();renderStats();
 }
 function updateDateLabel(){
   const label=fmtDate(currentDay),d=currentDay;
@@ -664,35 +748,54 @@ function getDayLogs(baby){
 function renderSummary(){
   const logs=getDayLogs(currentBaby);
   const cls=currentBaby==='a'?'a-chip':'b-chip';
-  const milks=logs.filter(l=>l.type==='milk');
-  const diapers=logs.filter(l=>l.type==='diaper'||l.type==='poop');
-  const totalMl=milks.reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const milks=logs.filter(l=>['nursing','formula','bottlemilk','milk'].includes(l.type));
+  const diapers=logs.filter(l=>l.type==='diaper');
+  const notes=logs.filter(l=>l.type==='note');
   document.getElementById('summaryStrip').innerHTML=`
-    <div class="sum-chip ${cls}"><span class="icon">🍼</span>${milks.length} 次餵奶${totalMl?' · '+totalMl+'ml':''}</div>
-    <div class="sum-chip ${cls}"><span class="icon">👶</span>${diapers.length} 次換尿布</div>
-    <div class="sum-chip ${cls}"><span class="icon">📝</span>${logs.filter(l=>l.type==='note').length} 則備註</div>`;
-}
-function typeInfo(type){
-  return {milk:{icon:'🍼',label:'餵奶'},diaper:{icon:'👶',label:'換尿布'},poop:{icon:'💩',label:'排便'},note:{icon:'📝',label:'備註'}}[type]||{icon:'📋',label:type};
+    <div class="sum-chip ${cls}"><span class="icon">🍼</span>${milks.length} 次餵食</div>
+    <div class="sum-chip ${cls}"><span class="icon">👶</span>${diapers.length} 次換尿片</div>
+    <div class="sum-chip ${cls}"><span class="icon">📝</span>${notes.length} 則備註</div>`;
 }
 function logDetail(log){
-  if(log.type==='milk')return`${log.milkType||'母乳'}${log.amount?' · '+log.amount+'ml':''}`;
-  if(log.type==='diaper')return log.diaperType||'換尿布';
-  if(log.type==='poop')return`${log.poopColor||''} ${log.poopConsistency||''}`.trim();
-  if(log.type==='note')return log.note||'';
-  return'';
+  if(log.type==='nursing'){
+    const parts=[];
+    if(log.nurseLeft) parts.push(`左 ${log.nurseLeft} 分`);
+    if(log.nurseRight) parts.push(`右 ${log.nurseRight} 分`);
+    return parts.join(' · ') || '哺乳';
+  }
+  if(log.type==='formula') return `配方奶 · ${log.amount||0}ml`;
+  if(log.type==='bottlemilk') return `瓶餵母乳 · ${log.amount||0}ml`;
+  if(log.type==='milk') return `${log.milkType||'母乳'}${log.amount?' · '+log.amount+'ml':''}`; // legacy
+  if(log.type==='diaper'){
+    const parts=[log.diaperType||''];
+    if(log.diaperTexture) parts.push(log.diaperTexture);
+    if(log.diaperAmount) parts.push(log.diaperAmount);
+    return parts.filter(Boolean).join(' · ');
+  }
+  if(log.type==='bath') return `洗澡 ${log.bathMin||0} 分鐘`;
+  if(log.type==='growth'){
+    const parts=[];
+    if(log.weight) parts.push(`體重 ${log.weight}g`);
+    if(log.height) parts.push(`身長 ${log.height}cm`);
+    return parts.join(' · ') || '成長記錄';
+  }
+  if(log.type==='temp') return `${log.temp||'--'} °C`;
+  if(log.type==='note') return log.note||'';
+  return '';
 }
 function renderLogItems(logs,container){
   if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="e-icon">🌙</div><p>還沒有紀錄</p></div>`;return;}
   container.innerHTML=logs.map(log=>{
     const info=typeInfo(log.type);
     const name=state.names[log.baby]||(log.baby==='a'?'寶寶甲':'寶寶乙');
+    const noteHtml = log.tag ? `<div class="log-note">📌 ${log.tag}</div>` : '';
     return`<div class="log-item ${log.baby}-log">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
         <div class="log-who ${log.baby}">${name}</div>
         <div class="log-desc">${info.label}</div>
         <div class="log-detail">${logDetail(log)}</div>
+        ${noteHtml}
       </div>
       <div class="log-time">${fmtTime(log.time)}</div>
       <button class="log-del" onclick="deleteLog('${log.id}')">✕</button>
@@ -703,21 +806,72 @@ function renderTodayLog(){
   const logs=state.logs.filter(l=>isSameDay(new Date(l.time),currentDay)).sort((a,b)=>new Date(b.time)-new Date(a.time));
   renderLogItems(logs,document.getElementById('todayLog'));
 }
-function renderAllLog(){
-  renderCalendar();
+function renderQuickGrid(){
+  const baby=currentBaby,cls=baby==='a'?'a-btn':'b-btn';
+  const name=state.names[baby]||(baby==='a'?'寶寶甲':'寶寶乙');
+  const items=[
+    {icon:'🤱',label:'哺乳',type:'nursing'},
+    {icon:'🍼',label:'配方奶',type:'formula'},
+    {icon:'👶',label:'換尿片',type:'diaper'},
+    {icon:'📝',label:'備註',type:'note'},
+  ];
+  document.getElementById('quickGrid').innerHTML=items.map(it=>
+    `<button class="action-btn ${cls}" onclick="openAddType('${it.type}','${baby}')">
+      <span class="icon">${it.icon}</span>
+      <div class="label">${it.label}</div>
+      <div class="sub">為 ${name}</div>
+    </button>`).join('') +
+    `<button class="more-btn" onclick="openAddType('bottlemilk','${baby}')">查看更多紀錄類型 ＋</button>`;
+}
+function renderWeight(){
+  const list=document.getElementById('weightList');
+  if(!state.weights.length){list.innerHTML='<div class="empty-state" style="padding:20px 0"><div class="e-icon">⚖️</div><p>尚無成長紀錄</p></div>';return;}
+  const sorted=[...state.weights].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=sorted.map(w=>`
+    <div class="weight-row">
+      <div class="w-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
+      <div class="w-vals">
+        <div><div class="weight-val a">${w.a?w.a+'g':'—'}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
+        <div><div class="weight-val b">${w.b?w.b+'g':'—'}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
+      </div>
+    </div>`).join('');
+}
+function renderStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
+  function calc(logs){
+    const milks=logs.filter(l=>['nursing','formula','bottlemilk','milk'].includes(l.type));
+    const ml = logs.filter(l=>['formula','bottlemilk','milk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+    return{
+      milk:milks.length, ml,
+      diaper:logs.filter(l=>l.type==='diaper').length,
+      bath:logs.filter(l=>l.type==='bath').length,
+    };
+  }
+  const sa=calc(todayLogs.filter(l=>l.baby==='a'));
+  const sb=calc(todayLogs.filter(l=>l.baby==='b'));
+  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val a">${sa.milk}</div><div class="s-val b">${sb.milk}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val a">${sa.ml}</div><div class="s-val b">${sb.ml}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val a">${sa.diaper}</div><div class="s-val b">${sb.diaper}</div><div class="s-sub">${a} / ${b}</div></div>
+    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val a">${sa.bath}</div><div class="s-val b">${sb.bath}</div><div class="s-sub">${a} / ${b}</div></div>`;
 }
 
 // ─── Calendar ─────────────────────────────────────────
 let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0);
-let selectedCalDay = null;
 
-function changeCalMonth(d){
-  calMonth.setMonth(calMonth.getMonth()+d);
-  renderCalendar();
-}
+function changeCalMonth(d){ calMonth.setMonth(calMonth.getMonth()+d); renderCalendar(); }
+function dateKey(d){ return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 
-function dateKey(d){
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+function calDotClass(type){
+  if(['nursing','formula','bottlemilk','milk'].includes(type)) return 'milk';
+  if(type==='diaper') return 'diaper';
+  if(type==='bath') return 'bath';
+  if(type==='growth') return 'growth';
+  if(type==='temp') return 'temp';
+  if(type==='note') return 'note';
+  return 'milk';
 }
 
 function renderCalendar(){
@@ -727,13 +881,12 @@ function renderCalendar(){
 
   labelEl.textContent = `${calMonth.getFullYear()} 年 ${calMonth.getMonth()+1} 月`;
 
-  // Build map of date -> set of types present
   const dayTypes = {};
   state.logs.forEach(l=>{
     const d = new Date(l.time);
     const key = dateKey(d);
     if(!dayTypes[key]) dayTypes[key] = new Set();
-    dayTypes[key].add(l.type);
+    dayTypes[key].add(calDotClass(l.type));
   });
 
   const year = calMonth.getFullYear();
@@ -741,13 +894,10 @@ function renderCalendar(){
   const firstDay = new Date(year, month, 1);
   const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
-
   const today = new Date(); today.setHours(0,0,0,0);
 
   let cells = '';
-  for(let i=0;i<startWeekday;i++){
-    cells += `<div class="cal-cell empty"></div>`;
-  }
+  for(let i=0;i<startWeekday;i++){ cells += `<div class="cal-cell empty"></div>`; }
   for(let day=1; day<=daysInMonth; day++){
     const cellDate = new Date(year, month, day);
     const key = dateKey(cellDate);
@@ -755,10 +905,7 @@ function renderCalendar(){
     const types = dayTypes[key];
     let dotsHtml = '';
     if(types){
-      const typeDotMap = {milk:'a', diaper:'b', poop:'c', note:'d'};
-      dotsHtml = '<div class="cal-dots">' +
-        Array.from(types).map(t=>`<span class="dot ${typeDotMap[t]||'a'}"></span>`).join('') +
-        '</div>';
+      dotsHtml = '<div class="cal-dots">' + Array.from(types).map(t=>`<span class="dot ${t}"></span>`).join('') + '</div>';
     }
     cells += `<div class="cal-cell ${isToday?'today':''} ${types?'has-data':''}" onclick="openDayDetail(${year},${month},${day})">
       <div class="cal-daynum">${day}</div>
@@ -778,55 +925,64 @@ function openDayDetail(year, month, day){
   document.getElementById('dayModal').classList.add('open');
 }
 
-function renderQuickGrid(){
-  const baby=currentBaby,cls=baby==='a'?'a-btn':'b-btn';
-  const name=state.names[baby]||(baby==='a'?'寶寶甲':'寶寶乙');
-  const items=[{icon:'🍼',label:'餵奶',type:'milk'},{icon:'👶',label:'換尿布',type:'diaper'},{icon:'💩',label:'排便',type:'poop'},{icon:'📝',label:'備註',type:'note'}];
-  document.getElementById('quickGrid').innerHTML=items.map(it=>
-    `<button class="action-btn ${cls}" onclick="openAddType('${it.type}','${baby}')">
-      <span class="icon">${it.icon}</span>
-      <div class="label">${it.label}</div>
-      <div class="sub">為 ${name}</div>
-    </button>`).join('');
-}
-function renderWeight(){
-  const list=document.getElementById('weightList');
-  if(!state.weights.length){list.innerHTML='<div class="empty-state" style="padding:20px 0"><div class="e-icon">⚖️</div><p>尚無成長紀錄</p></div>';return;}
-  const sorted=[...state.weights].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML=sorted.map(w=>`
-    <div class="weight-row">
-      <div class="w-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
-      <div class="w-vals">
-        <div><div class="weight-val a">${w.a?w.a+'g':'—'}</div><div class="weight-label">${state.names.a||'甲'}</div></div>
-        <div><div class="weight-val b">${w.b?w.b+'g':'—'}</div><div class="weight-label">${state.names.b||'乙'}</div></div>
-      </div>
+// ─── Type grid in add modal ───────────────────────────
+function renderTypeGrid(){
+  document.getElementById('typeGrid').innerHTML = TYPE_DEFS.map(t=>
+    `<div class="type-cell ${currentType===t.key?'active':''}" onclick="selectType('${t.key}')">
+      <span class="tc-icon">${t.icon}</span>
+      <div class="tc-label">${t.label}</div>
     </div>`).join('');
 }
-function renderStats(){
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
-  function calc(logs){
-    const milks=logs.filter(l=>l.type==='milk');
-    return{milk:milks.length,ml:milks.reduce((s,l)=>s+(parseInt(l.amount)||0),0),
-      diaper:logs.filter(l=>l.type==='diaper'||l.type==='poop').length,
-      poop:logs.filter(l=>l.type==='poop').length};
+function selectType(key){
+  currentType = key;
+  renderTypeGrid();
+  updateForm();
+}
+function updateForm(){
+  const allFieldGroups = ['nursing','bottlemilk','diaper','bath','growth','temp','note'];
+  allFieldGroups.forEach(g=>{
+    const el = document.getElementById('fields-'+g);
+    if(el) el.style.display='none';
+  });
+  if(currentType==='nursing'){
+    document.getElementById('fields-nursing').style.display='';
+  } else if(currentType==='formula' || currentType==='bottlemilk'){
+    document.getElementById('fields-bottlemilk').style.display='';
+    document.getElementById('bottleLabel').textContent = currentType==='formula' ? '配方奶量（ml）' : '瓶餵母乳量（ml）';
+  } else if(currentType==='diaper'){
+    document.getElementById('fields-diaper').style.display='';
+  } else if(currentType==='bath'){
+    document.getElementById('fields-bath').style.display='';
+  } else if(currentType==='growth'){
+    document.getElementById('fields-growth').style.display='';
+  } else if(currentType==='temp'){
+    document.getElementById('fields-temp').style.display='';
+  } else if(currentType==='note'){
+    document.getElementById('fields-note').style.display='';
   }
-  const sa=calc(todayLogs.filter(l=>l.baby==='a'));
-  const sb=calc(todayLogs.filter(l=>l.baby==='b'));
-  const a=state.names.a||'寶寶甲',b=state.names.b||'寶寶乙';
-  document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card"><div class="s-label">餵奶次數</div><div class="s-val a">${sa.milk}</div><div class="s-val b">${sb.milk}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val a">${sa.ml}</div><div class="s-val b">${sb.ml}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">換尿布</div><div class="s-val a">${sa.diaper}</div><div class="s-val b">${sb.diaper}</div><div class="s-sub">${a} / ${b}</div></div>
-    <div class="stat-card"><div class="s-label">排便次數</div><div class="s-val a">${sa.poop}</div><div class="s-val b">${sb.poop}</div><div class="s-sub">${a} / ${b}</div></div>`;
+  document.getElementById('commonTagField').style.display = currentType==='note' ? 'none' : '';
 }
 
 // ─── Modal ────────────────────────────────────────────
-function openAdd(){openAddType('milk',currentBaby);}
+function openAdd(){openAddType('nursing',currentBaby);}
 function openAddType(type,baby){
   selectedBabyInModal=baby;
-  document.getElementById('typeSelect').value=type;
-  updateForm();renderBabyPicker();setDefaultTime();
+  currentType = type;
+  resetTimers();
+  renderTypeGrid();
+  updateForm();
+  renderBabyPicker();
+  setDefaultTime();
+  // reset fields
+  ['nurseLeftMin','nurseRightMin','bottleAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('diaperTexture').value='';
+  document.getElementById('diaperAmount').value='';
+  diaperType='小便';
+  document.querySelectorAll('#fields-diaper .seg-btns .seg-btn').forEach((b,i)=>{
+    b.classList.toggle('sel-a', i===0);
+  });
   document.getElementById('addModal').classList.add('open');
 }
 function renderBabyPicker(){
@@ -840,17 +996,57 @@ function pickBaby(baby,btn){
   document.querySelectorAll('#babyPicker .seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));
   btn.classList.add(baby==='a'?'sel-a':'sel-b');
 }
-function updateForm(){
-  const type=document.getElementById('typeSelect').value;
-  ['milk','diaper','poop','note'].forEach(t=>{
-    document.getElementById(t+'Fields').style.display=t===type?'':'none';
-  });
+function pickDiaperType(t,btn){
+  diaperType=t;
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));
+  btn.classList.add('sel-a');
 }
-function pickMilkType(t,btn){milkType=t;resetSeg(btn,'sel-a');}
-function pickDiaper(t,btn){diaperType=t;resetSeg(btn,'sel-a');}
-function pickPoop(t,btn){poopColor=t;resetSeg(btn,'sel-a');}
-function pickPoopType(t,btn){poopConsistency=t;resetSeg(btn,'sel-a');}
-function resetSeg(btn,cls){btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('sel-a','sel-b'));btn.classList.add(cls);}
+
+// ─── Timers ───────────────────────────────────────────
+function resetTimers(){
+  if(nurseTimers.left) clearInterval(nurseTimers.left.interval);
+  if(nurseTimers.right) clearInterval(nurseTimers.right.interval);
+  if(bathTimer) clearInterval(bathTimer.interval);
+  nurseTimers = {left:null, right:null};
+  bathTimer = null;
+  const lb=document.getElementById('nurseLeftTimerBtn'); if(lb){lb.textContent='▶ 開始';lb.classList.remove('running');}
+  const rb=document.getElementById('nurseRightTimerBtn'); if(rb){rb.textContent='▶ 開始';rb.classList.remove('running');}
+  const bb=document.getElementById('bathTimerBtn'); if(bb){bb.textContent='▶ 開始';bb.classList.remove('running');}
+}
+function toggleNurseTimer(side){
+  const btn = document.getElementById(side==='left'?'nurseLeftTimerBtn':'nurseRightTimerBtn');
+  const input = document.getElementById(side==='left'?'nurseLeftMin':'nurseRightMin');
+  if(nurseTimers[side] && nurseTimers[side].running){
+    clearInterval(nurseTimers[side].interval);
+    nurseTimers[side].running = false;
+    btn.textContent='▶ 開始'; btn.classList.remove('running');
+  } else {
+    const startVal = parseFloat(input.value)||0;
+    const startTime = Date.now() - startVal*60000;
+    nurseTimers[side] = { running:true, interval: setInterval(()=>{
+      const mins = (Date.now()-startTime)/60000;
+      input.value = mins.toFixed(1);
+    }, 1000) };
+    btn.textContent='⏸ 計時中'; btn.classList.add('running');
+  }
+}
+function toggleBathTimer(){
+  const btn = document.getElementById('bathTimerBtn');
+  const input = document.getElementById('bathMin');
+  if(bathTimer && bathTimer.running){
+    clearInterval(bathTimer.interval);
+    bathTimer.running = false;
+    btn.textContent='▶ 開始'; btn.classList.remove('running');
+  } else {
+    const startVal = parseFloat(input.value)||0;
+    const startTime = Date.now() - startVal*60000;
+    bathTimer = { running:true, interval: setInterval(()=>{
+      const mins = (Date.now()-startTime)/60000;
+      input.value = mins.toFixed(1);
+    }, 1000) };
+    btn.textContent='⏸ 計時中'; btn.classList.add('running');
+  }
+}
 
 function setDefaultTime(){
   const now=new Date();
@@ -862,22 +1058,51 @@ function setDefaultTime(){
 
 function saveLog(){
   if(isSaving)return;
-  const type=document.getElementById('typeSelect').value;
   const dateVal=document.getElementById('logDate').value;
   const timeVal=document.getElementById('logTimeOnly').value;
   if(!dateVal||!timeVal){alert('請選擇日期與時間');return;}
   const time=`${dateVal}T${timeVal}`;
-  const log={baby:selectedBabyInModal,type,time,createdAt:Date.now()};
-  if(type==='milk'){log.milkType=milkType;log.amount=document.getElementById('milkAmount').value||'';}
-  if(type==='diaper'){log.diaperType=diaperType;}
-  if(type==='poop'){log.poopColor=poopColor;log.poopConsistency=poopConsistency;}
-  if(type==='note'){log.note=document.getElementById('noteText').value;}
+  const log={baby:selectedBabyInModal,type:currentType,time,createdAt:Date.now()};
+
+  if(currentType==='nursing'){
+    log.nurseLeft = document.getElementById('nurseLeftMin').value || '';
+    log.nurseRight = document.getElementById('nurseRightMin').value || '';
+  } else if(currentType==='formula' || currentType==='bottlemilk'){
+    log.amount = document.getElementById('bottleAmount').value || '';
+  } else if(currentType==='diaper'){
+    log.diaperType = diaperType;
+    log.diaperTexture = document.getElementById('diaperTexture').value || '';
+    log.diaperAmount = document.getElementById('diaperAmount').value || '';
+  } else if(currentType==='bath'){
+    log.bathMin = document.getElementById('bathMin').value || '';
+  } else if(currentType==='growth'){
+    log.weight = document.getElementById('growthWeight').value || '';
+    log.height = document.getElementById('growthHeight').value || '';
+  } else if(currentType==='temp'){
+    log.temp = document.getElementById('tempValue').value || '';
+  } else if(currentType==='note'){
+    log.note = document.getElementById('noteText').value || '';
+  }
+  if(currentType!=='note'){
+    log.tag = document.getElementById('commonTag').value || '';
+  }
+
   isSaving=true;
   const btn=document.getElementById('saveLogBtn');
   btn.disabled=true;btn.textContent='儲存中…';
   setSyncStatus('syncing');
   db.ref('logs').push(log)
-    .then(()=>{setSyncStatus('ok');closeModal('addModal');isSaving=false;btn.disabled=false;btn.textContent='儲存紀錄';})
+    .then(()=>{
+      setSyncStatus('ok');closeModal('addModal');isSaving=false;
+      btn.disabled=false;btn.textContent='儲存紀錄';
+      resetTimers();
+      // also save growth into weights collection for the 成長 view if weight provided
+      if(currentType==='growth' && log.weight){
+        const wEntry = { date: dateVal };
+        wEntry[selectedBabyInModal] = log.weight;
+        db.ref('weights').push(wEntry).catch(()=>{});
+      }
+    })
     .catch(()=>{setSyncStatus('error');isSaving=false;btn.disabled=false;btn.textContent='儲存紀錄';alert('儲存失敗，請確認網路連線');});
 }
 
@@ -885,7 +1110,7 @@ function deleteLog(id){
   if(!confirm('確定要刪除這筆紀錄？'))return;
   setSyncStatus('syncing');
   db.ref('logs/'+id).remove()
-    .then(()=>setSyncStatus('ok'))
+    .then(()=>{setSyncStatus('ok');closeModal('dayModal');})
     .catch(()=>setSyncStatus('error'));
 }
 
