@@ -1276,18 +1276,27 @@ function renderStats(){
 
 function renderLatestGrowth(baby){
   const hKey = baby+'_h';
-  const entries = state.weights.filter(w => w[baby] || w[hKey]);
-  if(!entries.length){
+  const weightEntries = state.weights.filter(w => w[baby]);
+  const heightEntries = state.weights.filter(w => w[hKey]);
+
+  if(!weightEntries.length && !heightEntries.length){
     document.getElementById('statLatestWeight').textContent = '—';
     document.getElementById('statLatestHeight').textContent = '—';
     document.getElementById('statLatestDate').textContent = '尚無紀錄';
     return;
   }
-  const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const latest = sorted[0];
-  document.getElementById('statLatestWeight').textContent = latest[baby] ? `${latest[baby]} g` : '—';
-  document.getElementById('statLatestHeight').textContent = latest[hKey] ? `${latest[hKey]} cm` : '—';
-  document.getElementById('statLatestDate').textContent = `更新於 ${new Date(latest.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}`;
+
+  const latestWeight = weightEntries.length ? [...weightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+  const latestHeight = heightEntries.length ? [...heightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+
+  document.getElementById('statLatestWeight').textContent = latestWeight ? `${latestWeight[baby]} g` : '—';
+  document.getElementById('statLatestHeight').textContent = latestHeight ? `${latestHeight[hKey]} cm` : '—';
+
+  const dates = [latestWeight, latestHeight].filter(Boolean).map(e=>new Date(e.date));
+  const mostRecentDate = dates.length ? new Date(Math.max(...dates)) : null;
+  document.getElementById('statLatestDate').textContent = mostRecentDate
+    ? `更新於 ${mostRecentDate.toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}`
+    : '';
 }
 
 function feedingGoalKey(baby){ return `feedingGoal_${baby}`; }
