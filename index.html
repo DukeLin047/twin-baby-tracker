@@ -319,6 +319,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <button onclick="closeModal('memoDayModal')" style="background:none;border:none;color:var(--ink3);font-size:22px;cursor:pointer;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
     </div>
     <div id="memoDayList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button class="btn-save" style="width:100%;margin-top:16px;" onclick="openMemoAddForDate(memoDayModalDate)">＋ 新增備忘</button>
   </div>
 </div>
 
@@ -1441,9 +1442,12 @@ function renderMemoCalendar(){
   gridEl.innerHTML = cells;
 }
 
+let memoDayModalDate = null;
+
 function openMemoDayDetail(year, month, day){
   const targetDate = new Date(year, month, day);
   const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  memoDayModalDate = dateStr;
   const memos = state.memos.filter(m=>m.date===dateStr).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   const label = `${year}/${String(month+1).padStart(2,'0')}/${String(day).padStart(2,'0')}`;
   document.getElementById('memoDayModalTitle').textContent = `📌 ${label} 的備忘`;
@@ -1473,6 +1477,17 @@ function openMemoAdd(){
   renderMemoBabyPicker();
   const now = new Date();
   document.getElementById('memoDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('memoContent').value = '';
+  document.getElementById('memoAddModal').classList.add('open');
+}
+
+function openMemoAddForDate(dateStr){
+  closeModal('memoDayModal');
+  selectedMemoBaby = 'all';
+  renderMemoBabyPicker();
+  const now = new Date();
+  document.getElementById('memoDate').value = dateStr || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('memoContent').value = '';
   document.getElementById('memoAddModal').classList.add('open');
