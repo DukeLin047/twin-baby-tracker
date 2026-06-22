@@ -289,6 +289,64 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <span><i class="dot note"></i>📝 備註</span>
     </div>
   </div>
+
+  <!-- 備忘行事曆 -->
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">📌 備忘行事曆</div>
+      <button onclick="openMemoAdd()" style="background:linear-gradient(135deg,#D9B97E,var(--gold));color:#1A1410;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增備忘</button>
+    </div>
+    <div class="cal-header">
+      <button class="cal-nav" onclick="changeMemoCalMonth(-1)">‹</button>
+      <div class="cal-month-label" id="memoCalMonthLabel"></div>
+      <button class="cal-nav" onclick="changeMemoCalMonth(1)">›</button>
+    </div>
+    <div class="cal-weekdays">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="cal-grid" id="memoCalGrid"></div>
+    <p style="font-size:11px;color:var(--ink3);margin-top:12px;line-height:1.5;">
+      💡 有圓點的日期代表當天有備忘事項，點擊查看詳情。新增備忘時會自動產生行事曆事件檔（.ics），可加入手機「日曆」APP。
+    </p>
+  </div>
+</div>
+
+<div class="overlay" id="memoDayModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div class="modal-title" id="memoDayModalTitle" style="margin-bottom:0;">備忘</div>
+      <button onclick="closeModal('memoDayModal')" style="background:none;border:none;color:var(--ink3);font-size:22px;cursor:pointer;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
+    </div>
+    <div id="memoDayList" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+</div>
+
+<div class="overlay" id="memoAddModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>📌</span>新增備忘</div>
+    <div class="field">
+      <label>對象</label>
+      <div class="seg-btns" id="memoBabyPicker"></div>
+    </div>
+    <div class="field">
+      <label>日期</label>
+      <input type="date" id="memoDate">
+    </div>
+    <div class="field">
+      <label>時間</label>
+      <input type="time" id="memoTime">
+    </div>
+    <div class="field">
+      <label>事項內容</label>
+      <textarea id="memoContent" placeholder="例如：打預防針、回診、體檢…"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('memoAddModal')">取消</button>
+      <button class="btn-save" id="saveMemoBtn" onclick="saveMemo()">儲存並加入行事曆</button>
+    </div>
+  </div>
 </div>
 
 <div class="overlay" id="dayModal">
@@ -743,7 +801,7 @@ const BABY_COLORS = [
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
 // ─── State ────────────────────────────────────────────
-let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0 };
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[] };
 let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
@@ -848,6 +906,11 @@ function startListening() {
   });
   db.ref('inventoryAdjust').on('value', snap => {
     state.inventoryAdjust = snap.val() || 0;
+    renderAll();
+  });
+  db.ref('memos').on('value', snap => {
+    const val = snap.val();
+    state.memos = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
     renderAll();
   });
   setTimeout(()=>{ document.getElementById('loadingScreen').style.display='none'; }, 1200);
@@ -1026,7 +1089,7 @@ function selectBaby(baby){
 function renderAll(){
   renderBabyTabs();
   updateDateLabel();renderSummary();
-  renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();
+  renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();renderMemoCalendar();
   renderBabyPicker();
 }
 
@@ -1334,6 +1397,138 @@ function openDayDetail(year, month, day){
   document.getElementById('dayModalTitle').textContent = `📅 ${label} 的紀錄`;
   renderLogItems(logs, document.getElementById('dayLogList'));
   document.getElementById('dayModal').classList.add('open');
+}
+
+// ─── 備忘行事曆 ────────────────────────────────────────
+let memoCalMonth = new Date(); memoCalMonth.setDate(1); memoCalMonth.setHours(0,0,0,0);
+let selectedMemoBaby = 'all';
+
+function changeMemoCalMonth(d){ memoCalMonth.setMonth(memoCalMonth.getMonth()+d); renderMemoCalendar(); }
+
+function renderMemoCalendar(){
+  const labelEl = document.getElementById('memoCalMonthLabel');
+  const gridEl = document.getElementById('memoCalGrid');
+  if(!labelEl || !gridEl) return;
+  labelEl.textContent = `${memoCalMonth.getFullYear()} 年 ${memoCalMonth.getMonth()+1} 月`;
+
+  const dayHasMemo = {};
+  state.memos.forEach(m=>{
+    const d = new Date(m.date+'T00:00:00');
+    const key = dateKey(d);
+    dayHasMemo[key] = true;
+  });
+
+  const year = memoCalMonth.getFullYear();
+  const month = memoCalMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let cells = '';
+  for(let i=0;i<startWeekday;i++){ cells += `<div class="cal-cell empty"></div>`; }
+  for(let day=1; day<=daysInMonth; day++){
+    const cellDate = new Date(year, month, day);
+    const key = dateKey(cellDate);
+    const isToday = isSameDay(cellDate, today);
+    const hasMemo = dayHasMemo[key];
+    const dotsHtml = hasMemo ? `<div class="cal-dots"><span class="dot note"></span></div>` : '';
+    cells += `<div class="cal-cell ${isToday?'today':''} ${hasMemo?'has-data':''}" onclick="openMemoDayDetail(${year},${month},${day})">
+      <div class="cal-daynum">${day}</div>
+      ${dotsHtml}
+    </div>`;
+  }
+  gridEl.innerHTML = cells;
+}
+
+function openMemoDayDetail(year, month, day){
+  const targetDate = new Date(year, month, day);
+  const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const memos = state.memos.filter(m=>m.date===dateStr).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const label = `${year}/${String(month+1).padStart(2,'0')}/${String(day).padStart(2,'0')}`;
+  document.getElementById('memoDayModalTitle').textContent = `📌 ${label} 的備忘`;
+  const listEl = document.getElementById('memoDayList');
+  if(!memos.length){
+    listEl.innerHTML = `<div class="empty-state"><div class="e-icon">🗒️</div><p>這天還沒有備忘</p></div>`;
+  } else {
+    listEl.innerHTML = memos.map(m=>{
+      const who = m.baby==='all' ? '全部寶寶' : babyName(m.baby);
+      const c = m.baby==='all' ? {main:'var(--gold)'} : babyColor(m.baby);
+      return `<div class="log-item" style="border-left-color:${c.main};">
+        <div class="log-icon">📌</div>
+        <div class="log-body">
+          <div class="log-who" style="color:${c.main};">${who}</div>
+          <div class="log-desc">${m.content||''}</div>
+          <div class="log-detail">${m.time?('⏰ '+m.time):'整天'}</div>
+        </div>
+        <button class="log-del" onclick="deleteMemo('${m.id}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('memoDayModal').classList.add('open');
+}
+
+function openMemoAdd(){
+  selectedMemoBaby = 'all';
+  renderMemoBabyPicker();
+  const now = new Date();
+  document.getElementById('memoDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('memoContent').value = '';
+  document.getElementById('memoAddModal').classList.add('open');
+}
+
+function renderMemoBabyPicker(){
+  const container = document.getElementById('memoBabyPicker');
+  if(!container) return;
+  const ids = activeBabyIds();
+  const options = [{id:'all', label:'全部寶寶'}, ...ids.map(id=>({id, label:babyName(id)}))];
+  container.innerHTML = options.map(opt=>{
+    const isSel = selectedMemoBaby===opt.id;
+    return `<button class="seg-btn ${isSel?'selected':''}" onclick="pickMemoBaby('${opt.id}')">${opt.label}</button>`;
+  }).join('');
+}
+function pickMemoBaby(id){
+  selectedMemoBaby = id;
+  renderMemoBabyPicker();
+}
+
+function saveMemo(){
+  const date = document.getElementById('memoDate').value;
+  const time = document.getElementById('memoTime').value;
+  const content = document.getElementById('memoContent').value.trim();
+  if(!date || !content){ alert('請填入日期與事項內容'); return; }
+  const memo = { baby: selectedMemoBaby, date, time, content, createdAt: Date.now(), recordedBy: currentUserName||'' };
+  const btn = document.getElementById('saveMemoBtn');
+  btn.disabled = true; btn.textContent = '儲存中…';
+  setSyncStatus('syncing');
+  db.ref('memos').push(memo)
+    .then(()=>{
+      setSyncStatus('ok');
+      btn.disabled = false; btn.textContent = '儲存並加入行事曆';
+      closeModal('memoAddModal');
+      // Export to calendar
+      const who = selectedMemoBaby==='all' ? '' : `（${babyName(selectedMemoBaby)}）`;
+      const label = `📌 ${content}${who}`;
+      if(time){
+        const [hh, mm] = time.split(':').map(Number);
+        const target = new Date(date+'T00:00:00');
+        target.setHours(hh, mm, 0, 0);
+        exportToCalendar(target, label);
+      } else {
+        const target = new Date(date+'T09:00:00');
+        exportToCalendar(target, label, 60);
+      }
+    })
+    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent='儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
+}
+
+function deleteMemo(id){
+  if(!confirm('確定要刪除這筆備忘？')) return;
+  setSyncStatus('syncing');
+  db.ref('memos/'+id).remove()
+    .then(()=>{ setSyncStatus('ok'); closeModal('memoDayModal'); })
+    .catch(()=>setSyncStatus('error'));
 }
 
 // ─── Type grid in add modal ───────────────────────────
