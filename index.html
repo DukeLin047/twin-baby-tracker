@@ -294,11 +294,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <div class="overlay" id="dayModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="dayModalTitle">紀錄</div>
-    <div class="log-list" id="dayLogList"></div>
-    <div class="modal-btns">
-      <button class="btn-cancel" style="flex:1" onclick="closeModal('dayModal')">關閉</button>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div class="modal-title" id="dayModalTitle" style="margin-bottom:0;">紀錄</div>
+      <button onclick="closeModal('dayModal')" style="background:none;border:none;color:var(--ink3);font-size:22px;cursor:pointer;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
     </div>
+    <div class="log-list" id="dayLogList"></div>
   </div>
 </div>
 
