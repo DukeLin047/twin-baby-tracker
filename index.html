@@ -786,10 +786,25 @@ function typeInfo(type){
 function activeBabyIds(){
   return BABY_IDS.slice(0, state.babyCount || 2);
 }
+function normalizeBabyId(id){
+  if(id==='a') return 'b1';
+  if(id==='b') return 'b2';
+  return id;
+}
+function normalizeWeightEntry(w){
+  const out = {...w};
+  if('a' in w){ out.b1 = w.a; delete out.a; }
+  if('b' in w){ out.b2 = w.b; delete out.b; }
+  if('a_h' in w){ out.b1_h = w.a_h; delete out.a_h; }
+  if('b_h' in w){ out.b2_h = w.b_h; delete out.b_h; }
+  return out;
+}
 function babyName(id){
+  id = normalizeBabyId(id);
   return (state.babies && state.babies[id]) || id;
 }
 function babyColor(id){
+  id = normalizeBabyId(id);
   const idx = BABY_IDS.indexOf(id);
   return BABY_COLORS[idx] || BABY_COLORS[0];
 }
@@ -823,12 +838,12 @@ function startListening() {
   });
   db.ref('logs').on('value', snap => {
     const val = snap.val();
-    state.logs = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    state.logs = val ? Object.entries(val).map(([id,v])=>({...v,id,baby:normalizeBabyId(v.baby)})) : [];
     renderAll();
   });
   db.ref('weights').on('value', snap => {
     const val = snap.val();
-    state.weights = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    state.weights = val ? Object.entries(val).map(([id,v])=>({...normalizeWeightEntry(v),id})) : [];
     renderAll();
   });
   db.ref('inventoryAdjust').on('value', snap => {
