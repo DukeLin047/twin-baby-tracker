@@ -232,14 +232,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <div class="header-top">
     <div>
       <h1 id="appTitle">👶 <span class="hl">多寶日誌</span></h1>
-      <p>新生兒照護紀錄</p>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
       <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
       <div id="userBadge" onclick="changeUserName()" style="font-size:11px;background:rgba(255,255,255,0.18);padding:4px 10px;border-radius:20px;cursor:pointer;white-space:nowrap;"></div>
     </div>
   </div>
-  <div class="date-bar">
+  <div class="date-bar" id="dateBar">
     <button class="date-nav" onclick="changeDay(-1)">‹</button>
     <span id="dateLabel"></span>
     <button class="date-nav" onclick="changeDay(1)">›</button>
@@ -270,6 +269,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <!-- LOGS VIEW (Calendar) -->
 <div class="view" id="view-logs">
   <div class="section" style="padding-top:16px">
+    <div class="section-title">新生兒照護紀錄</div>
     <div class="cal-header">
       <button class="cal-nav" onclick="changeCalMonth(-1)">‹</button>
       <div class="cal-month-label" id="calMonthLabel"></div>
@@ -1077,6 +1077,8 @@ function showView(name,btn){
   document.querySelectorAll('nav .nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(name==='settings') renderSettingsView();
+  const dateBar = document.getElementById('dateBar');
+  if(dateBar) dateBar.style.display = (name==='logs') ? 'none' : 'flex';
   renderAll();
 }
 function selectBaby(baby){
