@@ -1228,9 +1228,12 @@ function renderWeight(){
       const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
       listHtml = sorted.map(w=>{
         const text = [w[id]?w[id]+'g':null, w[id+'_h']?w[id+'_h']+'cm':null].filter(Boolean).join(' · ') || '—';
-        return `<div class="growth-entry">
-          <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
-          <div class="ge-vals">${text}</div>
+        return `<div class="growth-entry" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div>
+            <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
+            <div class="ge-vals">${text}</div>
+          </div>
+          <button class="log-del" onclick="deleteWeightEntry('${w.id}')" style="flex-shrink:0;">✕</button>
         </div>`;
       }).join('');
     }
@@ -1752,6 +1755,14 @@ function deleteLog(id){
   setSyncStatus('syncing');
   db.ref('logs/'+id).remove()
     .then(()=>{setSyncStatus('ok');closeModal('dayModal');})
+    .catch(()=>setSyncStatus('error'));
+}
+
+function deleteWeightEntry(id){
+  if(!confirm('確定要刪除這筆成長紀錄？')) return;
+  setSyncStatus('syncing');
+  db.ref('weights/'+id).remove()
+    .then(()=>setSyncStatus('ok'))
     .catch(()=>setSyncStatus('error'));
 }
 
