@@ -1430,14 +1430,23 @@ function renderCalendar(){
   }
   gridEl.innerHTML = cells;
 }
+let openDayModalDate = null;
+
 function openDayDetail(year, month, day){
+  openDayModalDate = {year, month, day};
+  renderDayDetailModal();
+  document.getElementById('dayModal').classList.add('open');
+}
+
+function renderDayDetailModal(){
+  if(!openDayModalDate) return;
+  const {year, month, day} = openDayModalDate;
   const targetDate = new Date(year, month, day);
   const logs = state.logs.filter(l=>isSameDay(new Date(l.time), targetDate))
     .sort((a,b)=>new Date(a.time)-new Date(b.time));
   const label = `${year}/${String(month+1).padStart(2,'0')}/${String(day).padStart(2,'0')}`;
   document.getElementById('dayModalTitle').textContent = `📅 ${label} 的紀錄`;
   renderLogItems(logs, document.getElementById('dayLogList'));
-  document.getElementById('dayModal').classList.add('open');
 }
 
 // ─── 備忘行事曆 ────────────────────────────────────────
@@ -1762,15 +1771,18 @@ function saveLog(){
   btn.disabled=true;btn.textContent='儲存中…';
   setSyncStatus('syncing');
   db.ref('logs').push(log)
-    .then(()=>{
+    .then((ref)=>{
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
       btn.disabled=false;btn.textContent='儲存紀錄';
       resetTimers();
       if(currentType==='growth' && (log.weight || log.height)){
-        const wEntry = { date: dateVal };
+        const wEntry = { date: dateVal, sourceLogId: ref.key };
         if(log.weight) wEntry[selectedBabyInModal] = log.weight;
         if(log.height) wEntry[selectedBabyInModal+'_h'] = log.height;
-        db.ref('weights').push(wEntry).catch(()=>{});
+        db.ref('weights').push(wEntry).then((wRef)=>{
+          // link back so deleting the log can also remove the weights entry
+          db.ref('logs/'+ref.key+'/linkedWeightId').set(wRef.key).catch(()=>{});
+        }).catch(()=>{});
       }
     })
     .catch(()=>{setSyncStatus('error');isSaving=false;btn.disabled=false;btn.textContent='儲存紀錄';alert('儲存失敗，請確認網路連線');});
@@ -1779,7 +1791,13 @@ function saveLog(){
 function deleteLog(id){
   if(!confirm('確定要刪除這筆紀錄？'))return;
   setSyncStatus('syncing');
-  db.ref('logs/'+id).remove()
+  const logEntry = state.logs.find(l=>l.id===id);
+  const linkedWeightId = logEntry ? logEntry.linkedWeightId : null;
+  const tasks = [db.ref('logs/'+id).remove()];
+  if(linkedWeightId){
+    tasks.push(db.ref('weights/'+linkedWeightId).remove());
+  }
+  Promise.all(tasks)
     .then(()=>{setSyncStatus('ok');closeModal('dayModal');})
     .catch(()=>setSyncStatus('error'));
 }
@@ -1787,7 +1805,13 @@ function deleteLog(id){
 function deleteWeightEntry(id){
   if(!confirm('確定要刪除這筆成長紀錄？')) return;
   setSyncStatus('syncing');
-  db.ref('weights/'+id).remove()
+  const weightEntry = state.weights.find(w=>w.id===id);
+  const sourceLogId = weightEntry ? weightEntry.sourceLogId : null;
+  const tasks = [db.ref('weights/'+id).remove()];
+  if(sourceLogId){
+    tasks.push(db.ref('logs/'+sourceLogId).remove());
+  }
+  Promise.all(tasks)
     .then(()=>setSyncStatus('ok'))
     .catch(()=>setSyncStatus('error'));
 }
