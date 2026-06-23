@@ -480,7 +480,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <!-- STATS VIEW -->
 <div class="view" id="view-stats">
   <div class="section" style="padding-top:16px">
-    <div class="section-title">今日統計</div>
+    <div class="section-title" id="statsSectionTitle">今日統計</div>
     <div class="baby-tabs" id="statBabyTabs" style="padding:0;margin-bottom:14px;"></div>
 
     <div class="weight-card" style="margin-bottom:14px;">
@@ -514,7 +514,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
       <div id="goalResultBox" style="display:none;margin-top:14px;padding:14px;background:var(--c1-light);border-radius:12px;border:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;">
-          <span>今日目標</span><span id="goalTargetMl" style="color:var(--ink);font-weight:700;">-- ml</span>
+          <span id="goalTargetLabel">今日目標</span><span id="goalTargetMl" style="color:var(--ink);font-weight:700;">-- ml</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
           <span>每餐建議奶量</span><span id="goalPerFeedMl" style="color:var(--ink);font-weight:700;">-- ml</span>
@@ -529,7 +529,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
           <span>加總後今日目標</span><span id="goalAdjustedTargetMl" style="color:var(--gold);font-weight:700;">-- ml</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
-          <span>今日已喝</span><span id="goalActualMl" style="color:var(--ink);font-weight:700;">-- ml</span>
+          <span id="goalActualLabel">今日已喝</span><span id="goalActualMl" style="color:var(--ink);font-weight:700;">-- ml</span>
         </div>
         <div style="height:8px;background:var(--bg-elev2);border-radius:4px;margin-top:10px;overflow:hidden;border:1px solid var(--border);">
           <div id="goalProgressBar" style="height:100%;background:var(--gold);border-radius:4px;width:0%;transition:width 0.3s;"></div>
@@ -1255,8 +1255,15 @@ function selectStatBaby(baby){
 
 function renderStats(){
   const baby = currentStatBaby;
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today));
+  const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
+  const dayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),targetDay));
+  const dayLabel = fmtDate(targetDay);
+  const titleEl = document.getElementById('statsSectionTitle');
+  if(titleEl) titleEl.textContent = `${dayLabel}統計`;
+  const tEl = document.getElementById('goalTargetLabel');
+  if(tEl) tEl.textContent = `${dayLabel}目標`;
+  const aEl = document.getElementById('goalActualLabel');
+  if(aEl) aEl.textContent = `${dayLabel}已喝`;
   function calc(logs){
     const milks=logs.filter(l=>['nursing','formula','bottlemilk'].includes(l.type));
     const ml = logs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
@@ -1267,7 +1274,7 @@ function renderStats(){
     };
   }
   const c = babyColor(baby);
-  const s = calc(todayLogs.filter(l=>l.baby===baby));
+  const s = calc(dayLogs.filter(l=>l.baby===baby));
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val" style="color:${c.main}">${s.milk}</div></div>
     <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val" style="color:${c.main}">${s.ml}</div></div>
@@ -1318,9 +1325,9 @@ function saveFeedingGoal(){
   const feeds = document.getElementById('goalFeeds').value || 8;
   const extra = document.getElementById('goalExtraMl').value || 0;
   localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds, extra}));
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayLogs=state.logs.filter(l=>isSameDay(new Date(l.time),today) && l.baby===baby);
-  const ml = todayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
+  const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
+  const dayLogs = state.logs.filter(l=>isSameDay(new Date(l.time),targetDay) && l.baby===baby);
+  const ml = dayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
   renderFeedingGoalProgress(baby, ml);
 }
 function renderFeedingGoalProgress(baby, actualMl){
