@@ -614,16 +614,18 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         <div class="field">
           <label>左乳（秒）</label>
           <div class="timer-row">
-            <input type="number" id="nurseLeftMin" placeholder="0" min="0">
+            <input type="number" id="nurseLeftMin" placeholder="0" min="0" oninput="updateMinSecDisplay('nurseLeftMin','nurseLeftDisplay')">
             <button class="timer-btn" id="nurseLeftTimerBtn" onclick="toggleNurseTimer('left')">▶ 開始</button>
           </div>
+          <div id="nurseLeftDisplay" style="font-size:13px;color:var(--ink3);margin-top:6px;"></div>
         </div>
         <div class="field">
           <label>右乳（秒）</label>
           <div class="timer-row">
-            <input type="number" id="nurseRightMin" placeholder="0" min="0">
+            <input type="number" id="nurseRightMin" placeholder="0" min="0" oninput="updateMinSecDisplay('nurseRightMin','nurseRightDisplay')">
             <button class="timer-btn" id="nurseRightTimerBtn" onclick="toggleNurseTimer('right')">▶ 開始</button>
           </div>
+          <div id="nurseRightDisplay" style="font-size:13px;color:var(--ink3);margin-top:6px;"></div>
         </div>
       </div>
     </div>
@@ -681,9 +683,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <div class="field">
         <label>洗澡時長（秒）</label>
         <div class="timer-row">
-          <input type="number" id="bathMin" placeholder="0" min="0">
+          <input type="number" id="bathMin" placeholder="0" min="0" oninput="updateMinSecDisplay('bathMin','bathDisplay')">
           <button class="timer-btn" id="bathTimerBtn" onclick="toggleBathTimer()">▶ 開始</button>
         </div>
+        <div id="bathDisplay" style="font-size:13px;color:var(--ink3);margin-top:6px;"></div>
       </div>
     </div>
 
@@ -1173,8 +1176,8 @@ function renderSummary(){
 function logDetail(log){
   if(log.type==='nursing'){
     const parts=[];
-    if(log.nurseLeft) parts.push(`左 ${log.nurseLeft} 秒`);
-    if(log.nurseRight) parts.push(`右 ${log.nurseRight} 秒`);
+    if(log.nurseLeft) parts.push(`左 ${fmtMinSec(log.nurseLeft)}`);
+    if(log.nurseRight) parts.push(`右 ${fmtMinSec(log.nurseRight)}`);
     return parts.join(' · ') || '哺乳';
   }
   if(log.type==='formula') return `配方奶 · ${log.amount||0}ml`;
@@ -1186,7 +1189,7 @@ function logDetail(log){
     if(log.diaperAmount) parts.push(log.diaperAmount);
     return parts.filter(Boolean).join(' · ');
   }
-  if(log.type==='bath') return `洗澡 ${log.bathMin||0} 秒`;
+  if(log.type==='bath') return `洗澡 ${fmtMinSec(log.bathMin||0)}`;
   if(log.type==='growth'){
     const parts=[];
     if(log.weight) parts.push(`體重 ${log.weight}g`);
@@ -1649,6 +1652,9 @@ function openAddType(type,baby){
   ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent='';
+  });
   document.getElementById('diaperTexture').value='';
   document.getElementById('diaperAmount').value='';
   diaperType='小便';
@@ -1690,9 +1696,28 @@ function resetTimers(){
   const rb=document.getElementById('nurseRightTimerBtn'); if(rb){rb.textContent='▶ 開始';rb.classList.remove('running');}
   const bb=document.getElementById('bathTimerBtn'); if(bb){bb.textContent='▶ 開始';bb.classList.remove('running');}
 }
+function fmtMinSec(totalSeconds){
+  totalSeconds = parseInt(totalSeconds) || 0;
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  if(mins > 0){
+    return secs > 0 ? `${mins} 分 ${secs} 秒` : `${mins} 分鐘`;
+  }
+  return `${secs} 秒`;
+}
+
+function updateMinSecDisplay(inputId, displayId){
+  const input = document.getElementById(inputId);
+  const display = document.getElementById(displayId);
+  if(!input || !display) return;
+  const secs = parseInt(input.value) || 0;
+  display.textContent = secs > 0 ? `＝ ${fmtMinSec(secs)}` : '';
+}
+
 function toggleNurseTimer(side){
   const btn = document.getElementById(side==='left'?'nurseLeftTimerBtn':'nurseRightTimerBtn');
   const input = document.getElementById(side==='left'?'nurseLeftMin':'nurseRightMin');
+  const displayId = side==='left'?'nurseLeftDisplay':'nurseRightDisplay';
   if(nurseTimers[side] && nurseTimers[side].running){
     clearInterval(nurseTimers[side].interval);
     nurseTimers[side].running = false;
@@ -1703,6 +1728,7 @@ function toggleNurseTimer(side){
     nurseTimers[side] = { running:true, interval: setInterval(()=>{
       const secs = Math.round((Date.now()-startTime)/1000);
       input.value = secs;
+      updateMinSecDisplay(input.id, displayId);
     }, 1000) };
     btn.textContent='⏸ 計時中'; btn.classList.add('running');
   }
@@ -1720,6 +1746,7 @@ function toggleBathTimer(){
     bathTimer = { running:true, interval: setInterval(()=>{
       const secs = Math.round((Date.now()-startTime)/1000);
       input.value = secs;
+      updateMinSecDisplay('bathMin','bathDisplay');
     }, 1000) };
     btn.textContent='⏸ 計時中'; btn.classList.add('running');
   }
