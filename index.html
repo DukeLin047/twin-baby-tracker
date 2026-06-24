@@ -1467,7 +1467,16 @@ function ageInMonths(birthStr, dateStr){
 
 function getWhoTable(metricKey, sex){
   if(metricKey === 'weight'){
-    return sex === 'girl' ? WHO_WEIGHT_GIRLS : WHO_WEIGHT_BOYS;
+    const table = sex === 'girl' ? WHO_WEIGHT_GIRLS : WHO_WEIGHT_BOYS;
+    // WHO weight table is in kg; app stores weight in grams, so convert.
+    return table.map(r => ({
+      m: r.m,
+      p3: r.p3 * 1000,
+      p15: r.p15 * 1000,
+      p50: r.p50 * 1000,
+      p85: r.p85 * 1000,
+      p97: r.p97 * 1000,
+    }));
   }
   return sex === 'girl' ? WHO_LENGTH_GIRLS : WHO_LENGTH_BOYS;
 }
