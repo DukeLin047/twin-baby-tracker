@@ -392,6 +392,22 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     </div>
   </div>
 
+  <!-- 成長曲線圖 -->
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">📈 成長曲線</div>
+      <div class="seg-btns" style="flex:0;gap:6px;" id="growthChartToggle">
+        <button class="seg-btn selected" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
+        <button class="seg-btn" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
+      </div>
+    </div>
+    <div class="weight-card">
+      <div id="growthChartLegend" style="display:flex;gap:14px;margin-bottom:10px;"></div>
+      <div id="growthChartSvgWrap" style="width:100%;overflow-x:auto;"></div>
+      <p id="growthChartEmpty" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:24px 0;">尚無足夠資料繪製曲線（需至少 1 筆紀錄）</p>
+    </div>
+  </div>
+
   <!-- 母乳庫存 -->
   <div class="section">
     <div class="section-title">🧊 母乳庫存</div>
@@ -1100,7 +1116,7 @@ function showView(name,btn){
   if(btn)btn.classList.add('active');
   if(name==='settings') renderSettingsView();
   const dateBar = document.getElementById('dateBar');
-  if(dateBar) dateBar.style.display = (name==='logs') ? 'none' : 'flex';
+  if(dateBar) dateBar.style.display = (name==='logs' || name==='weight') ? 'none' : 'flex';
   renderAll();
 }
 function selectBaby(baby){
@@ -1267,6 +1283,98 @@ function renderWeight(){
       <div style="display:flex;flex-direction:column;gap:8px;">${listHtml}</div>
     </div>`;
   }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
+  renderGrowthChart();
+}
+
+// ─── 成長曲線圖（SVG，無外部套件） ────────────────────
+let growthChartMetric = 'weight';
+function setGrowthChartMetric(metric, btn){
+  growthChartMetric = metric;
+  document.querySelectorAll('#growthChartToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  renderGrowthChart();
+}
+
+function renderGrowthChart(){
+  const wrap = document.getElementById('growthChartSvgWrap');
+  const legendEl = document.getElementById('growthChartLegend');
+  const emptyEl = document.getElementById('growthChartEmpty');
+  if(!wrap) return;
+
+  const ids = activeBabyIds();
+  const metricKey = growthChartMetric; // 'weight' or 'height'
+  const unit = metricKey === 'weight' ? 'g' : 'cm';
+
+  // Build per-baby sorted point series: [{x: dateMs, y: value}]
+  const series = ids.map((id, i) => {
+    const fieldKey = metricKey === 'weight' ? id : (id + '_h');
+    const points = state.weights
+      .filter(w => w[fieldKey])
+      .map(w => ({ x: new Date(w.date + 'T00:00:00').getTime(), y: parseFloat(w[fieldKey]) }))
+      .sort((a,b) => a.x - b.x);
+    return { id, color: BABY_COLORS[i].main, points };
+  }).filter(s => s.points.length > 0);
+
+  if(!series.length){
+    wrap.innerHTML = '';
+    emptyEl.style.display = 'block';
+    legendEl.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  legendEl.innerHTML = series.map(s => `
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);font-weight:600;">
+      <span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;"></span>${babyName(s.id)}
+    </span>`).join('');
+
+  // Chart geometry
+  const W = 600, H = 260, padL = 46, padR = 16, padT = 16, padB = 30;
+  const allX = series.flatMap(s => s.points.map(p => p.x));
+  const allY = series.flatMap(s => s.points.map(p => p.y));
+  let minX = Math.min(...allX), maxX = Math.max(...allX);
+  let minY = Math.min(...allY), maxY = Math.max(...allY);
+  if(minX === maxX){ minX -= 86400000; maxX += 86400000; }
+  if(minY === maxY){ minY -= 1; maxY += 1; }
+  const yPad = (maxY - minY) * 0.15 || 1;
+  minY -= yPad; maxY += yPad;
+
+  const xScale = (x) => padL + ((x - minX) / (maxX - minX)) * (W - padL - padR);
+  const yScale = (y) => H - padB - ((y - minY) / (maxY - minY)) * (H - padT - padB);
+
+  // Gridlines (4 horizontal)
+  let gridLines = '';
+  const gridCount = 4;
+  for(let i=0;i<=gridCount;i++){
+    const gy = padT + (i/gridCount)*(H-padT-padB);
+    const val = maxY - (i/gridCount)*(maxY-minY);
+    gridLines += `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="#2A3354" stroke-width="1" />`;
+    gridLines += `<text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="11" fill="#6B7290">${Math.round(val)}</text>`;
+  }
+
+  // X-axis date labels (first and last point per overall range)
+  const fmtAxisDate = (ms) => {
+    const d = new Date(ms);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  };
+  let xLabels = `<text x="${padL}" y="${H-8}" font-size="11" fill="#6B7290">${fmtAxisDate(minX)}</text>
+    <text x="${W-padR}" y="${H-8}" text-anchor="end" font-size="11" fill="#6B7290">${fmtAxisDate(maxX)}</text>`;
+
+  // Lines + points per baby
+  let seriesSvg = '';
+  series.forEach(s => {
+    const pathD = s.points.map((p,i) => `${i===0?'M':'L'} ${xScale(p.x).toFixed(1)} ${yScale(p.y).toFixed(1)}`).join(' ');
+    seriesSvg += `<path d="${pathD}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+    s.points.forEach(p => {
+      seriesSvg += `<circle cx="${xScale(p.x).toFixed(1)}" cy="${yScale(p.y).toFixed(1)}" r="4" fill="${s.color}" stroke="#0B0F1A" stroke-width="1.5" />`;
+    });
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;min-width:320px;" preserveAspectRatio="xMidYMid meet">
+    ${gridLines}
+    ${seriesSvg}
+    ${xLabels}
+  </svg>`;
 }
 
 function selectStatBaby(baby){
