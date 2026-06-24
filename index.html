@@ -1589,9 +1589,11 @@ function renderGrowthChart(){
   let seriesSvg = '';
   series.forEach(s => {
     const pathD = s.points.map((p,i) => `${i===0?'M':'L'} ${xScale(p.x).toFixed(1)} ${yScale(p.y).toFixed(1)}`).join(' ');
-    seriesSvg += `<path d="${pathD}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+    seriesSvg += `<path d="${pathD}" fill="none" stroke="${s.color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`;
     s.points.forEach(p => {
-      seriesSvg += `<circle cx="${xScale(p.x).toFixed(1)}" cy="${yScale(p.y).toFixed(1)}" r="4" fill="${s.color}" stroke="#0B0F1A" stroke-width="1.5" />`;
+      const cx = xScale(p.x).toFixed(1), cy = yScale(p.y).toFixed(1);
+      seriesSvg += `<circle cx="${cx}" cy="${cy}" r="8" fill="${s.color}" opacity="0.25" />`;
+      seriesSvg += `<circle cx="${cx}" cy="${cy}" r="6" fill="${s.color}" stroke="#F1EDE4" stroke-width="2" />`;
     });
   });
 
