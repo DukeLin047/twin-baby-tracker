@@ -584,6 +584,17 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     </div>
 
     <div class="weight-card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:10px;">🔐 家庭密碼</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;">
+        <span style="font-size:18px;font-weight:800;color:var(--gold);letter-spacing:2px;" id="settingsFamilyCode">------</span>
+        <button class="btn-danger" onclick="switchFamily()">切換家庭</button>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        把這組密碼分享給同一家庭的成員（例如另一半），輸入同一組密碼就能看到同一份紀錄。切換到別組密碼會看到完全不同（或全新）的資料。
+      </p>
+    </div>
+
+    <div class="weight-card" style="margin-bottom:14px;">
       <div class="section-title" style="margin-bottom:10px;">👤 目前使用者</div>
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;">
         <span style="font-size:16px;font-weight:700;color:var(--ink);" id="settingsCurrentUser">--</span>
@@ -783,6 +794,24 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 </div>
 
 <!-- USER LOGIN MODAL -->
+<div class="overlay" id="familyModal" style="align-items:center">
+  <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:center">🔐 家庭密碼</div>
+    <p style="font-size:14px;color:var(--ink2);text-align:center;margin-bottom:20px">
+      輸入你家的 6 位數密碼。<br>
+      第一次使用？自己設一個新密碼即可開始記錄；<br>
+      已經有密碼的家庭，輸入同一組密碼就能看到同一份資料。
+    </p>
+    <div class="field">
+      <label>6 位數密碼</label>
+      <input type="text" id="familyCodeInput" placeholder="例如：123456" inputmode="numeric" maxlength="6" pattern="[0-9]*">
+    </div>
+    <button class="btn-save" style="width:100%;margin-top:8px" onclick="submitFamilyCode()">進入 ✅</button>
+    <p id="familyCodeStatus" style="font-size:12px;color:var(--ink3);text-align:center;margin-top:12px;"></p>
+  </div>
+</div>
+
 <div class="overlay" id="loginModal" style="align-items:center">
   <div class="modal" style="border-radius:24px;max-width:380px;margin:20px">
     <div class="modal-handle"></div>
@@ -825,6 +854,17 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// ─── Family/household scoping ─────────────────────────
+// Each "family" is identified by a 6-digit code chosen by the user.
+// All data lives under families/{code}/... so different households never see each other's data.
+const LEGACY_FAMILY_CODE = '000000'; // existing pre-multi-family data lives here after one-time migration
+let familyCode = null;
+
+function fref(path){
+  if(!familyCode) throw new Error('familyCode not set yet');
+  return db.ref('families/' + familyCode + '/' + path);
+}
 
 // ─── Color palette per baby slot (muted jewel tones for dark theme) ──
 // ─── WHO Child Growth Standards (official, 0-24 months) ──
@@ -1053,26 +1093,26 @@ function setSyncStatus(status) {
 
 // ─── Firebase listeners ──────────────────────────────
 function startListening() {
-  db.ref('babies').on('value', snap => {
+  fref('babies').on('value', snap => {
     const val = snap.val();
     if(val) { state.babies = val.names || {}; state.babyCount = val.count || 2; }
     renderAll();
   });
-  db.ref('logs').on('value', snap => {
+  fref('logs').on('value', snap => {
     const val = snap.val();
     state.logs = val ? Object.entries(val).map(([id,v])=>({...v,id,baby:normalizeBabyId(v.baby)})) : [];
     renderAll();
   });
-  db.ref('weights').on('value', snap => {
+  fref('weights').on('value', snap => {
     const val = snap.val();
     state.weights = val ? Object.entries(val).map(([id,v])=>({...normalizeWeightEntry(v),id})) : [];
     renderAll();
   });
-  db.ref('inventoryAdjust').on('value', snap => {
+  fref('inventoryAdjust').on('value', snap => {
     state.inventoryAdjust = snap.val() || 0;
     renderAll();
   });
-  db.ref('memos').on('value', snap => {
+  fref('memos').on('value', snap => {
     const val = snap.val();
     state.memos = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
     renderAll();
@@ -1082,19 +1122,71 @@ function startListening() {
 
 // ─── Init ─────────────────────────────────────────────
 function init() {
-  startListening();
   setDefaultTime();
   renderTypeGrid();
   renderSetupNameFields();
   currentUserName = localStorage.getItem('userName') || '';
   updateUserBadge();
-  setTimeout(()=>{
-    if(!currentUserName){
-      document.getElementById('loginModal').classList.add('open');
-    } else if(!state.babies || !Object.keys(state.babies).length) {
-      document.getElementById('setupModal').classList.add('open');
-    }
-  }, 1500);
+
+  familyCode = localStorage.getItem('familyCode') || '';
+  if(familyCode && /^\d{6}$/.test(familyCode)){
+    enterFamily(familyCode, false);
+  } else {
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('familyModal').classList.add('open');
+  }
+}
+
+function submitFamilyCode(){
+  const input = document.getElementById('familyCodeInput').value.trim();
+  if(!/^\d{6}$/.test(input)){
+    document.getElementById('familyCodeStatus').textContent = '請輸入 6 位數字密碼';
+    return;
+  }
+  enterFamily(input, true);
+}
+
+let migrationChecked = false;
+
+function enterFamily(code, fromModal){
+  familyCode = code;
+  localStorage.setItem('familyCode', code);
+
+  if(fromModal){
+    document.getElementById('familyCodeStatus').textContent = '連線中…';
+  }
+
+  // One-time migration: if this is the very first code ever used on this device/browser session
+  // and the legacy root-level data (pre-multi-family) still exists, offer to claim it.
+  maybeMigrateLegacyData(code).then(()=>{
+    startListening();
+    if(fromModal) closeModal('familyModal');
+    setTimeout(()=>{
+      if(!currentUserName){
+        document.getElementById('loginModal').classList.add('open');
+      } else if(!state.babies || !Object.keys(state.babies).length) {
+        document.getElementById('setupModal').classList.add('open');
+      }
+    }, 1200);
+  });
+}
+
+function maybeMigrateLegacyData(code){
+  // Only attempt migration if nothing has been claimed under this code yet,
+  // AND legacy root-level data actually exists, AND no other family has already claimed it.
+  return db.ref('families/' + code).once('value').then(snap => {
+    if(snap.exists()) return; // this family code already has data, nothing to migrate
+    return db.ref('migrationClaimed').once('value').then(claimedSnap => {
+      if(claimedSnap.exists()) return; // legacy data already claimed by some other family code previously
+      return db.ref('babies').once('value').then(legacySnap => {
+        if(!legacySnap.exists()) return; // no legacy data to migrate
+        // Perform migration: copy root-level nodes into families/{code}/...
+        return Promise.all(['babies','logs','weights','memos','inventoryAdjust'].map(key=>
+          db.ref(key).once('value').then(s => s.exists() ? db.ref('families/'+code+'/'+key).set(s.val()) : null)
+        )).then(()=> db.ref('migrationClaimed').set(true));
+      });
+    });
+  }).catch(()=>{});
 }
 
 function saveLoginName(){
@@ -1131,6 +1223,12 @@ function logoutUser(){
   updateUserBadge();
   showView('home');
   setTimeout(()=>{ document.getElementById('loginModal').classList.add('open'); }, 250);
+}
+
+function switchFamily(){
+  if(!confirm('確定要切換到另一組家庭密碼嗎？畫面會重新載入，並要求輸入新的 6 位數密碼。')) return;
+  localStorage.removeItem('familyCode');
+  location.reload();
 }
 
 // ─── Baby count selector grid (shared by setup + settings) ──
@@ -1191,7 +1289,7 @@ function saveInitialSetup(){
     names[id] = { name: val, sex, birth };
   }
   setSyncStatus('syncing');
-  db.ref('babies').set({ count: setupBabyCount, names })
+  fref('babies').set({ count: setupBabyCount, names })
     .then(()=>{ setSyncStatus('ok'); closeModal('setupModal'); })
     .catch(()=>setSyncStatus('error'));
 }
@@ -1201,6 +1299,8 @@ let settingsBabyCount = 2;
 function renderSettingsView(){
   const userEl = document.getElementById('settingsCurrentUser');
   if(userEl) userEl.textContent = currentUserName ? `👤 ${currentUserName}` : '尚未設定';
+  const codeEl = document.getElementById('settingsFamilyCode');
+  if(codeEl) codeEl.textContent = familyCode || '------';
   settingsBabyCount = state.babyCount || 2;
   renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
   renderSettingsNameFields();
@@ -1246,7 +1346,7 @@ function saveBabySettings(){
     names[id] = { name: val, sex, birth };
   }
   setSyncStatus('syncing');
-  db.ref('babies').set({ count: settingsBabyCount, names })
+  fref('babies').set({ count: settingsBabyCount, names })
     .then(()=>{ setSyncStatus('ok'); showView('home'); })
     .catch(()=>setSyncStatus('error'));
 }
@@ -1913,7 +2013,7 @@ function saveMemo(){
   const btn = document.getElementById('saveMemoBtn');
   btn.disabled = true; btn.textContent = '儲存中…';
   setSyncStatus('syncing');
-  db.ref('memos').push(memo)
+  fref('memos').push(memo)
     .then(()=>{
       setSyncStatus('ok');
       btn.disabled = false; btn.textContent = '儲存並加入行事曆';
@@ -1937,7 +2037,7 @@ function saveMemo(){
 function deleteMemo(id){
   if(!confirm('確定要刪除這筆備忘？')) return;
   setSyncStatus('syncing');
-  db.ref('memos/'+id).remove()
+  fref('memos/'+id).remove()
     .then(()=>{ setSyncStatus('ok'); closeModal('memoDayModal'); })
     .catch(()=>setSyncStatus('error'));
 }
@@ -2141,7 +2241,7 @@ function saveLog(){
   const btn=document.getElementById('saveLogBtn');
   btn.disabled=true;btn.textContent='儲存中…';
   setSyncStatus('syncing');
-  db.ref('logs').push(log)
+  fref('logs').push(log)
     .then((ref)=>{
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
       btn.disabled=false;btn.textContent='儲存紀錄';
@@ -2150,9 +2250,9 @@ function saveLog(){
         const wEntry = { date: dateVal, sourceLogId: ref.key };
         if(log.weight) wEntry[selectedBabyInModal] = log.weight;
         if(log.height) wEntry[selectedBabyInModal+'_h'] = log.height;
-        db.ref('weights').push(wEntry).then((wRef)=>{
+        fref('weights').push(wEntry).then((wRef)=>{
           // link back so deleting the log can also remove the weights entry
-          db.ref('logs/'+ref.key+'/linkedWeightId').set(wRef.key).catch(()=>{});
+          fref('logs/'+ref.key+'/linkedWeightId').set(wRef.key).catch(()=>{});
         }).catch(()=>{});
       }
     })
@@ -2164,9 +2264,9 @@ function deleteLog(id){
   setSyncStatus('syncing');
   const logEntry = state.logs.find(l=>l.id===id);
   const linkedWeightId = logEntry ? logEntry.linkedWeightId : null;
-  const tasks = [db.ref('logs/'+id).remove()];
+  const tasks = [fref('logs/'+id).remove()];
   if(linkedWeightId){
-    tasks.push(db.ref('weights/'+linkedWeightId).remove());
+    tasks.push(fref('weights/'+linkedWeightId).remove());
   }
   Promise.all(tasks)
     .then(()=>{setSyncStatus('ok');closeModal('dayModal');})
@@ -2178,9 +2278,9 @@ function deleteWeightEntry(id){
   setSyncStatus('syncing');
   const weightEntry = state.weights.find(w=>w.id===id);
   const sourceLogId = weightEntry ? weightEntry.sourceLogId : null;
-  const tasks = [db.ref('weights/'+id).remove()];
+  const tasks = [fref('weights/'+id).remove()];
   if(sourceLogId){
-    tasks.push(db.ref('logs/'+sourceLogId).remove());
+    tasks.push(fref('logs/'+sourceLogId).remove());
   }
   Promise.all(tasks)
     .then(()=>setSyncStatus('ok'))
@@ -2222,7 +2322,7 @@ function saveWeight(){
   });
   if(!hasAny){alert('請至少填入一項數值');return;}
   setSyncStatus('syncing');
-  db.ref('weights').push(entry)
+  fref('weights').push(entry)
     .then(()=>{setSyncStatus('ok');closeModal('weightModal');})
     .catch(()=>setSyncStatus('error'));
 }
@@ -2231,7 +2331,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelectorAll('.overlay').forEach(ov=>{
     ov.addEventListener('click',e=>{
-      if(e.target===ov && ov.id!=='setupModal' && ov.id!=='loginModal') closeModal(ov.id);
+      if(e.target===ov && ov.id!=='setupModal' && ov.id!=='loginModal' && ov.id!=='familyModal') closeModal(ov.id);
     });
   });
 });
@@ -2258,7 +2358,7 @@ function adjustInventory(){
   if(isNaN(newTotal) || newTotal < 0){ alert('請輸入有效的數字'); return; }
   const newAdjust = newTotal - (pumped - used);
   setSyncStatus('syncing');
-  db.ref('inventoryAdjust').set(newAdjust)
+  fref('inventoryAdjust').set(newAdjust)
     .then(()=>setSyncStatus('ok'))
     .catch(()=>setSyncStatus('error'));
 }
