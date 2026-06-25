@@ -1439,20 +1439,28 @@ function getDayLogs(baby){
 }
 
 function renderSummary(){
-  const logs=getDayLogs(currentBaby);
+  // 餵食、換尿片、哺乳：嚴格只算目前選中的寶寶（或全部寶寶，但不含擠奶）
+  const ids = activeBabyIds();
+  let babyLogs = state.logs.filter(l=>isSameDay(new Date(l.time),currentDay));
+  if(currentBaby){
+    babyLogs = babyLogs.filter(l=>l.baby===currentBaby);
+  } else {
+    babyLogs = babyLogs.filter(l=>ids.includes(l.baby));
+  }
 
-  // 餵食次數/總量：哺乳、配方奶、瓶餵母乳、擠奶 全部算入
-  const feeds = logs.filter(l=>['nursing','formula','bottlemilk','pump'].includes(l.type));
-  const feedMl = logs.filter(l=>['formula','bottlemilk','pump'].includes(l.type))
+  const feeds = babyLogs.filter(l=>['nursing','formula','bottlemilk'].includes(l.type));
+  const feedMl = babyLogs.filter(l=>['formula','bottlemilk'].includes(l.type))
     .reduce((s,l)=>s+(parseInt(l.amount)||0),0);
 
-  const diapers = logs.filter(l=>l.type==='diaper');
+  const diapers = babyLogs.filter(l=>l.type==='diaper');
 
-  const nursingLogs = logs.filter(l=>l.type==='nursing');
+  const nursingLogs = babyLogs.filter(l=>l.type==='nursing');
   const leftSec = nursingLogs.reduce((s,l)=>s+(parseInt(l.nurseLeft)||0),0);
   const rightSec = nursingLogs.reduce((s,l)=>s+(parseInt(l.nurseRight)||0),0);
 
-  const pumpLogs = logs.filter(l=>l.type==='pump');
+  // 擠奶不屬於特定寶寶，永遠顯示當天全家總量
+  const sharedLogs = state.logs.filter(l=>isSameDay(new Date(l.time),currentDay) && l.baby==='shared');
+  const pumpLogs = sharedLogs.filter(l=>l.type==='pump');
   const pumpMl = pumpLogs.reduce((s,l)=>s+(parseInt(l.amount)||0),0);
 
   document.getElementById('summaryStrip').innerHTML=`
