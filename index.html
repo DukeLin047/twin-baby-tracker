@@ -1000,6 +1000,7 @@ let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
 let isSaving = false;
+let editingLogId = null;
 let currentType = 'nursing';
 let diaperType = '小便';
 let nurseTimers = { left:null, right:null };
@@ -1535,8 +1536,13 @@ function renderLogItems(logs,container){
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
       </div>
-      <div class="log-time">${fmtTime(log.time)}${recorderHtml}</div>
-      <button class="log-del" onclick="deleteLog('${log.id}')">✕</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <div class="log-time">${fmtTime(log.time)}${recorderHtml}</div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="openEditLog('${log.id}')" style="background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;padding:0;">✏️</button>
+          <button class="log-del" onclick="deleteLog('${log.id}')" style="padding:0;">✕</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -2146,6 +2152,9 @@ function updateForm(){
 // ─── Modal ────────────────────────────────────────────
 function openAdd(){openAddType('nursing',currentBaby||activeBabyIds()[0]);}
 function openAddType(type,baby){
+  editingLogId = null;
+  document.getElementById('modalTitleText').textContent = '新增紀錄';
+  document.getElementById('saveLogBtn').textContent = '儲存紀錄';
   selectedBabyInModal=baby;
   currentType = type;
   resetTimers();
@@ -2165,6 +2174,71 @@ function openAddType(type,baby){
   document.querySelectorAll('#fields-diaper .seg-btns .seg-btn').forEach((b,i)=>{
     b.classList.toggle('selected', i===0);
   });
+  document.getElementById('addModal').classList.add('open');
+}
+
+function openEditLog(id){
+  const log = state.logs.find(l=>l.id===id);
+  if(!log) return;
+  closeModal('dayModal');
+  editingLogId = id;
+  document.getElementById('modalTitleText').textContent = '編輯紀錄';
+  document.getElementById('saveLogBtn').textContent = '儲存修改';
+
+  selectedBabyInModal = (log.baby==='shared') ? (activeBabyIds()[0]) : log.baby;
+  currentType = log.type;
+  resetTimers();
+  renderTypeGrid();
+  updateForm();
+  renderBabyPicker();
+
+  // Pre-fill date/time
+  const dt = new Date(log.time);
+  document.getElementById('logDate').value = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+
+  // Clear all fields first
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(fid=>{
+    const el=document.getElementById(fid); if(el) el.value='';
+  });
+  ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
+    const el=document.getElementById(fid); if(el) el.textContent='';
+  });
+  document.getElementById('diaperTexture').value='';
+  document.getElementById('diaperAmount').value='';
+
+  // Pre-fill type-specific fields
+  if(log.type==='nursing'){
+    document.getElementById('nurseLeftMin').value = log.nurseLeft || '';
+    document.getElementById('nurseRightMin').value = log.nurseRight || '';
+    updateMinSecDisplay('nurseLeftMin','nurseLeftDisplay');
+    updateMinSecDisplay('nurseRightMin','nurseRightDisplay');
+  } else if(log.type==='formula' || log.type==='bottlemilk'){
+    document.getElementById('bottleAmount').value = log.amount || '';
+  } else if(log.type==='pump'){
+    document.getElementById('pumpAmount').value = log.amount || '';
+  } else if(log.type==='diaper'){
+    diaperType = log.diaperType || '小便';
+    document.getElementById('diaperTexture').value = log.diaperTexture || '';
+    document.getElementById('diaperAmount').value = log.diaperAmount || '';
+  } else if(log.type==='bath'){
+    document.getElementById('bathMin').value = log.bathMin || '';
+    updateMinSecDisplay('bathMin','bathDisplay');
+  } else if(log.type==='growth'){
+    document.getElementById('growthWeight').value = log.weight || '';
+    document.getElementById('growthHeight').value = log.height || '';
+  } else if(log.type==='temp'){
+    document.getElementById('tempValue').value = log.temp || '';
+  } else if(log.type==='note'){
+    document.getElementById('noteText').value = log.note || '';
+  }
+  if(log.type!=='note'){
+    document.getElementById('commonTag').value = log.tag || '';
+  }
+  document.querySelectorAll('#fields-diaper .seg-btns .seg-btn').forEach(b=>{
+    b.classList.toggle('selected', b.textContent.trim()===diaperType);
+  });
+
   document.getElementById('addModal').classList.add('open');
 }
 function renderBabyPicker(){
@@ -2270,7 +2344,10 @@ function saveLog(){
   const timeVal=document.getElementById('logTimeOnly').value;
   if(!dateVal||!timeVal){alert('請選擇日期與時間');return;}
   const time=`${dateVal}T${timeVal}`;
-  const log={baby: currentType==='pump' ? 'shared' : selectedBabyInModal, type:currentType,time,createdAt:Date.now(),recordedBy:currentUserName||''};
+  const isEdit = !!editingLogId;
+  const existingLog = isEdit ? state.logs.find(l=>l.id===editingLogId) : null;
+
+  const log={baby: currentType==='pump' ? 'shared' : selectedBabyInModal, type:currentType,time,createdAt: existingLog ? existingLog.createdAt : Date.now(),recordedBy:currentUserName||''};
 
   if(currentType==='nursing'){
     log.nurseLeft = document.getElementById('nurseLeftMin').value || '';
@@ -2299,8 +2376,41 @@ function saveLog(){
 
   isSaving=true;
   const btn=document.getElementById('saveLogBtn');
-  btn.disabled=true;btn.textContent='儲存中…';
+  btn.disabled=true;btn.textContent=isEdit?'更新中…':'儲存中…';
   setSyncStatus('syncing');
+
+  if(isEdit){
+    // Preserve any existing link to a weights entry
+    if(existingLog && existingLog.linkedWeightId){
+      log.linkedWeightId = existingLog.linkedWeightId;
+    }
+    fref('logs/'+editingLogId).set(log)
+      .then(()=>{
+        setSyncStatus('ok');closeModal('addModal');isSaving=false;
+        btn.disabled=false;btn.textContent='儲存紀錄';
+        resetTimers();
+        editingLogId = null;
+        // Keep the linked weights entry in sync with the edited growth log
+        if(currentType==='growth'){
+          if(existingLog && existingLog.linkedWeightId){
+            const wUpdate = { date: dateVal };
+            wUpdate[log.baby] = log.weight || null;
+            wUpdate[log.baby+'_h'] = log.height || null;
+            fref('weights/'+existingLog.linkedWeightId).update(wUpdate).catch(()=>{});
+          } else if(log.weight || log.height){
+            const wEntry = { date: dateVal, sourceLogId: editingLogId };
+            if(log.weight) wEntry[log.baby] = log.weight;
+            if(log.height) wEntry[log.baby+'_h'] = log.height;
+            fref('weights').push(wEntry).then((wRef)=>{
+              fref('logs/'+editingLogId+'/linkedWeightId').set(wRef.key).catch(()=>{});
+            }).catch(()=>{});
+          }
+        }
+      })
+      .catch(()=>{setSyncStatus('error');isSaving=false;btn.disabled=false;btn.textContent='儲存修改';alert('更新失敗，請確認網路連線');});
+    return;
+  }
+
   fref('logs').push(log)
     .then((ref)=>{
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
