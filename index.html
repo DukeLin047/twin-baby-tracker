@@ -22,14 +22,17 @@ const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <stop offset="0%" style="stop-color:#0B1120"/>
       <stop offset="100%" style="stop-color:#1C2536"/>
     </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E0C18A"/>
+      <stop offset="100%" style="stop-color:#C9A36A"/>
+    </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="110" fill="url(#g)"/>
-  <circle cx="256" cy="190" r="80" fill="none" stroke="#C9A36A" stroke-width="3" opacity="0.9"/>
-  <circle cx="232" cy="180" r="7" fill="#C9A36A"/>
-  <circle cx="280" cy="180" r="7" fill="#C9A36A"/>
-  <path d="M225 205 q31 22 62 0" stroke="#C9A36A" stroke-width="4" fill="none" stroke-linecap="round"/>
-  <text x="256" y="330" text-anchor="middle" font-family="serif" font-size="38" font-weight="700" fill="#F1EDE4">新生兒成長紀錄</text>
-  <text x="256" y="372" text-anchor="middle" font-family="sans-serif" font-size="22" letter-spacing="2" fill="#C9A36A">多　寶　日　誌</text>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.55"/>
+  <circle cx="207" cy="240" r="46" fill="none" stroke="url(#gold)" stroke-width="7"/>
+  <circle cx="305" cy="240" r="46" fill="none" stroke="url(#gold)" stroke-width="7"/>
+  <path d="M150 326c14-30 38-46 57-46s44 16 57 46" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M248 326c14-30 38-46 57-46s44 16 57 46" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
 </svg>`;
 const iconBlob = new Blob([iconSVG], {type:'image/svg+xml'});
 const iconURL = URL.createObjectURL(iconBlob);
@@ -107,7 +110,8 @@ header p{font-size:14px;color:var(--ink3);margin-top:3px;letter-spacing:1.5px;te
 
 .log-list{display:flex;flex-direction:column;gap:8px;}
 .log-item{background:var(--bg-elev2);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;border-left:2px solid transparent;border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
-.log-icon{font-size:22px;flex-shrink:0;margin-top:1px;filter:saturate(0.75);}
+.log-icon{flex-shrink:0;margin-top:1px;width:22px;height:22px;color:var(--gold);}
+.log-icon svg{width:100%;height:100%;display:block;}
 .log-body{flex:1;min-width:0;}
 .log-who{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .log-desc{font-size:16px;font-weight:600;margin-top:2px;color:var(--ink);}
@@ -197,6 +201,8 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .dot.note{background:#C9A36A;}
 .cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:14px;background:var(--bg-elev1);border-radius:var(--radius-sm);border:1px solid var(--border);}
 .cal-legend span{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink2);font-weight:600;}
+.legend-icon{width:13px;height:13px;display:inline-flex;color:var(--ink2);}
+.legend-icon svg{width:100%;height:100%;display:block;}
 .cal-legend .dot{width:7px;height:7px;}
 
 /* Distinct calendar block containers */
@@ -217,7 +223,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .type-cell{background:var(--bg-elev2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 4px;text-align:center;cursor:pointer;transition:all 0.15s;}
 .type-cell.active{background:var(--gold-dim);border-color:var(--gold);}
-.type-cell .tc-icon{font-size:24px;display:block;margin-bottom:4px;filter:saturate(0.75);}
+.type-cell .tc-icon{display:flex;align-items:center;justify-content:center;margin:0 auto 6px;width:24px;height:24px;color:var(--ink2);}
+.type-cell .tc-icon svg{width:100%;height:100%;display:block;}
+.type-cell.active .tc-icon{color:var(--gold);}
 .type-cell .tc-label{font-size:13px;font-weight:600;color:var(--ink2);}
 .type-cell.active .tc-label{color:var(--gold);}
 
@@ -230,7 +238,8 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .setting-row .dot-color{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
 
 #loadingScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--ink);}
-#loadingScreen .l-icon{font-size:52px;margin-bottom:18px;animation:pulse 1.8s infinite;filter:saturate(0.6);}
+#loadingScreen .l-icon{width:56px;height:56px;margin-bottom:18px;animation:pulse 1.8s infinite;color:var(--gold);}
+#loadingScreen .l-icon svg{width:100%;height:100%;display:block;}
 #loadingScreen .l-text{font-size:19px;font-weight:700;letter-spacing:1px;color:var(--gold);}
 #loadingScreen .l-sub{font-size:15px;color:var(--ink3);margin-top:8px;letter-spacing:0.5px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
@@ -239,7 +248,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 </head>
 <body>
 <div id="loadingScreen">
-  <div class="l-icon">👶</div>
+  <div class="l-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.7" cy="11" r="2.2"/><circle cx="14.3" cy="11" r="2.2"/><path d="M7 16c.6-1.3 1.6-2 2.3-2s1.7.7 2.3 2"/><path d="M11.6 16c.6-1.3 1.6-2 2.3-2s1.7.7 2.3 2"/></svg></div>
   <div class="l-text">多寶日誌</div>
   <div class="l-sub">連線中…</div>
 </div>
@@ -298,15 +307,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
       </div>
       <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-legend">
-        <span><i class="dot milk"></i>🍼 奶</span>
-        <span><i class="dot pump"></i>🤲 擠奶</span>
-        <span><i class="dot diaper"></i>👶 尿布</span>
-        <span><i class="dot bath"></i>🛁 洗澡</span>
-        <span><i class="dot growth"></i>📏 成長</span>
-        <span><i class="dot temp"></i>🌡️ 體溫</span>
-        <span><i class="dot note"></i>📝 備註</span>
-      </div>
+      <div class="cal-legend" id="calLegend"></div>
     </div>
   </div>
 
@@ -962,31 +963,44 @@ let currentUserName = '';
 let currentStatBaby = 'b1';
 let setupBabyCount = 2;
 
+// ─── Custom line-icon set (replaces emoji for a cohesive premium look) ──
+const ICON_SVG = {
+  nursing: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="2.4"/><path d="M4.5 19c0-3.8 2-7 4.5-7 1.1 0 2.1.5 2.9 1.4"/><path d="M9 13.3c2.6.4 4.8 2.6 5.5 5.7"/><circle cx="16" cy="17.5" r="1.3"/></svg>`,
+  formula: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="7" height="12" rx="1.8"/><path d="M9.8 8.5V6a1.3 1.3 0 0 1 1.3-1.3h1.8A1.3 1.3 0 0 1 14.2 6v2.5"/><line x1="8.5" y1="13.5" x2="15.5" y2="13.5"/></svg>`,
+  bottlemilk: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="7" height="10.5" rx="1.8"/><path d="M9.3 10V8a1.1 1.1 0 0 1 1.1-1.1h1.7A1.1 1.1 0 0 1 13.2 8v2"/><path d="M17 4.3c1 1.4 1.6 2.4 1.6 3.3a1.6 1.6 0 1 1-3.2 0c0-.9.6-1.9 1.6-3.3Z"/></svg>`,
+  pump: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5c0-2.6 1.9-4.7 4.3-4.7"/><path d="M20.5 12.5c0-2.6-1.9-4.7-4.3-4.7"/><path d="M3.5 12.5v2.3A5.2 5.2 0 0 0 8.7 20h6.6a5.2 5.2 0 0 0 5.2-5.2v-2.3"/></svg>`,
+  diaper: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5c2.4-1.4 5.1-2.1 8-2.1s5.6.7 8 2.1"/><path d="M4 8.5c0 4.3 2.2 8.7 8 8.7s8-4.4 8-8.7"/><path d="M9.5 11.8c.7.6 1.6.9 2.5.9s1.8-.3 2.5-.9"/></svg>`,
+  bath: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h17"/><path d="M4.5 12.5v2.2a4.3 4.3 0 0 0 4.3 4.3h6.4a4.3 4.3 0 0 0 4.3-4.3v-2.2"/><path d="M6.5 12.5V8.3a2.3 2.3 0 0 1 4.5-.7"/><path d="M9 19v1.3M15 19v1.3"/></svg>`,
+  growth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 9.5 11l4 3.2L19 6"/><circle cx="19" cy="6" r="1.4"/><path d="M4 21h16"/></svg>`,
+  temp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 14.2V5.3a1.8 1.8 0 1 0-3.5 0v8.9a3.6 3.6 0 1 0 3.5 0Z"/><line x1="14.7" y1="7" x2="16.5" y2="7"/><line x1="14.7" y1="9.5" x2="16.5" y2="9.5"/></svg>`,
+  note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l3 3v12.5a.5.5 0 0 1-.5.5H6.5a.5.5 0 0 1-.5-.5V4.5A.5.5 0 0 1 6 4Z"/><path d="M16 4v3h3"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14" x2="15.5" y2="14"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>`,
+};
+
 const TYPE_DEFS = [
-  {key:'nursing', icon:'🤱', label:'哺乳'},
-  {key:'formula', icon:'🍼', label:'配方奶'},
-  {key:'bottlemilk', icon:'🍼', label:'瓶餵母乳'},
-  {key:'pump', icon:'🤲', label:'擠奶'},
-  {key:'diaper', icon:'👶', label:'換尿片'},
-  {key:'bath', icon:'🦆', label:'洗澡'},
-  {key:'growth', icon:'📏', label:'成長記錄'},
-  {key:'temp', icon:'🌡️', label:'體溫'},
-  {key:'note', icon:'📝', label:'備註'},
+  {key:'nursing', icon:ICON_SVG.nursing, label:'哺乳'},
+  {key:'formula', icon:ICON_SVG.formula, label:'配方奶'},
+  {key:'bottlemilk', icon:ICON_SVG.bottlemilk, label:'瓶餵母乳'},
+  {key:'pump', icon:ICON_SVG.pump, label:'擠奶'},
+  {key:'diaper', icon:ICON_SVG.diaper, label:'換尿片'},
+  {key:'bath', icon:ICON_SVG.bath, label:'洗澡'},
+  {key:'growth', icon:ICON_SVG.growth, label:'成長記錄'},
+  {key:'temp', icon:ICON_SVG.temp, label:'體溫'},
+  {key:'note', icon:ICON_SVG.note, label:'備註'},
 ];
 
 function typeInfo(type){
   const map = {
-    nursing:{icon:'🤱',label:'哺乳'},
-    formula:{icon:'🍼',label:'配方奶'},
-    bottlemilk:{icon:'🍼',label:'瓶餵母乳'},
-    pump:{icon:'🤲',label:'擠奶'},
-    diaper:{icon:'👶',label:'換尿片'},
-    bath:{icon:'🦆',label:'洗澡'},
-    growth:{icon:'📏',label:'成長記錄'},
-    temp:{icon:'🌡️',label:'體溫'},
-    note:{icon:'📝',label:'備註'},
+    nursing:{icon:ICON_SVG.nursing,label:'哺乳'},
+    formula:{icon:ICON_SVG.formula,label:'配方奶'},
+    bottlemilk:{icon:ICON_SVG.bottlemilk,label:'瓶餵母乳'},
+    pump:{icon:ICON_SVG.pump,label:'擠奶'},
+    diaper:{icon:ICON_SVG.diaper,label:'換尿片'},
+    bath:{icon:ICON_SVG.bath,label:'洗澡'},
+    growth:{icon:ICON_SVG.growth,label:'成長記錄'},
+    temp:{icon:ICON_SVG.temp,label:'體溫'},
+    note:{icon:ICON_SVG.note,label:'備註'},
   };
-  return map[type] || {icon:'📋',label:type};
+  return map[type] || {icon:ICON_SVG.note,label:type};
 }
 
 function activeBabyIds(){
@@ -1843,10 +1857,31 @@ function calDotClass(type){
   if(type==='note') return 'note';
   return 'milk';
 }
+let legendRendered = false;
+function renderCalLegend(){
+  if(legendRendered) return; // static content, only needs to render once
+  const el = document.getElementById('calLegend');
+  if(!el) return;
+  const items = [
+    {dot:'milk', icon:ICON_SVG.formula, label:'奶'},
+    {dot:'pump', icon:ICON_SVG.pump, label:'擠奶'},
+    {dot:'diaper', icon:ICON_SVG.diaper, label:'尿布'},
+    {dot:'bath', icon:ICON_SVG.bath, label:'洗澡'},
+    {dot:'growth', icon:ICON_SVG.growth, label:'成長'},
+    {dot:'temp', icon:ICON_SVG.temp, label:'體溫'},
+    {dot:'note', icon:ICON_SVG.note, label:'備註'},
+  ];
+  el.innerHTML = items.map(it=>
+    `<span><i class="dot ${it.dot}"></i><span class="legend-icon">${it.icon}</span>${it.label}</span>`
+  ).join('');
+  legendRendered = true;
+}
+
 function renderCalendar(){
   const labelEl = document.getElementById('calMonthLabel');
   const gridEl = document.getElementById('calGrid');
   if(!labelEl || !gridEl) return;
+  renderCalLegend();
   labelEl.textContent = `${calMonth.getFullYear()} 年 ${calMonth.getMonth()+1} 月`;
   const dayTypes = {};
   state.logs.forEach(l=>{
