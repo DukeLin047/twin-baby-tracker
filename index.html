@@ -532,8 +532,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:8px;" id="statLatestDate"></div>
     </div>
 
-    <div class="stat-grid" id="statsGrid"></div>
-
     <div class="weight-card" style="margin-top:14px;">
       <div class="section-title" style="margin-bottom:10px;">🎯 每日餵奶目標</div>
       <div class="field-row">
@@ -1645,26 +1643,13 @@ function renderStats(){
   if(tEl) tEl.textContent = `${dayLabel}目標`;
   const aEl = document.getElementById('goalActualLabel');
   if(aEl) aEl.textContent = `${dayLabel}已喝`;
-  function calc(logs){
-    const milks=logs.filter(l=>['nursing','formula','bottlemilk'].includes(l.type));
-    const ml = logs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
-    return{
-      milk:milks.length, ml,
-      diaper:logs.filter(l=>l.type==='diaper').length,
-      bath:logs.filter(l=>l.type==='bath').length,
-    };
-  }
-  const c = babyColor(baby);
-  const s = calc(dayLogs.filter(l=>l.baby===baby));
-  document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card"><div class="s-label">餵食次數</div><div class="s-val" style="color:${c.main}">${s.milk}</div></div>
-    <div class="stat-card"><div class="s-label">總量(ml)</div><div class="s-val" style="color:${c.main}">${s.ml}</div></div>
-    <div class="stat-card"><div class="s-label">換尿片</div><div class="s-val" style="color:${c.main}">${s.diaper}</div></div>
-    <div class="stat-card"><div class="s-label">洗澡次數</div><div class="s-val" style="color:${c.main}">${s.bath}</div></div>`;
+
+  const babyLogs = dayLogs.filter(l=>l.baby===baby);
+  const actualMl = babyLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
 
   renderLatestGrowth(baby);
   loadFeedingGoalInputs(baby);
-  renderFeedingGoalProgress(baby, s.ml);
+  renderFeedingGoalProgress(baby, actualMl);
 }
 
 function renderLatestGrowth(baby){
