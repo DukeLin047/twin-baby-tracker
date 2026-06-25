@@ -948,7 +948,7 @@ const BABY_COLORS = [
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
 // ─── State ────────────────────────────────────────────
-let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[] };
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], feedingGoals:{} };
 let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
@@ -1073,6 +1073,10 @@ function startListening() {
   fref('memos').on('value', snap => {
     const val = snap.val();
     state.memos = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    renderAll();
+  });
+  fref('feedingGoals').on('value', snap => {
+    state.feedingGoals = snap.val() || {};
     renderAll();
   });
   setTimeout(()=>{ document.getElementById('loadingScreen').style.display='none'; }, 1200);
@@ -1764,28 +1768,39 @@ function renderLatestGrowth(baby){
     : '';
 }
 
-function feedingGoalKey(baby){ return `feedingGoal_${baby}`; }
 function loadFeedingGoalInputs(baby){
-  let goal = {};
-  try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
+  const goal = (state.feedingGoals && state.feedingGoals[baby]) || {};
   document.getElementById('goalWeight').value = goal.weight || '';
   document.getElementById('goalFeeds').value = goal.feeds || 8;
   document.getElementById('goalExtraMl').value = goal.extra || '';
 }
+let feedingGoalSaveTimer = null;
 function saveFeedingGoal(){
   const baby = currentStatBaby;
   const weight = document.getElementById('goalWeight').value;
   const feeds = document.getElementById('goalFeeds').value || 8;
   const extra = document.getElementById('goalExtraMl').value || 0;
-  localStorage.setItem(feedingGoalKey(baby), JSON.stringify({weight, feeds, extra}));
+
+  // Optimistic local update so the UI feels instant while we sync to Firebase
+  if(!state.feedingGoals) state.feedingGoals = {};
+  state.feedingGoals[baby] = {weight, feeds, extra};
+
   const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
   const dayLogs = state.logs.filter(l=>isSameDay(new Date(l.time),targetDay) && l.baby===baby);
   const ml = dayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
   renderFeedingGoalProgress(baby, ml);
+
+  // Debounce Firebase writes while the person is actively typing
+  clearTimeout(feedingGoalSaveTimer);
+  feedingGoalSaveTimer = setTimeout(()=>{
+    setSyncStatus('syncing');
+    fref('feedingGoals/'+baby).set({weight, feeds, extra})
+      .then(()=>setSyncStatus('ok'))
+      .catch(()=>setSyncStatus('error'));
+  }, 500);
 }
 function renderFeedingGoalProgress(baby, actualMl){
-  let goal = {};
-  try { goal = JSON.parse(localStorage.getItem(feedingGoalKey(baby)) || '{}'); } catch(e){}
+  const goal = (state.feedingGoals && state.feedingGoals[baby]) || {};
   const box = document.getElementById('goalResultBox');
   const weightG = parseFloat(goal.weight);
   if(!weightG || weightG<=0){ box.style.display = 'none'; return; }
