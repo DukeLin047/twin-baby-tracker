@@ -314,7 +314,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <div class="section">
     <div class="cal-block cal-block-memo">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div class="cal-block-title" style="margin:0;">📌 備忘行事曆</div>
+        <div class="cal-block-title" style="margin:0;">📌 寶寶行事曆</div>
         <button onclick="openMemoAdd()" class="memo-add-btn">＋ 新增備忘</button>
       </div>
       <div class="cal-header">
@@ -348,7 +348,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <div class="overlay" id="memoAddModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title"><span>📌</span>新增備忘</div>
+    <div class="modal-title" id="memoModalTitle"><span>📌</span>新增備忘</div>
     <div class="field">
       <label>對象</label>
       <div class="seg-btns" id="memoBabyPicker"></div>
@@ -1967,6 +1967,7 @@ function renderMemoCalendar(){
 }
 
 let memoDayModalDate = null;
+let editingMemoId = null;
 
 function openMemoDayDetail(year, month, day){
   const targetDate = new Date(year, month, day);
@@ -1989,7 +1990,10 @@ function openMemoDayDetail(year, month, day){
           <div class="log-desc">${m.content||''}</div>
           <div class="log-detail">${m.time?('⏰ '+m.time):'整天'}</div>
         </div>
-        <button class="log-del" onclick="deleteMemo('${m.id}')">✕</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <button onclick="openMemoEdit('${m.id}')" style="background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;">✏️</button>
+          <button class="log-del" onclick="deleteMemo('${m.id}')">✕</button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -1997,23 +2001,44 @@ function openMemoDayDetail(year, month, day){
 }
 
 function openMemoAdd(){
+  editingMemoId = null;
   selectedMemoBaby = 'all';
   renderMemoBabyPicker();
   const now = new Date();
+  document.getElementById('memoModalTitle').innerHTML = '<span>📌</span>新增備忘';
   document.getElementById('memoDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('memoContent').value = '';
+  document.getElementById('saveMemoBtn').textContent = '儲存並加入行事曆';
   document.getElementById('memoAddModal').classList.add('open');
 }
 
 function openMemoAddForDate(dateStr){
   closeModal('memoDayModal');
+  editingMemoId = null;
   selectedMemoBaby = 'all';
   renderMemoBabyPicker();
   const now = new Date();
+  document.getElementById('memoModalTitle').innerHTML = '<span>📌</span>新增備忘';
   document.getElementById('memoDate').value = dateStr || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('memoContent').value = '';
+  document.getElementById('saveMemoBtn').textContent = '儲存並加入行事曆';
+  document.getElementById('memoAddModal').classList.add('open');
+}
+
+function openMemoEdit(id){
+  const memo = state.memos.find(m=>m.id===id);
+  if(!memo) return;
+  closeModal('memoDayModal');
+  editingMemoId = id;
+  selectedMemoBaby = memo.baby || 'all';
+  renderMemoBabyPicker();
+  document.getElementById('memoModalTitle').innerHTML = '<span>✏️</span>編輯備忘';
+  document.getElementById('memoDate').value = memo.date || '';
+  document.getElementById('memoTime').value = memo.time || '';
+  document.getElementById('memoContent').value = memo.content || '';
+  document.getElementById('saveMemoBtn').textContent = '儲存修改';
   document.getElementById('memoAddModal').classList.add('open');
 }
 
@@ -2039,13 +2064,20 @@ function saveMemo(){
   if(!date || !content){ alert('請填入日期與事項內容'); return; }
   const memo = { baby: selectedMemoBaby, date, time, content, createdAt: Date.now(), recordedBy: currentUserName||'' };
   const btn = document.getElementById('saveMemoBtn');
-  btn.disabled = true; btn.textContent = '儲存中…';
+  const isEdit = !!editingMemoId;
+  btn.disabled = true; btn.textContent = isEdit ? '更新中…' : '儲存中…';
   setSyncStatus('syncing');
-  fref('memos').push(memo)
+
+  const savePromise = isEdit
+    ? fref('memos/'+editingMemoId).update(memo)
+    : fref('memos').push(memo);
+
+  savePromise
     .then(()=>{
       setSyncStatus('ok');
-      btn.disabled = false; btn.textContent = '儲存並加入行事曆';
+      btn.disabled = false; btn.textContent = isEdit ? '儲存修改' : '儲存並加入行事曆';
       closeModal('memoAddModal');
+      editingMemoId = null;
       // Export to calendar
       const who = selectedMemoBaby==='all' ? '' : `（${babyName(selectedMemoBaby)}）`;
       const label = `📌 ${content}${who}`;
@@ -2059,7 +2091,7 @@ function saveMemo(){
         exportToCalendar(target, label, 60);
       }
     })
-    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent='儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
+    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent=isEdit?'儲存修改':'儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
 }
 
 function deleteMemo(id){
