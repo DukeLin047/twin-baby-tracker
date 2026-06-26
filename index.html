@@ -328,6 +328,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   </div>
 </div>
 
+<div class="overlay" id="photoViewerModal" style="background:rgba(0,0,0,0.92);align-items:center;justify-content:center;z-index:9999;">
+  <button onclick="closeModal('photoViewerModal')" style="position:fixed;top:max(20px,env(safe-area-inset-top));right:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:center;">✕</button>
+  <img id="photoViewerImg" onclick="closeModal('photoViewerModal')" style="max-width:92vw;max-height:85vh;border-radius:8px;display:block;cursor:zoom-out;">
+</div>
+
 <div class="overlay" id="memoAddModal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1554,10 +1559,8 @@ function renderLogItems(logs,container){
 function viewMedicalPhoto(logId){
   const data = localStorage.getItem(medicalPhotoKey(logId));
   if(!data) return;
-  const w = window.open('');
-  if(w){
-    w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${data}" style="max-width:100%;max-height:100%;"></body>`);
-  }
+  document.getElementById('photoViewerImg').src = data;
+  document.getElementById('photoViewerModal').classList.add('open');
 }
 
 function renderTodayLog(){
