@@ -239,7 +239,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <header>
   <div class="header-top">
     <div>
-      <h1 id="appTitle">👶 <span class="hl">多寶日誌</span></h1>
+      <h1 id="appTitle" onclick="changeAppTitle()" style="cursor:pointer;">👶 <span class="hl" id="appTitleText">多寶日誌</span></h1>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
       <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
@@ -930,7 +930,7 @@ const BABY_COLORS = [
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
 // ─── State ────────────────────────────────────────────
-let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], feedingGoals:{} };
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], feedingGoals:{}, appTitle:'多寶日誌' };
 let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
@@ -1074,6 +1074,13 @@ function startListening() {
     state.feedingGoals = snap.val() || {};
     renderAll();
   });
+  fref('appTitle').on('value', snap => {
+    const val = snap.val();
+    state.appTitle = val || '多寶日誌';
+    const titleEl = document.getElementById('appTitleText');
+    if(titleEl) titleEl.textContent = state.appTitle;
+    document.title = state.appTitle;
+  });
   setTimeout(()=>{ document.getElementById('loadingScreen').style.display='none'; }, 1200);
 }
 
@@ -1171,6 +1178,17 @@ function changeUserName(){
   currentUserName = trimmed;
   localStorage.setItem('userName', trimmed);
   updateUserBadge();
+}
+
+function changeAppTitle(){
+  const newTitle = prompt('輸入新的 APP 名稱：', state.appTitle||'多寶日誌');
+  if(newTitle === null) return;
+  const trimmed = newTitle.trim();
+  if(!trimmed) return;
+  setSyncStatus('syncing');
+  fref('appTitle').set(trimmed)
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
 }
 
 function logoutUser(){
