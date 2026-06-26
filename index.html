@@ -686,7 +686,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
       <div class="field">
         <label>拍照存證（選填）</label>
-        <input type="file" id="medicalPhotoInput" accept="image/*" capture="environment" onchange="handleMedicalPhoto(event)" style="display:none;">
+        <input type="file" id="medicalPhotoInput" accept="image/*" onchange="handleMedicalPhoto(event)" style="display:none;">
         <button type="button" onclick="document.getElementById('medicalPhotoInput').click()" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:1.5px dashed var(--border);background:var(--bg-elev2);color:var(--ink2);font-size:14px;font-weight:600;cursor:pointer;">📷 拍照或選擇照片</button>
         <div id="medicalPhotoPreviewWrap" style="display:none;margin-top:10px;position:relative;">
           <img id="medicalPhotoPreview" style="width:100%;border-radius:var(--radius-sm);display:block;">
