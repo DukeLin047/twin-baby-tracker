@@ -179,6 +179,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .dot.bath{background:#7FB8D9;}
 .dot.growth{background:#8FBF9A;}
 .dot.temp{background:#D97A6E;}
+.dot.medical{background:#E0739E;}
 .dot.note{background:#C9A36A;}
 .cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:14px;background:var(--bg-elev1);border-radius:var(--radius-sm);border:1px solid var(--border);}
 .cal-legend span{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink2);font-weight:600;}
@@ -673,6 +674,25 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
     </div>
 
+    <div id="fields-medical" style="display:none">
+      <div class="field">
+        <label>症狀描述</label>
+        <textarea id="medicalText" placeholder="例如：大便顏色偏綠、有黏液、寶寶異常哭鬧…"></textarea>
+      </div>
+      <div class="field">
+        <label>拍照存證（選填）</label>
+        <input type="file" id="medicalPhotoInput" accept="image/*" capture="environment" onchange="handleMedicalPhoto(event)" style="display:none;">
+        <button type="button" onclick="document.getElementById('medicalPhotoInput').click()" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:1.5px dashed var(--border);background:var(--bg-elev2);color:var(--ink2);font-size:14px;font-weight:600;cursor:pointer;">📷 拍照或選擇照片</button>
+        <div id="medicalPhotoPreviewWrap" style="display:none;margin-top:10px;position:relative;">
+          <img id="medicalPhotoPreview" style="width:100%;border-radius:var(--radius-sm);display:block;">
+          <button type="button" onclick="removeMedicalPhoto()" style="position:absolute;top:8px;right:8px;background:rgba(11,15,26,0.75);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+        </div>
+        <p style="font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;">
+          ⚠️ 照片只會儲存在這支裝置本機，不會同步到雲端，也不會被其他家人看到。症狀文字描述會正常同步給全家。
+        </p>
+      </div>
+    </div>
+
     <div id="fields-note" style="display:none">
       <div class="field">
         <label>備註內容</label>
@@ -955,6 +975,7 @@ const ICON_SVG = {
   growth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 9.5 11l4 3.2L19 6"/><circle cx="19" cy="6" r="1.4"/><path d="M4 21h16"/></svg>`,
   temp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 14.2V5.3a1.8 1.8 0 1 0-3.5 0v8.9a3.6 3.6 0 1 0 3.5 0Z"/><line x1="14.7" y1="7" x2="16.5" y2="7"/><line x1="14.7" y1="9.5" x2="16.5" y2="9.5"/></svg>`,
   note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l3 3v12.5a.5.5 0 0 1-.5.5H6.5a.5.5 0 0 1-.5-.5V4.5A.5.5 0 0 1 6 4Z"/><path d="M16 4v3h3"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14" x2="15.5" y2="14"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>`,
+  medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M9.5 3.5v-1a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1"/><path d="M7 13h2.3l1.2-2.5 1.6 4 1.2-2.5H17"/></svg>`,
 };
 
 const TYPE_DEFS = [
@@ -966,6 +987,7 @@ const TYPE_DEFS = [
   {key:'bath', icon:ICON_SVG.bath, label:'洗澡'},
   {key:'growth', icon:ICON_SVG.growth, label:'成長記錄'},
   {key:'temp', icon:ICON_SVG.temp, label:'體溫'},
+  {key:'medical', icon:ICON_SVG.medical, label:'症狀紀錄'},
   {key:'note', icon:ICON_SVG.note, label:'備註'},
 ];
 
@@ -979,6 +1001,7 @@ function typeInfo(type){
     bath:{icon:ICON_SVG.bath,label:'洗澡'},
     growth:{icon:ICON_SVG.growth,label:'成長記錄'},
     temp:{icon:ICON_SVG.temp,label:'體溫'},
+    medical:{icon:ICON_SVG.medical,label:'症狀紀錄'},
     note:{icon:ICON_SVG.note,label:'備註'},
   };
   return map[type] || {icon:ICON_SVG.note,label:type};
@@ -1485,6 +1508,7 @@ function logDetail(log){
     return parts.join(' · ') || '成長記錄';
   }
   if(log.type==='temp') return `${log.temp||'--'} °C`;
+  if(log.type==='medical') return log.medicalText||'症狀紀錄';
   if(log.type==='note') return log.note||'';
   return '';
 }
@@ -1498,6 +1522,15 @@ function renderLogItems(logs,container){
     const c = isShared ? {main:'#A855F7'} : babyColor(log.baby);
     const noteHtml = log.tag ? `<div class="log-note">📌 ${log.tag}</div>` : '';
     const recorderHtml = log.recordedBy ? `<div class="log-recorder">✍️ ${log.recordedBy}</div>` : '';
+    let photoHtml = '';
+    if(log.type==='medical' && log.hasLocalPhoto){
+      const localPhoto = localStorage.getItem(medicalPhotoKey(log.id));
+      if(localPhoto){
+        photoHtml = `<img src="${localPhoto}" onclick="event.stopPropagation();viewMedicalPhoto('${log.id}')" style="width:100%;max-width:160px;border-radius:8px;margin-top:8px;cursor:pointer;display:block;">`;
+      } else {
+        photoHtml = `<div style="font-size:11px;color:var(--ink3);margin-top:6px;">📷 照片存在其他裝置上</div>`;
+      }
+    }
     return`<div class="log-item" style="border-left-color:${c.main};">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
@@ -1505,6 +1538,7 @@ function renderLogItems(logs,container){
         <div class="log-desc">${info.label}</div>
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
+        ${photoHtml}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
         <div class="log-time">${fmtTime(log.time)}${recorderHtml}</div>
@@ -1515,6 +1549,15 @@ function renderLogItems(logs,container){
       </div>
     </div>`;
   }).join('');
+}
+
+function viewMedicalPhoto(logId){
+  const data = localStorage.getItem(medicalPhotoKey(logId));
+  if(!data) return;
+  const w = window.open('');
+  if(w){
+    w.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${data}" style="max-width:100%;max-height:100%;"></body>`);
+  }
 }
 
 function renderTodayLog(){
@@ -1853,6 +1896,7 @@ function calDotClass(type){
   if(type==='bath') return 'bath';
   if(type==='growth') return 'growth';
   if(type==='temp') return 'temp';
+  if(type==='medical') return 'medical';
   if(type==='note') return 'note';
   return 'milk';
 }
@@ -1868,6 +1912,7 @@ function renderCalLegend(){
     {dot:'bath', icon:ICON_SVG.bath, label:'洗澡'},
     {dot:'growth', icon:ICON_SVG.growth, label:'成長'},
     {dot:'temp', icon:ICON_SVG.temp, label:'體溫'},
+    {dot:'medical', icon:ICON_SVG.medical, label:'症狀'},
     {dot:'note', icon:ICON_SVG.note, label:'備註'},
   ];
   el.innerHTML = items.map(it=>
@@ -2124,7 +2169,7 @@ function selectType(key){
   updateForm();
 }
 function updateForm(){
-  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','note'];
+  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','medical','note'];
   allFieldGroups.forEach(g=>{
     const el = document.getElementById('fields-'+g);
     if(el) el.style.display='none';
@@ -2144,6 +2189,8 @@ function updateForm(){
     document.getElementById('fields-growth').style.display='';
   } else if(currentType==='temp'){
     document.getElementById('fields-temp').style.display='';
+  } else if(currentType==='medical'){
+    document.getElementById('fields-medical').style.display='';
   } else if(currentType==='note'){
     document.getElementById('fields-note').style.display='';
   }
@@ -2153,6 +2200,81 @@ function updateForm(){
 
 // ─── Modal ────────────────────────────────────────────
 function openAdd(){openAddType('nursing',currentBaby||activeBabyIds()[0]);}
+// ─── 症狀紀錄照片（僅存本機，不同步雲端） ─────────────
+let currentMedicalPhotoData = null; // base64 string for the photo currently in the modal, or null
+
+function handleMedicalPhoto(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      // Resize down to max 900px on the longest side, compress as JPEG to keep localStorage usage small
+      const maxDim = 900;
+      let { width, height } = img;
+      if(width > height && width > maxDim){
+        height = Math.round(height * (maxDim/width));
+        width = maxDim;
+      } else if(height > maxDim){
+        width = Math.round(width * (maxDim/height));
+        height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      currentMedicalPhotoData = dataUrl;
+      showMedicalPhotoPreview(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showMedicalPhotoPreview(dataUrl){
+  document.getElementById('medicalPhotoPreview').src = dataUrl;
+  document.getElementById('medicalPhotoPreviewWrap').style.display = 'block';
+}
+
+function removeMedicalPhoto(){
+  currentMedicalPhotoData = null;
+  const input = document.getElementById('medicalPhotoInput');
+  if(input) input.value = '';
+  const wrap = document.getElementById('medicalPhotoPreviewWrap');
+  if(wrap) wrap.style.display = 'none';
+}
+
+function medicalPhotoKey(logId){ return `medicalPhoto_${familyCode}_${logId}`; }
+
+function saveMedicalPhotoForLog(logId){
+  if(currentMedicalPhotoData){
+    try {
+      localStorage.setItem(medicalPhotoKey(logId), currentMedicalPhotoData);
+    } catch(e){
+      console.warn('無法儲存照片到本機（可能空間不足）', e);
+    }
+  }
+}
+
+function loadMedicalPhotoForLog(logId){
+  const data = localStorage.getItem(medicalPhotoKey(logId));
+  if(data){
+    currentMedicalPhotoData = data;
+    showMedicalPhotoPreview(data);
+  } else {
+    removeMedicalPhoto();
+  }
+}
+
+function deleteMedicalPhotoForLog(logId){
+  localStorage.removeItem(medicalPhotoKey(logId));
+}
+
+function hasLocalMedicalPhoto(logId){
+  return !!localStorage.getItem(medicalPhotoKey(logId));
+}
+
 function openAddType(type,baby){
   editingLogId = null;
   document.getElementById('modalTitleText').textContent = '新增紀錄';
@@ -2164,7 +2286,7 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
@@ -2176,6 +2298,7 @@ function openAddType(type,baby){
   document.querySelectorAll('#fields-diaper .seg-btns .seg-btn').forEach((b,i)=>{
     b.classList.toggle('selected', i===0);
   });
+  removeMedicalPhoto();
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -2200,7 +2323,7 @@ function openEditLog(id){
   document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 
   // Clear all fields first
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','noteText','commonTag'].forEach(fid=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','noteText','commonTag'].forEach(fid=>{
     const el=document.getElementById(fid); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
@@ -2208,6 +2331,7 @@ function openEditLog(id){
   });
   document.getElementById('diaperTexture').value='';
   document.getElementById('diaperAmount').value='';
+  removeMedicalPhoto();
 
   // Pre-fill type-specific fields
   if(log.type==='nursing'){
@@ -2231,6 +2355,9 @@ function openEditLog(id){
     document.getElementById('growthHeight').value = log.height || '';
   } else if(log.type==='temp'){
     document.getElementById('tempValue').value = log.temp || '';
+  } else if(log.type==='medical'){
+    document.getElementById('medicalText').value = log.medicalText || '';
+    loadMedicalPhotoForLog(log.id);
   } else if(log.type==='note'){
     document.getElementById('noteText').value = log.note || '';
   }
@@ -2369,6 +2496,9 @@ function saveLog(){
     log.height = document.getElementById('growthHeight').value || '';
   } else if(currentType==='temp'){
     log.temp = document.getElementById('tempValue').value || '';
+  } else if(currentType==='medical'){
+    log.medicalText = document.getElementById('medicalText').value || '';
+    log.hasLocalPhoto = !!currentMedicalPhotoData;
   } else if(currentType==='note'){
     log.note = document.getElementById('noteText').value || '';
   }
@@ -2391,6 +2521,10 @@ function saveLog(){
         setSyncStatus('ok');closeModal('addModal');isSaving=false;
         btn.disabled=false;btn.textContent='儲存紀錄';
         resetTimers();
+        if(currentType==='medical'){
+          if(currentMedicalPhotoData) saveMedicalPhotoForLog(editingLogId);
+          else deleteMedicalPhotoForLog(editingLogId);
+        }
         editingLogId = null;
         // Keep the linked weights entry in sync with the edited growth log
         if(currentType==='growth'){
@@ -2418,6 +2552,9 @@ function saveLog(){
       setSyncStatus('ok');closeModal('addModal');isSaving=false;
       btn.disabled=false;btn.textContent='儲存紀錄';
       resetTimers();
+      if(currentType==='medical' && currentMedicalPhotoData){
+        saveMedicalPhotoForLog(ref.key);
+      }
       if(currentType==='growth' && (log.weight || log.height)){
         const wEntry = { date: dateVal, sourceLogId: ref.key };
         if(log.weight) wEntry[selectedBabyInModal] = log.weight;
@@ -2436,6 +2573,9 @@ function deleteLog(id){
   setSyncStatus('syncing');
   const logEntry = state.logs.find(l=>l.id===id);
   const linkedWeightId = logEntry ? logEntry.linkedWeightId : null;
+  if(logEntry && logEntry.type==='medical'){
+    deleteMedicalPhotoForLog(id);
+  }
   const tasks = [fref('logs/'+id).remove()];
   if(linkedWeightId){
     tasks.push(fref('weights/'+linkedWeightId).remove());
