@@ -1537,17 +1537,17 @@ function renderLogItems(logs,container){
     return`<div class="log-item" style="border-left-color:${c.main};">
       <div class="log-icon">${info.icon}</div>
       <div class="log-body">
-        <div class="log-who" style="color:${c.main};">${name}</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span class="log-time">${fmtTime(log.time)}</span>
+          <span class="log-who" style="color:${c.main};">${name}</span>
+        </div>
         <div class="log-desc">${info.label}</div>
         <div class="log-detail">${logDetail(log)}</div>
         ${noteHtml}
         ${photoHtml}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-        <div>
-          <div class="log-time">${fmtTime(log.time)}</div>
-          ${recorderHtml}
-        </div>
+        ${recorderHtml}
         <div style="display:flex;gap:10px;">
           <button onclick="openEditLog('${log.id}')" style="background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;padding:0;">✏️</button>
           <button class="log-del" onclick="deleteLog('${log.id}')" style="padding:0;">✕</button>
