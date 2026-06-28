@@ -403,14 +403,18 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 
   <!-- 餵食趨勢圖 -->
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div class="section-title" style="margin:0;">📊 餵食趨勢</div>
-      <div class="seg-btns" style="flex:0;gap:6px;flex-wrap:wrap;" id="feedChartToggle">
-        <button class="seg-btn selected" style="flex:0;padding:7px 12px;" onclick="setFeedChartMetric('nursing',this)">哺乳</button>
-        <button class="seg-btn" style="flex:0;padding:7px 12px;" onclick="setFeedChartMetric('formula',this)">配方奶</button>
-        <button class="seg-btn" style="flex:0;padding:7px 12px;" onclick="setFeedChartMetric('bottlemilk',this)">瓶餵母乳</button>
-        <button class="seg-btn" style="flex:0;padding:7px 12px;" onclick="setFeedChartMetric('pump',this)">擠奶</button>
-      </div>
+    <div class="section-title" style="margin-bottom:10px;">📊 餵食趨勢圖</div>
+    <div class="seg-btns" style="gap:6px;margin-bottom:10px;" id="feedChartToggle">
+      <button class="seg-btn selected" onclick="setFeedChartMetric('nursing',this)">哺乳</button>
+      <button class="seg-btn" onclick="setFeedChartMetric('formula',this)">配方奶</button>
+      <button class="seg-btn" onclick="setFeedChartMetric('bottlemilk',this)">瓶餵母乳</button>
+      <button class="seg-btn" onclick="setFeedChartMetric('pump',this)">擠奶</button>
+    </div>
+    <div class="seg-btns" style="gap:6px;margin-bottom:12px;" id="feedChartRangeToggle">
+      <button class="seg-btn" onclick="setFeedChartRange('1d',this)">最近1天</button>
+      <button class="seg-btn" onclick="setFeedChartRange('7d',this)">最近7天</button>
+      <button class="seg-btn selected" onclick="setFeedChartRange('30d',this)">最近30天</button>
+      <button class="seg-btn" onclick="setFeedChartRange('all',this)">全部</button>
     </div>
     <div class="weight-card">
       <div id="feedChartLegend" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;"></div>
@@ -1841,11 +1845,23 @@ function renderGrowthChart(){
 
 // ─── 餵食趨勢圖（哺乳／配方奶／瓶餵母乳／擠奶） ──────────
 let feedChartMetric = 'nursing';
+let feedChartRange = '30d'; // '1d' | '7d' | '30d' | 'all'
 function setFeedChartMetric(metric, btn){
   feedChartMetric = metric;
   document.querySelectorAll('#feedChartToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   renderFeedChart();
+}
+function setFeedChartRange(range, btn){
+  feedChartRange = range;
+  document.querySelectorAll('#feedChartRangeToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  renderFeedChart();
+}
+function feedChartCutoff(){
+  if(feedChartRange === 'all') return 0;
+  const days = { '1d':1, '7d':7, '30d':30 }[feedChartRange] || 30;
+  return Date.now() - days*86400000;
 }
 
 function renderFeedChart(){
@@ -1858,12 +1874,13 @@ function renderFeedChart(){
   const isPump = metric === 'pump';
   const isNursing = metric === 'nursing';
   const unit = isNursing ? '分鐘' : 'ml';
+  const cutoff = feedChartCutoff();
 
   let series = [];
   if(isPump){
     // Pump is not tied to a specific baby (baby === 'shared') — single combined series.
     const points = state.logs
-      .filter(l => l.type === 'pump' && l.amount)
+      .filter(l => l.type === 'pump' && l.amount && new Date(l.time).getTime() >= cutoff)
       .map(l => ({ x: new Date(l.time).getTime(), y: parseFloat(l.amount) }))
       .sort((a,b) => a.x - b.x);
     if(points.length) series.push({ id: 'shared', label: '擠奶', color: '#C9A36A', points });
@@ -1873,12 +1890,12 @@ function renderFeedChart(){
       let points;
       if(isNursing){
         points = state.logs
-          .filter(l => l.type === 'nursing' && l.baby === id && (l.nurseLeft || l.nurseRight))
+          .filter(l => l.type === 'nursing' && l.baby === id && (l.nurseLeft || l.nurseRight) && new Date(l.time).getTime() >= cutoff)
           .map(l => ({ x: new Date(l.time).getTime(), y: Math.round(((parseInt(l.nurseLeft)||0) + (parseInt(l.nurseRight)||0)) / 60 * 10) / 10 }))
           .sort((a,b) => a.x - b.x);
       } else {
         points = state.logs
-          .filter(l => l.type === metric && l.baby === id && l.amount)
+          .filter(l => l.type === metric && l.baby === id && l.amount && new Date(l.time).getTime() >= cutoff)
           .map(l => ({ x: new Date(l.time).getTime(), y: parseFloat(l.amount) }))
           .sort((a,b) => a.x - b.x);
       }
