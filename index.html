@@ -401,28 +401,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     </div>
   </div>
 
-  <!-- 餵食趨勢圖 -->
-  <div class="section">
-    <div class="section-title" style="margin-bottom:10px;">📊 餵食趨勢圖</div>
-    <div class="seg-btns" style="gap:6px;margin-bottom:10px;" id="feedChartToggle">
-      <button class="seg-btn selected" onclick="setFeedChartMetric('nursing',this)">哺乳</button>
-      <button class="seg-btn" onclick="setFeedChartMetric('formula',this)">配方奶</button>
-      <button class="seg-btn" onclick="setFeedChartMetric('bottlemilk',this)">瓶餵母乳</button>
-      <button class="seg-btn" onclick="setFeedChartMetric('pump',this)">擠奶</button>
-    </div>
-    <div class="seg-btns" style="gap:6px;margin-bottom:12px;" id="feedChartRangeToggle">
-      <button class="seg-btn" onclick="setFeedChartRange('1d',this)">最近1天</button>
-      <button class="seg-btn" onclick="setFeedChartRange('7d',this)">最近7天</button>
-      <button class="seg-btn selected" onclick="setFeedChartRange('30d',this)">最近30天</button>
-      <button class="seg-btn" onclick="setFeedChartRange('all',this)">全部</button>
-    </div>
-    <div class="weight-card">
-      <div id="feedChartLegend" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;"></div>
-      <div id="feedChartSvgWrap" style="width:100%;overflow-x:auto;"></div>
-      <p id="feedChartEmpty" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:24px 0;">尚無資料</p>
-    </div>
-  </div>
-
   <!-- 母乳庫存 -->
   <div class="section">
     <div class="section-title">🧊 母乳庫存</div>
@@ -1673,7 +1651,6 @@ function renderWeight(){
     </div>`;
   }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
   renderGrowthChart();
-  renderFeedChart();
 }
 
 // ─── 成長曲線圖（SVG，無外部套件） ────────────────────
@@ -1841,135 +1818,6 @@ function renderGrowthChart(){
     ${pctLabels}
   </svg>
   <p style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">資料來源：WHO Child Growth Standards（世界衛生組織兒童生長標準）</p>`;
-}
-
-// ─── 餵食趨勢圖（哺乳／配方奶／瓶餵母乳／擠奶） ──────────
-let feedChartMetric = 'nursing';
-let feedChartRange = '30d'; // '1d' | '7d' | '30d' | 'all'
-function setFeedChartMetric(metric, btn){
-  feedChartMetric = metric;
-  document.querySelectorAll('#feedChartToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  renderFeedChart();
-}
-function setFeedChartRange(range, btn){
-  feedChartRange = range;
-  document.querySelectorAll('#feedChartRangeToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  renderFeedChart();
-}
-function feedChartCutoff(){
-  if(feedChartRange === 'all') return 0;
-  const days = { '1d':1, '7d':7, '30d':30 }[feedChartRange] || 30;
-  return Date.now() - days*86400000;
-}
-
-function renderFeedChart(){
-  const wrap = document.getElementById('feedChartSvgWrap');
-  const legendEl = document.getElementById('feedChartLegend');
-  const emptyEl = document.getElementById('feedChartEmpty');
-  if(!wrap) return;
-
-  const metric = feedChartMetric; // 'nursing' | 'formula' | 'bottlemilk' | 'pump'
-  const isPump = metric === 'pump';
-  const isNursing = metric === 'nursing';
-  const unit = isNursing ? '分鐘' : 'ml';
-  const cutoff = feedChartCutoff();
-
-  let series = [];
-  if(isPump){
-    // Pump is not tied to a specific baby (baby === 'shared') — single combined series.
-    const points = state.logs
-      .filter(l => l.type === 'pump' && l.amount && new Date(l.time).getTime() >= cutoff)
-      .map(l => ({ x: new Date(l.time).getTime(), y: parseFloat(l.amount) }))
-      .sort((a,b) => a.x - b.x);
-    if(points.length) series.push({ id: 'shared', label: '擠奶', color: '#C9A36A', points });
-  } else {
-    const ids = activeBabyIds();
-    ids.forEach((id, i) => {
-      let points;
-      if(isNursing){
-        points = state.logs
-          .filter(l => l.type === 'nursing' && l.baby === id && (l.nurseLeft || l.nurseRight) && new Date(l.time).getTime() >= cutoff)
-          .map(l => ({ x: new Date(l.time).getTime(), y: Math.round(((parseInt(l.nurseLeft)||0) + (parseInt(l.nurseRight)||0)) / 60 * 10) / 10 }))
-          .sort((a,b) => a.x - b.x);
-      } else {
-        points = state.logs
-          .filter(l => l.type === metric && l.baby === id && l.amount && new Date(l.time).getTime() >= cutoff)
-          .map(l => ({ x: new Date(l.time).getTime(), y: parseFloat(l.amount) }))
-          .sort((a,b) => a.x - b.x);
-      }
-      if(points.length) series.push({ id, label: babyName(id), color: BABY_COLORS[i].main, points });
-    });
-  }
-
-  if(!series.length){
-    wrap.innerHTML = '';
-    legendEl.innerHTML = '';
-    emptyEl.textContent = '尚無資料（新增紀錄後這裡會自動畫出趨勢）';
-    emptyEl.style.display = 'block';
-    return;
-  }
-  emptyEl.style.display = 'none';
-
-  legendEl.innerHTML = series.map(s => `
-    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);font-weight:600;">
-      <span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;"></span>${s.label}
-    </span>`).join('');
-
-  // Chart geometry
-  const W = 640, H = 280, padL = 50, padR = 16, padT = 16, padB = 36;
-  const allX = series.flatMap(s => s.points.map(p => p.x));
-  const allY = series.flatMap(s => s.points.map(p => p.y));
-  let minX = Math.min(...allX), maxX = Math.max(...allX);
-  let minY = 0, maxY = Math.max(...allY);
-  if(minX === maxX){ minX -= 3600000; maxX += 3600000; }
-  const yPad = (maxY - minY) * 0.12 || 1;
-  maxY += yPad;
-
-  const xScale = (x) => padL + ((x - minX) / (maxX - minX)) * (W - padL - padR);
-  const yScale = (y) => H - padB - ((y - minY) / (maxY - minY)) * (H - padT - padB);
-
-  // Y gridlines
-  let gridLines = '';
-  const gridCount = 4;
-  for(let i=0;i<=gridCount;i++){
-    const gy = padT + (i/gridCount)*(H-padT-padB);
-    const val = maxY - (i/gridCount)*(maxY-minY);
-    gridLines += `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="#2A3354" stroke-width="1" />`;
-    gridLines += `<text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="11" fill="#6B7290">${Math.round(val)}</text>`;
-  }
-
-  // X-axis date labels — spread across available width, max ~6 labels regardless of date range
-  const totalDays = Math.max(1, Math.round((maxX-minX)/86400000));
-  const labelCount = Math.min(6, totalDays+1);
-  let xLabels = '';
-  for(let i=0;i<=labelCount;i++){
-    const t = minX + (i/labelCount)*(maxX-minX);
-    const d = new Date(t);
-    const gx = xScale(t);
-    xLabels += `<text x="${gx}" y="${H-12}" text-anchor="middle" font-size="10" fill="#6B7290">${d.getMonth()+1}/${d.getDate()}</text>`;
-    xLabels += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${H-padB}" stroke="#1E2745" stroke-width="1" />`;
-  }
-  xLabels += `<text x="${(padL+W-padR)/2}" y="${H-1}" text-anchor="middle" font-size="10" fill="#6B7290">日期</text>`;
-
-  // Series lines + points
-  let seriesSvg = '';
-  series.forEach(s => {
-    const pathD = s.points.map((p,i) => `${i===0?'M':'L'} ${xScale(p.x).toFixed(1)} ${yScale(p.y).toFixed(1)}`).join(' ');
-    seriesSvg += `<path d="${pathD}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.85" />`;
-    s.points.forEach(p => {
-      const cx = xScale(p.x).toFixed(1), cy = yScale(p.y).toFixed(1);
-      seriesSvg += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="${s.color}" stroke="#0B0F1A" stroke-width="1.2" />`;
-    });
-  });
-
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;min-width:480px;" preserveAspectRatio="xMidYMid meet">
-    ${gridLines}
-    ${seriesSvg}
-    ${xLabels}
-  </svg>
-  <p style="font-size:11px;color:var(--ink3);margin-top:8px;text-align:center;">單位：${unit}　·　每個點代表一筆紀錄</p>`;
 }
 
 function selectStatBaby(baby){
