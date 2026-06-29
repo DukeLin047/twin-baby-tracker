@@ -522,6 +522,19 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         ⚠️ 公式：每日總奶量 = 體重(kg) × 150ml，每餐建議奶量 = 每日總奶量 ÷ 每日餐數，僅供參考，請依寶寶實際狀況調整。追加奶量會加總計入今日目標。
       </p>
     </div>
+
+    <div class="weight-card" style="margin-top:14px;">
+      <div class="section-title" style="margin-bottom:10px;">⏰ 餵奶時間表</div>
+      <div class="field">
+        <label>每隔幾小時餵一餐</label>
+        <input type="number" id="feedIntervalHours" placeholder="例如：3" min="0.5" step="0.5" oninput="renderFeedScheduleForBaby(currentStatBaby)">
+      </div>
+      <div id="feedScheduleResult" style="display:none;margin-top:10px;">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;" id="feedScheduleBaseInfo"></div>
+        <div id="feedScheduleList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <p id="feedScheduleEmpty" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;">今天還沒有餵奶紀錄，無法計算時間表（需要至少一筆哺乳／配方奶／瓶餵母乳紀錄作為起算基準）</p>
+    </div>
   </div>
 </div>
 
@@ -1915,6 +1928,7 @@ function renderStats(){
   renderLatestGrowth(baby);
   loadFeedingGoalInputs(baby);
   renderFeedingGoalProgress(baby, actualMl);
+  renderFeedScheduleForBaby(baby);
 }
 
 function renderLatestGrowth(baby){
@@ -1947,6 +1961,8 @@ function loadFeedingGoalInputs(baby){
   document.getElementById('goalWeight').value = goal.weight || '';
   document.getElementById('goalFeeds').value = goal.feeds || 8;
   document.getElementById('goalExtraMl').value = goal.extra || '';
+  const intervalEl = document.getElementById('feedIntervalHours');
+  if(intervalEl) intervalEl.value = goal.intervalHours || '';
 }
 let feedingGoalSaveTimer = null;
 function saveFeedingGoal(){
@@ -1954,25 +1970,91 @@ function saveFeedingGoal(){
   const weight = document.getElementById('goalWeight').value;
   const feeds = document.getElementById('goalFeeds').value || 8;
   const extra = document.getElementById('goalExtraMl').value || 0;
+  const intervalHours = document.getElementById('feedIntervalHours').value || '';
 
   // Optimistic local update so the UI feels instant while we sync to Firebase
   if(!state.feedingGoals) state.feedingGoals = {};
-  state.feedingGoals[baby] = {weight, feeds, extra};
+  state.feedingGoals[baby] = {weight, feeds, extra, intervalHours};
 
   const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
   const dayLogs = state.logs.filter(l=>isSameDay(new Date(l.time),targetDay) && l.baby===baby);
   const ml = dayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
   renderFeedingGoalProgress(baby, ml);
+  renderFeedScheduleForBaby(baby);
 
   // Debounce Firebase writes while the person is actively typing
   clearTimeout(feedingGoalSaveTimer);
   feedingGoalSaveTimer = setTimeout(()=>{
     setSyncStatus('syncing');
-    fref('feedingGoals/'+baby).set({weight, feeds, extra})
+    fref('feedingGoals/'+baby).set({weight, feeds, extra, intervalHours})
       .then(()=>setSyncStatus('ok'))
       .catch(()=>setSyncStatus('error'));
   }, 500);
 }
+
+function renderFeedScheduleForBaby(baby){
+  const resultBox = document.getElementById('feedScheduleResult');
+  const emptyBox = document.getElementById('feedScheduleEmpty');
+  const listEl = document.getElementById('feedScheduleList');
+  const baseInfoEl = document.getElementById('feedScheduleBaseInfo');
+  if(!resultBox || !emptyBox || !listEl) return;
+
+  const goal = (state.feedingGoals && state.feedingGoals[baby]) || {};
+  const intervalHours = parseFloat(goal.intervalHours);
+
+  if(!intervalHours || intervalHours <= 0){
+    resultBox.style.display = 'none';
+    emptyBox.style.display = 'none';
+    return;
+  }
+
+  // Find today's feeding logs (哺乳/配方奶/瓶餵母乳) for this baby, sorted by time
+  const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
+  const feedLogs = state.logs
+    .filter(l => l.baby === baby && ['nursing','formula','bottlemilk'].includes(l.type) && isSameDay(new Date(l.time), targetDay))
+    .sort((a,b) => new Date(a.time) - new Date(b.time));
+
+  if(!feedLogs.length){
+    resultBox.style.display = 'none';
+    emptyBox.style.display = 'block';
+    return;
+  }
+  emptyBox.style.display = 'none';
+  resultBox.style.display = 'block';
+
+  const firstFeedTime = new Date(feedLogs[0].time);
+  const c = babyColor(baby);
+  baseInfoEl.innerHTML = `以今天第一餐 <strong style="color:${c.main}">${String(firstFeedTime.getHours()).padStart(2,'0')}:${String(firstFeedTime.getMinutes()).padStart(2,'0')}</strong> 為基準，每隔 ${intervalHours} 小時：`;
+
+  const intervalMs = intervalHours * 3600000;
+  const now = Date.now();
+  const slots = [];
+  // Generate today's full schedule starting from the first feed, up to 23:59
+  let t = firstFeedTime.getTime();
+  const dayEnd = new Date(targetDay); dayEnd.setHours(23,59,59,999);
+  let slotIndex = 1;
+  while(t <= dayEnd.getTime()){
+    slots.push({ time: new Date(t), index: slotIndex, isPast: t < now });
+    t += intervalMs;
+    slotIndex++;
+  }
+
+  listEl.innerHTML = slots.map(s => {
+    const hh = String(s.time.getHours()).padStart(2,'0');
+    const mm = String(s.time.getMinutes()).padStart(2,'0');
+    const isNext = !s.isPast && slots.find(x => !x.isPast) === s;
+    const style = isNext
+      ? `background:${c.light};border:1.5px solid ${c.main};`
+      : s.isPast
+        ? `background:var(--bg-elev2);border:1px solid var(--border);opacity:0.55;`
+        : `background:var(--bg-elev2);border:1px solid var(--border);`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;${style}">
+      <span style="font-weight:700;font-size:15px;color:var(--ink);">第 ${s.index} 餐</span>
+      <span style="font-weight:800;font-size:16px;color:${isNext ? c.main : 'var(--ink2)'};">${hh}:${mm}${isNext ? '　🔔 下一餐' : ''}</span>
+    </div>`;
+  }).join('');
+}
+
 function renderFeedingGoalProgress(baby, actualMl){
   const goal = (state.feedingGoals && state.feedingGoals[baby]) || {};
   const box = document.getElementById('goalResultBox');
