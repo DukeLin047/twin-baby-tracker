@@ -950,12 +950,33 @@ const WHO_LENGTH_GIRLS = [
 ];
 
 
+// Default per-slot colors (used when a baby has no manually chosen color yet)
 const BABY_COLORS = [
   {key:'c1', main:'#5C7A99', light:'#E2E9F0', mid:'#8FAEC9'},
   {key:'c2', main:'#4F8576', light:'#E0EEE8', mid:'#7DB0A2'},
   {key:'c3', main:'#A87E4C', light:'#F0E6D8', mid:'#C9A36A'},
   {key:'c4', main:'#B0654A', light:'#F2E2DC', mid:'#CB8D74'},
   {key:'c5', main:'#8E6B9C', light:'#EBE2EF', mid:'#B196C0'},
+];
+// Full selectable palette (16 colors) — used in the settings color picker.
+// Each baby can pick any of these regardless of their slot position.
+const COLOR_PALETTE = [
+  {key:'blue',    main:'#5C7A99', light:'#E2E9F0', mid:'#8FAEC9', label:'霧藍'},
+  {key:'teal',    main:'#4F8576', light:'#E0EEE8', mid:'#7DB0A2', label:'墨綠'},
+  {key:'tan',     main:'#A87E4C', light:'#F0E6D8', mid:'#C9A36A', label:'古銅'},
+  {key:'terra',   main:'#B0654A', light:'#F2E2DC', mid:'#CB8D74', label:'赭石'},
+  {key:'mauve',   main:'#8E6B9C', light:'#EBE2EF', mid:'#B196C0', label:'紫丁香'},
+  {key:'rose',    main:'#B05C7A', light:'#F2E2E8', mid:'#CB8DA3', label:'玫瑰粉'},
+  {key:'sage',    main:'#6B8E5A', light:'#E6EDE0', mid:'#96B485', label:'鼠尾草綠'},
+  {key:'sky',     main:'#4A8FB8', light:'#DDEBF2', mid:'#7CB3D1', label:'天空藍'},
+  {key:'mustard', main:'#B89342', light:'#F2EBD8', mid:'#D1B570', label:'芥末黃'},
+  {key:'plum',    main:'#7A5C8E', light:'#E8E2EF', mid:'#A38AB6', label:'梅紫'},
+  {key:'coral',   main:'#C16B52', light:'#F4E3DC', mid:'#D89980', label:'珊瑚橘'},
+  {key:'forest',  main:'#3F7A5C', light:'#DDEAE3', mid:'#72A68C', label:'森林綠'},
+  {key:'slate',   main:'#5A6B7A', light:'#E3E7EB', mid:'#8A9AA8', label:'石板灰'},
+  {key:'wine',    main:'#8E4A4F', light:'#EDE0E1', mid:'#B57A7E', label:'酒紅'},
+  {key:'gold',    main:'#B8924A', light:'#F3ECDC', mid:'#D9C190', label:'香檳金'},
+  {key:'indigo',  main:'#4F5C8E', light:'#E2E4EF', mid:'#8089B6', label:'靛藍'},
 ];
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
@@ -1051,8 +1072,19 @@ function babyBirth(id){
   if(!entry || typeof entry === 'string') return '';
   return entry.birth || '';
 }
+function babyColorKey(id){
+  id = normalizeBabyId(id);
+  const entry = state.babies && state.babies[id];
+  if(!entry || typeof entry === 'string') return '';
+  return entry.colorKey || '';
+}
 function babyColor(id){
   id = normalizeBabyId(id);
+  const chosenKey = babyColorKey(id);
+  if(chosenKey){
+    const found = COLOR_PALETTE.find(c => c.key === chosenKey);
+    if(found) return found;
+  }
   const idx = BABY_IDS.indexOf(id);
   return BABY_COLORS[idx] || BABY_COLORS[0];
 }
@@ -1241,16 +1273,26 @@ function switchFamily(){
 
 // ─── Baby count selector grid (shared by setup + settings) ──
 // Simpler approach: re-render via global handler functions
+let setupColorChoices = {}; // {babyId: colorKey}
+
 function renderSetupNameFields(){
   renderBabyCountGridSimple('setupCountGrid', setupBabyCount, 'setup');
   const container = document.getElementById('setupNameFields');
   const ids = BABY_IDS.slice(0, setupBabyCount);
   container.innerHTML = ids.map((id,i)=>{
-    const c = BABY_COLORS[i];
+    if(!(id in setupColorChoices)){
+      setupColorChoices[id] = BABY_COLORS[i].key;
+    }
+    const swatches = COLOR_PALETTE.map(col => {
+      const isSelected = setupColorChoices[id] === col.key;
+      return `<button type="button" onclick="pickSetupBabyColor('${id}','${col.key}')" title="${col.label}"
+        style="width:32px;height:32px;border-radius:50%;background:${col.main};border:${isSelected ? '3px solid var(--accent-gold)' : '2px solid transparent'};box-shadow:${isSelected ? '0 0 0 2px var(--bg-elev2)' : 'none'};cursor:pointer;flex-shrink:0;padding:0;"></button>`;
+    }).join('');
+    const c = COLOR_PALETTE.find(col => col.key === setupColorChoices[id]) || BABY_COLORS[i];
     return `<div class="field" style="background:var(--bg-elev2);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);">
       <label><span class="dot-color" style="background:${c.main};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;"></span>寶寶 ${i+1}</label>
       <input type="text" id="setupName_${id}" placeholder="名字，例如：小宇" style="margin-bottom:10px;">
-      <div class="field-row" style="margin-bottom:0;">
+      <div class="field-row" style="margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;">
           <label style="font-size:12px;">性別（選填）</label>
           <select id="setupSex_${id}">
@@ -1264,8 +1306,14 @@ function renderSetupNameFields(){
           <input type="date" id="setupBirth_${id}">
         </div>
       </div>
+      <label style="font-size:12px;">顏色主題</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">${swatches}</div>
     </div>`;
   }).join('');
+}
+function pickSetupBabyColor(id, colorKey){
+  setupColorChoices[id] = colorKey;
+  renderSetupNameFields();
 }
 
 function renderBabyCountGridSimple(containerId, selectedCount, mode){
@@ -1294,7 +1342,8 @@ function saveInitialSetup(){
     if(!val){ alert('請為每個寶寶輸入名字'); return; }
     const sex = document.getElementById('setupSex_'+id).value || '';
     const birth = document.getElementById('setupBirth_'+id).value || '';
-    names[id] = { name: val, sex, birth };
+    const colorKey = setupColorChoices[id] || '';
+    names[id] = { name: val, sex, birth, colorKey };
   }
   setSyncStatus('syncing');
   fref('babies').set({ count: setupBabyCount, names })
@@ -1310,23 +1359,35 @@ function renderSettingsView(){
   const codeEl = document.getElementById('settingsFamilyCode');
   if(codeEl) codeEl.textContent = familyCode || '------';
   settingsBabyCount = state.babyCount || 2;
+  settingsColorChoices = {};
   renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
   renderSettingsNameFields();
 }
+let settingsColorChoices = {}; // {babyId: colorKey} — tracks in-form selections before saving
+
 function renderSettingsNameFields(){
   renderBabyCountGridSimple('babyCountGrid', settingsBabyCount, 'settings');
   const container = document.getElementById('babyNameFields');
   const ids = BABY_IDS.slice(0, settingsBabyCount);
   container.innerHTML = ids.map((id,i)=>{
-    const c = BABY_COLORS[i];
     const existing = (state.babies && state.babies[id]) || {};
     const existingName = typeof existing === 'string' ? existing : (existing.name || '');
     const existingSex = typeof existing === 'string' ? '' : (existing.sex || '');
     const existingBirth = typeof existing === 'string' ? '' : (existing.birth || '');
+    const existingColorKey = typeof existing === 'string' ? '' : (existing.colorKey || '');
+    if(!(id in settingsColorChoices)){
+      settingsColorChoices[id] = existingColorKey || BABY_COLORS[i].key;
+    }
+    const c = COLOR_PALETTE.find(col => col.key === settingsColorChoices[id]) || babyColor(id);
+    const swatches = COLOR_PALETTE.map(col => {
+      const isSelected = settingsColorChoices[id] === col.key;
+      return `<button type="button" onclick="pickBabyColor('${id}','${col.key}')" title="${col.label}"
+        style="width:32px;height:32px;border-radius:50%;background:${col.main};border:${isSelected ? '3px solid var(--accent-gold)' : '2px solid transparent'};box-shadow:${isSelected ? '0 0 0 2px var(--bg-elev2)' : 'none'};cursor:pointer;flex-shrink:0;padding:0;"></button>`;
+    }).join('');
     return `<div class="field" style="background:var(--bg-elev2);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);">
       <label><span class="dot-color" style="background:${c.main};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;"></span>寶寶 ${i+1}</label>
       <input type="text" id="settingsName_${id}" placeholder="名字，例如：小宇" value="${existingName}" style="margin-bottom:10px;">
-      <div class="field-row" style="margin-bottom:0;">
+      <div class="field-row" style="margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;">
           <label style="font-size:12px;">性別（選填）</label>
           <select id="settingsSex_${id}">
@@ -1340,8 +1401,14 @@ function renderSettingsNameFields(){
           <input type="date" id="settingsBirth_${id}" value="${existingBirth}">
         </div>
       </div>
+      <label style="font-size:12px;">顏色主題</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">${swatches}</div>
     </div>`;
   }).join('');
+}
+function pickBabyColor(id, colorKey){
+  settingsColorChoices[id] = colorKey;
+  renderSettingsNameFields();
 }
 function saveBabySettings(){
   const ids = BABY_IDS.slice(0, settingsBabyCount);
@@ -1351,7 +1418,8 @@ function saveBabySettings(){
     if(!val){ alert('請為每個寶寶輸入名字'); return; }
     const sex = document.getElementById('settingsSex_'+id).value || '';
     const birth = document.getElementById('settingsBirth_'+id).value || '';
-    names[id] = { name: val, sex, birth };
+    const colorKey = settingsColorChoices[id] || '';
+    names[id] = { name: val, sex, birth, colorKey };
   }
   setSyncStatus('syncing');
   fref('babies').set({ count: settingsBabyCount, names })
@@ -1627,7 +1695,7 @@ function renderWeight(){
   const container = document.getElementById('weightColumns');
   if(!container) return;
   container.innerHTML = ids.map((id,i)=>{
-    const c = BABY_COLORS[i];
+    const c = babyColor(id);
     const entries = state.weights.filter(w => w[id] || w[id+'_h']);
     let listHtml;
     if(!entries.length){
@@ -1713,7 +1781,7 @@ function renderGrowthChart(){
       .filter(p => p.x >= 0 && p.x <= 24)
       .sort((a,b) => a.x - b.x);
     if(points.length){
-      series.push({ id, color: BABY_COLORS[i].main, sex: babySex(id) || 'boy', points });
+      series.push({ id, color: babyColor(id).main, sex: babySex(id) || 'boy', points });
     }
   });
 
@@ -2653,7 +2721,7 @@ function openWeightAdd(){
   document.getElementById('weightDate').value=new Date().toISOString().slice(0,10);
   const ids = activeBabyIds();
   document.getElementById('weightModalFields').innerHTML = ids.map((id,i)=>{
-    const c = BABY_COLORS[i];
+    const c = babyColor(id);
     return `<div class="field">
       <label style="color:${c.main}">${babyName(id)}</label>
       <div class="field-row">
