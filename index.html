@@ -413,17 +413,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         <div style="font-size:36px;font-weight:800;color:var(--c1);margin-top:4px;" id="inventoryTotal">0 ml</div>
         <div style="font-size:11px;color:var(--ink3);margin-top:4px;">擠奶會自動加入 · 瓶餵母乳會自動扣除</div>
       </div>
-      <div style="display:flex;gap:16px;justify-content:center;padding-top:12px;border-top:1.5px solid var(--border);">
-        <div style="text-align:center;">
-          <div style="font-size:11px;color:var(--ink3);font-weight:600;">🤲 累計擠奶</div>
-          <div style="font-size:16px;font-weight:700;color:#A855F7;margin-top:2px;" id="inventoryPumpedTotal">0 ml</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px;color:var(--ink3);font-weight:600;">🍼 累計喝掉</div>
-          <div style="font-size:16px;font-weight:700;color:var(--c1);margin-top:2px;" id="inventoryUsedTotal">0 ml</div>
-        </div>
-      </div>
-      <button class="btn-cancel" style="width:100%;margin-top:14px;" onclick="adjustInventory()">✏️ 手動調整庫存</button>
+      <button class="btn-cancel" style="width:100%;margin-top:4px;" onclick="adjustInventory()">✏️ 手動調整庫存</button>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
         💡 庫存依「擠奶」與「瓶餵母乳」紀錄自動加總／扣除。若實際庫存與顯示不同（例如丟棄或提前解凍），可用上方按鈕手動調整。
       </p>
@@ -2857,8 +2847,6 @@ function renderInventory(){
   const adjust = state.inventoryAdjust || 0;
   const total = pumped - used + adjust;
   totalEl.textContent = `${total} ml`;
-  document.getElementById('inventoryPumpedTotal').textContent = `${pumped} ml`;
-  document.getElementById('inventoryUsedTotal').textContent = `${used} ml`;
 }
 function adjustInventory(){
   const pumped = state.logs.filter(l=>l.type==='pump').reduce((s,l)=>s+(parseInt(l.amount)||0),0);
