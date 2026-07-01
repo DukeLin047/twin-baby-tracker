@@ -501,6 +501,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
           <span>加總後今日目標</span><span id="goalAdjustedTargetMl" style="color:var(--gold);font-weight:700;">-- ml</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
+          <span>加總後每餐建議奶量</span><span id="goalAdjustedPerFeedMl" style="color:var(--gold);font-weight:700;">-- ml</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;">
           <span id="goalActualLabel">今日已喝</span><span id="goalActualMl" style="color:var(--ink);font-weight:700;">-- ml</span>
         </div>
         <div style="height:8px;background:var(--bg-elev2);border-radius:4px;margin-top:10px;overflow:hidden;border:1px solid var(--border);">
@@ -2058,9 +2061,11 @@ function renderFeedingGoalProgress(baby, actualMl){
   const adjustedTargetMl = baseTargetMl + extraMl;
   const diff = adjustedTargetMl - actualMl;
   const pct = Math.min(100, Math.round((actualMl/adjustedTargetMl)*100));
+  const adjustedPerFeedMl = Math.round(adjustedTargetMl / feeds);
   document.getElementById('goalTargetMl').textContent = `${baseTargetMl} ml`;
   document.getElementById('goalPerFeedMl').textContent = `${perFeedMl} ml`;
   document.getElementById('goalAdjustedTargetMl').textContent = `${adjustedTargetMl} ml`;
+  document.getElementById('goalAdjustedPerFeedMl').textContent = `${adjustedPerFeedMl} ml`;
   document.getElementById('goalActualMl').textContent = `${actualMl} ml`;
   document.getElementById('goalProgressBar').style.width = `${pct}%`;
   document.getElementById('goalProgressBar').style.background = diff>0 ? 'var(--gold)' : 'var(--success)';
