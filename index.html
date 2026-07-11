@@ -2995,69 +2995,83 @@ function dismissBanner(){document.getElementById('installBanner').style.display=
 // ─── Pull to Refresh ──────────────────────────────────
 (function(){
   let startY = 0, currentY = 0, pulling = false, refreshing = false;
-  const THRESHOLD = 72; // px needed to trigger refresh
+  const THRESHOLD = 80;
 
   const indicator = document.getElementById('ptrIndicator');
   const spinner   = document.getElementById('ptrSpinner');
   const label     = document.getElementById('ptrLabel');
 
+  function getScrollTop(){
+    return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  }
+
   function setIndicatorY(dy){
-    const clamped = Math.min(dy, THRESHOLD + 20);
-    indicator.style.transform = `translateY(${clamped - 56}px)`;
+    const clamped = Math.min(dy, THRESHOLD + 24);
     indicator.style.transition = 'none';
+    indicator.style.transform = `translateY(${clamped - 56}px)`;
     const progress = Math.min(1, dy / THRESHOLD);
-    spinner.style.opacity = progress;
+    spinner.style.opacity = String(progress);
     spinner.style.transform = `rotate(${progress * 270}deg)`;
+    spinner.style.animation = '';
     label.textContent = dy >= THRESHOLD ? '放開即重新整理' : '下拉重新整理';
     label.style.color = dy >= THRESHOLD ? 'var(--accent-gold)' : 'var(--ink3)';
   }
 
   function reset(){
-    indicator.style.transition = 'transform 0.25s';
+    indicator.style.transition = 'transform 0.3s ease';
     indicator.style.transform = 'translateY(-56px)';
     spinner.style.animation = '';
     spinner.style.transform = '';
+    spinner.style.opacity = '0';
     label.textContent = '下拉重新整理';
     label.style.color = 'var(--ink3)';
-    refreshing = false;
-    pulling = false;
+    setTimeout(()=>{ refreshing = false; pulling = false; }, 300);
   }
 
   function doRefresh(){
     refreshing = true;
-    indicator.style.transition = 'transform 0.25s';
+    indicator.style.transition = 'transform 0.25s ease';
     indicator.style.transform = 'translateY(0px)';
     spinner.style.animation = 'spin 0.8s linear infinite';
+    spinner.style.opacity = '1';
     label.textContent = '重新整理中…';
     label.style.color = 'var(--accent-gold)';
     renderAll();
-    setTimeout(reset, 1200);
+    setTimeout(reset, 1400);
   }
 
   document.addEventListener('touchstart', e => {
     if(refreshing) return;
     startY = e.touches[0].clientY;
-    pulling = window.scrollY === 0;
+    currentY = startY;
+    pulling = getScrollTop() === 0;
   }, {passive: true});
 
   document.addEventListener('touchmove', e => {
-    if(!pulling || refreshing) return;
+    if(refreshing) return;
     currentY = e.touches[0].clientY;
     const dy = currentY - startY;
-    if(dy > 0 && window.scrollY === 0){
+    if(pulling && dy > 0 && getScrollTop() === 0){
       setIndicatorY(dy);
+    } else if(pulling && !refreshing && (dy <= 0 || getScrollTop() > 0)){
+      pulling = false;
+      reset();
     }
   }, {passive: true});
 
   document.addEventListener('touchend', () => {
-    if(!pulling || refreshing) return;
+    if(refreshing) return;
+    if(!pulling){ return; }
     const dy = currentY - startY;
-    if(dy >= THRESHOLD && window.scrollY === 0){
+    if(dy >= THRESHOLD && getScrollTop() === 0){
       doRefresh();
     } else {
       reset();
     }
-    pulling = false;
+  });
+
+  document.addEventListener('touchcancel', () => {
+    if(!refreshing) reset();
   });
 })();
 
