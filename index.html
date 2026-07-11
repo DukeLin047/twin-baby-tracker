@@ -380,10 +380,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 <div class="view" id="view-weight">
   <div class="section" style="padding-top:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="section-title" style="margin:0">成長紀錄</div>
+      <div onclick="toggleWeightList()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <div class="section-title" style="margin:0">成長紀錄</div>
+        <span id="weightListToggleIcon" style="font-size:14px;color:var(--ink3);transition:transform 0.2s;">▼</span>
+      </div>
       <button onclick="openWeightAdd()" style="background:linear-gradient(135deg,#7C9BB8,var(--gold));color:#FFFFFF;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
     </div>
-    <div class="weight-card">
+    <div id="weightListWrap" class="weight-card" style="overflow:hidden;transition:max-height 0.3s ease;max-height:2000px;">
       <div id="weightColumns" style="display:flex;gap:12px;overflow-x:auto;"></div>
     </div>
   </div>
@@ -1696,6 +1699,30 @@ function renderTodayLog(){
   renderLogItems(logs,document.getElementById('todayLog'));
 }
 
+let weightListCollapsed = localStorage.getItem('weightListCollapsed') === 'true';
+
+function toggleWeightList(){
+  weightListCollapsed = !weightListCollapsed;
+  localStorage.setItem('weightListCollapsed', weightListCollapsed);
+  applyWeightListState();
+}
+function applyWeightListState(){
+  const wrap = document.getElementById('weightListWrap');
+  const icon = document.getElementById('weightListToggleIcon');
+  if(!wrap || !icon) return;
+  if(weightListCollapsed){
+    wrap.style.maxHeight = '0';
+    wrap.style.marginTop = '0';
+    wrap.style.padding = '0';
+    icon.style.transform = 'rotate(-90deg)';
+  } else {
+    wrap.style.maxHeight = '2000px';
+    wrap.style.marginTop = '';
+    wrap.style.padding = '';
+    icon.style.transform = 'rotate(0deg)';
+  }
+}
+
 function renderWeight(){
   const ids = activeBabyIds();
   const container = document.getElementById('weightColumns');
@@ -1708,7 +1735,9 @@ function renderWeight(){
       listHtml = `<div class="empty-state" style="padding:16px 0"><div class="e-icon" style="font-size:28px;">⚖️</div><p style="font-size:12px;">尚無紀錄</p></div>`;
     } else {
       const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
-      listHtml = sorted.map(w=>{
+      const showAll = weightShowAll[id];
+      const toShow = showAll ? sorted : sorted.slice(0,1);
+      const rows = toShow.map(w=>{
         const text = [w[id]?w[id]+'g':null, w[id+'_h']?w[id+'_h']+'cm':null].filter(Boolean).join(' · ') || '—';
         return `<div class="growth-entry" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div>
@@ -1718,6 +1747,12 @@ function renderWeight(){
           <button class="log-del" onclick="deleteWeightEntry('${w.id}')" style="flex-shrink:0;">✕</button>
         </div>`;
       }).join('');
+      const toggleBtn = sorted.length > 1
+        ? `<button onclick="toggleWeightShowAll('${id}')" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:8px;background:var(--bg-elev2);color:var(--ink2);font-size:12px;font-weight:600;cursor:pointer;">
+            ${showAll ? '▲ 收起' : `▼ 展開全部 ${sorted.length} 筆`}
+          </button>`
+        : '';
+      listHtml = rows + toggleBtn;
     }
     return `<div style="flex:1;min-width:140px;">
       <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
@@ -1728,6 +1763,13 @@ function renderWeight(){
     </div>`;
   }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
   renderGrowthChart();
+  applyWeightListState();
+}
+
+let weightShowAll = {};
+function toggleWeightShowAll(id){
+  weightShowAll[id] = !weightShowAll[id];
+  renderWeight();
 }
 
 // ─── 成長曲線圖（SVG，無外部套件） ────────────────────
