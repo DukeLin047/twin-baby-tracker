@@ -229,6 +229,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 #loadingScreen .l-text{font-size:19px;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;width:100%;}
 #loadingScreen .l-sub{font-size:15px;color:var(--ink3);margin-top:8px;letter-spacing:0.5px;text-align:center;width:100%;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 
 </head>
@@ -237,6 +238,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <div class="l-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.7" cy="11" r="2.2"/><circle cx="14.3" cy="11" r="2.2"/><path d="M7.4 16C8.55 17.6 10.85 17.6 12 16"/><path d="M12 16C13.15 17.6 15.45 17.6 16.6 16"/></svg></div>
   <div class="l-text">寶寶成長日誌</div>
   <div class="l-sub">連線中…</div>
+</div>
+
+<div id="ptrIndicator" style="position:fixed;top:env(safe-area-inset-top,0);left:0;right:0;z-index:998;display:flex;flex-direction:column;align-items:center;justify-content:center;height:56px;transform:translateY(-56px);transition:transform 0.25s;pointer-events:none;background:var(--bg);">
+  <div id="ptrSpinner" style="width:26px;height:26px;border:2.5px solid var(--border);border-top-color:var(--accent-gold);border-radius:50%;"></div>
+  <div id="ptrLabel" style="font-size:11px;color:var(--ink3);margin-top:4px;font-weight:600;">下拉重新整理</div>
 </div>
 
 <div id="syncBar"></div>
@@ -2985,6 +2991,75 @@ function showInstallBanner(platform){
 }
 function doInstall(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});}}
 function dismissBanner(){document.getElementById('installBanner').style.display='none';}
+
+// ─── Pull to Refresh ──────────────────────────────────
+(function(){
+  let startY = 0, currentY = 0, pulling = false, refreshing = false;
+  const THRESHOLD = 72; // px needed to trigger refresh
+
+  const indicator = document.getElementById('ptrIndicator');
+  const spinner   = document.getElementById('ptrSpinner');
+  const label     = document.getElementById('ptrLabel');
+
+  function setIndicatorY(dy){
+    const clamped = Math.min(dy, THRESHOLD + 20);
+    indicator.style.transform = `translateY(${clamped - 56}px)`;
+    indicator.style.transition = 'none';
+    const progress = Math.min(1, dy / THRESHOLD);
+    spinner.style.opacity = progress;
+    spinner.style.transform = `rotate(${progress * 270}deg)`;
+    label.textContent = dy >= THRESHOLD ? '放開即重新整理' : '下拉重新整理';
+    label.style.color = dy >= THRESHOLD ? 'var(--accent-gold)' : 'var(--ink3)';
+  }
+
+  function reset(){
+    indicator.style.transition = 'transform 0.25s';
+    indicator.style.transform = 'translateY(-56px)';
+    spinner.style.animation = '';
+    spinner.style.transform = '';
+    label.textContent = '下拉重新整理';
+    label.style.color = 'var(--ink3)';
+    refreshing = false;
+    pulling = false;
+  }
+
+  function doRefresh(){
+    refreshing = true;
+    indicator.style.transition = 'transform 0.25s';
+    indicator.style.transform = 'translateY(0px)';
+    spinner.style.animation = 'spin 0.8s linear infinite';
+    label.textContent = '重新整理中…';
+    label.style.color = 'var(--accent-gold)';
+    renderAll();
+    setTimeout(reset, 1200);
+  }
+
+  document.addEventListener('touchstart', e => {
+    if(refreshing) return;
+    startY = e.touches[0].clientY;
+    pulling = window.scrollY === 0;
+  }, {passive: true});
+
+  document.addEventListener('touchmove', e => {
+    if(!pulling || refreshing) return;
+    currentY = e.touches[0].clientY;
+    const dy = currentY - startY;
+    if(dy > 0 && window.scrollY === 0){
+      setIndicatorY(dy);
+    }
+  }, {passive: true});
+
+  document.addEventListener('touchend', () => {
+    if(!pulling || refreshing) return;
+    const dy = currentY - startY;
+    if(dy >= THRESHOLD && window.scrollY === 0){
+      doRefresh();
+    } else {
+      reset();
+    }
+    pulling = false;
+  });
+})();
 
 init();
 </script>
