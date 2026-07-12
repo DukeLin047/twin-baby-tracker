@@ -184,6 +184,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .dot.growth{background:#8FBF9A;}
 .dot.temp{background:#D97A6E;}
 .dot.medical{background:#E0739E;}
+.dot.solidfood{background:#7BAE6B;}
 .dot.note{background:#5C7A99;}
 .cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:14px;background:var(--bg-elev1);border-radius:var(--radius-sm);border:1px solid var(--border);}
 .cal-legend span{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink2);font-weight:600;}
@@ -713,6 +714,30 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
     </div>
 
+    <div id="fields-solidfood" style="display:none">
+      <div class="field">
+        <label>食物名稱</label>
+        <input type="text" id="solidfoodName" placeholder="例如：南瓜泥、蘋果泥、粥…">
+      </div>
+      <div class="field">
+        <label>份量（選填）</label>
+        <input type="number" id="solidfoodAmount" placeholder="例如：30" min="0">
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;">單位：克（g）或毫升（ml）</div>
+      </div>
+      <div class="field">
+        <label>寶寶反應</label>
+        <div class="seg-btns" id="solidfoodReactionPicker">
+          <button type="button" class="seg-btn selected" onclick="pickSolidReaction('接受',this)">😊 接受</button>
+          <button type="button" class="seg-btn" onclick="pickSolidReaction('拒絕',this)">😣 拒絕</button>
+          <button type="button" class="seg-btn" onclick="pickSolidReaction('過敏反應',this)">⚠️ 過敏反應</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>備註（選填）</label>
+        <textarea id="solidfoodNote" placeholder="例如：第一次嘗試、喜歡吃、皮膚起疹…"></textarea>
+      </div>
+    </div>
+
     <div id="fields-note" style="display:none">
       <div class="field">
         <label>備註內容</label>
@@ -999,6 +1024,12 @@ let isSaving = false;
 let editingLogId = null;
 let currentType = 'nursing';
 let diaperType = '小便';
+let solidfoodReaction = '接受';
+function pickSolidReaction(val, btn){
+  solidfoodReaction = val;
+  document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
 let nurseTimers = { left:null, right:null };
 let bathTimer = null;
 let currentUserName = '';
@@ -1017,6 +1048,7 @@ const ICON_SVG = {
   temp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 14.2V5.3a1.8 1.8 0 1 0-3.5 0v8.9a3.6 3.6 0 1 0 3.5 0Z"/><line x1="14.7" y1="7" x2="16.5" y2="7"/><line x1="14.7" y1="9.5" x2="16.5" y2="9.5"/></svg>`,
   note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l3 3v12.5a.5.5 0 0 1-.5.5H6.5a.5.5 0 0 1-.5-.5V4.5A.5.5 0 0 1 6 4Z"/><path d="M16 4v3h3"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14" x2="15.5" y2="14"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>`,
   medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M9.5 3.5v-1a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1"/><path d="M7 13h2.3l1.2-2.5 1.6 4 1.2-2.5H17"/></svg>`,
+  solidfood: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 0 14 0"/><path d="M5 11H3M21 11h-2"/><path d="M12 4v2M8.5 5.5l1.5 1.5M15.5 5.5 14 7"/><line x1="5" y1="18" x2="19" y2="18"/><path d="M12 18v2"/></svg>`,
 };
 
 const TYPE_DEFS = [
@@ -1029,6 +1061,7 @@ const TYPE_DEFS = [
   {key:'growth', icon:ICON_SVG.growth, label:'成長記錄'},
   {key:'temp', icon:ICON_SVG.temp, label:'體溫'},
   {key:'medical', icon:ICON_SVG.medical, label:'症狀紀錄'},
+  {key:'solidfood', icon:ICON_SVG.solidfood, label:'副食品'},
   {key:'note', icon:ICON_SVG.note, label:'備註'},
 ];
 
@@ -1043,6 +1076,7 @@ function typeInfo(type){
     growth:{icon:ICON_SVG.growth,label:'成長記錄'},
     temp:{icon:ICON_SVG.temp,label:'體溫'},
     medical:{icon:ICON_SVG.medical,label:'症狀紀錄'},
+    solidfood:{icon:ICON_SVG.solidfood,label:'副食品'},
     note:{icon:ICON_SVG.note,label:'備註'},
   };
   return map[type] || {icon:ICON_SVG.note,label:type};
@@ -1636,6 +1670,12 @@ function logDetail(log){
   }
   if(log.type==='temp') return `${log.temp||'--'} °C`;
   if(log.type==='medical') return log.medicalText||'症狀紀錄';
+  if(log.type==='solidfood'){
+    const parts = [log.solidfoodName||'副食品'];
+    if(log.solidfoodAmount) parts.push(log.solidfoodAmount+'g');
+    if(log.solidfoodReaction) parts.push(log.solidfoodReaction);
+    return parts.join(' · ');
+  }
   if(log.type==='note') return log.note||'';
   return '';
 }
@@ -2135,6 +2175,7 @@ function calDotClass(type){
   if(type==='growth') return 'growth';
   if(type==='temp') return 'temp';
   if(type==='medical') return 'medical';
+  if(type==='solidfood') return 'solidfood';
   if(type==='note') return 'note';
   return 'milk';
 }
@@ -2151,6 +2192,7 @@ function renderCalLegend(){
     {dot:'growth', icon:ICON_SVG.growth, label:'成長'},
     {dot:'temp', icon:ICON_SVG.temp, label:'體溫'},
     {dot:'medical', icon:ICON_SVG.medical, label:'症狀'},
+    {dot:'solidfood', icon:ICON_SVG.solidfood, label:'副食品'},
     {dot:'note', icon:ICON_SVG.note, label:'備註'},
   ];
   el.innerHTML = items.map(it=>
@@ -2407,7 +2449,7 @@ function selectType(key){
   updateForm();
 }
 function updateForm(){
-  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','medical','note'];
+  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','medical','solidfood','note'];
   allFieldGroups.forEach(g=>{
     const el = document.getElementById('fields-'+g);
     if(el) el.style.display='none';
@@ -2429,6 +2471,8 @@ function updateForm(){
     document.getElementById('fields-temp').style.display='';
   } else if(currentType==='medical'){
     document.getElementById('fields-medical').style.display='';
+  } else if(currentType==='solidfood'){
+    document.getElementById('fields-solidfood').style.display='';
   } else if(currentType==='note'){
     document.getElementById('fields-note').style.display='';
   }
@@ -2524,7 +2568,7 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
@@ -2537,6 +2581,8 @@ function openAddType(type,baby){
     b.classList.toggle('selected', i===0);
   });
   removeMedicalPhoto();
+  solidfoodReaction = '接受';
+  document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -2561,7 +2607,7 @@ function openEditLog(id){
   document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 
   // Clear all fields first
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','noteText','commonTag'].forEach(fid=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
     const el=document.getElementById(fid); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
@@ -2596,6 +2642,14 @@ function openEditLog(id){
   } else if(log.type==='medical'){
     document.getElementById('medicalText').value = log.medicalText || '';
     loadMedicalPhotoForLog(log.id);
+  } else if(log.type==='solidfood'){
+    document.getElementById('solidfoodName').value = log.solidfoodName || '';
+    document.getElementById('solidfoodAmount').value = log.solidfoodAmount || '';
+    document.getElementById('solidfoodNote').value = log.solidfoodNote || '';
+    solidfoodReaction = log.solidfoodReaction || '接受';
+    document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach(b=>{
+      b.classList.toggle('selected', b.textContent.trim().includes(solidfoodReaction));
+    });
   } else if(log.type==='note'){
     document.getElementById('noteText').value = log.note || '';
   }
@@ -2737,6 +2791,11 @@ function saveLog(){
   } else if(currentType==='medical'){
     log.medicalText = document.getElementById('medicalText').value || '';
     log.hasLocalPhoto = !!currentMedicalPhotoData;
+  } else if(currentType==='solidfood'){
+    log.solidfoodName = document.getElementById('solidfoodName').value || '';
+    log.solidfoodAmount = document.getElementById('solidfoodAmount').value || '';
+    log.solidfoodReaction = solidfoodReaction || '接受';
+    log.solidfoodNote = document.getElementById('solidfoodNote').value || '';
   } else if(currentType==='note'){
     log.note = document.getElementById('noteText').value || '';
   }
