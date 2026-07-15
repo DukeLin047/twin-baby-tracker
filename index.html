@@ -863,6 +863,37 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   </div>
 </div>
 <script>
+// ─── Global error reporter (mobile debugging) ─────────
+// Shows any uncaught JS error as a red banner on screen so we can diagnose
+// issues on iPhone Safari where there's no developer console.
+window.addEventListener('error', function(e){
+  try{
+    let bar = document.getElementById('jsErrorBar');
+    if(!bar){
+      bar = document.createElement('div');
+      bar.id = 'jsErrorBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#B3402A;color:#fff;font-size:11px;padding:8px 34px 8px 10px;line-height:1.4;word-break:break-all;';
+      const x = document.createElement('span');
+      x.textContent = '✕';
+      x.style.cssText = 'position:absolute;top:6px;right:10px;font-size:14px;cursor:pointer;';
+      x.onclick = ()=>bar.remove();
+      bar.appendChild(x);
+      const msg = document.createElement('div');
+      msg.id = 'jsErrorBarMsg';
+      bar.appendChild(msg);
+      document.body.appendChild(bar);
+    }
+    const m = document.getElementById('jsErrorBarMsg');
+    if(m) m.textContent = '⚠ JS錯誤: ' + (e.message||'') + ' @ ' + (e.filename||'').split('/').pop() + ':' + (e.lineno||'');
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{
+    const reason = e.reason && (e.reason.message || String(e.reason));
+    window.dispatchEvent(new ErrorEvent('error', { message: 'Promise: ' + reason }));
+  }catch(_){}
+});
+
 // ─── Firebase Config ──────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyAQ9l3cnRi9NuilRnNno5vK_UfFaXjifzw",
@@ -1895,31 +1926,32 @@ function renderGrowthLatestSummary(){
     const mostRecentDate = dates.length ? new Date(Math.max(...dates)) : null;
     const dateStr = mostRecentDate ? mostRecentDate.toLocaleDateString('zh-TW',{month:'short',day:'numeric'}) : '尚無紀錄';
 
-    return `<div style="flex:1;min-width:150px;">
-      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
-        <span>${babyName(id)}</span>
+    return `<div style="padding:10px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+          <span>${babyName(id)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);">${dateStr}</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <div style="flex:1;text-align:center;">
+        <div style="flex:1;text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px 4px;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">體重</div>
-          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestWeight ? latestWeight[id]+'g' : '—'}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--ink);margin-top:2px;white-space:nowrap;">${latestWeight ? latestWeight[id]+'<span style="font-size:11px;font-weight:600;">g</span>' : '—'}</div>
         </div>
-        <div style="flex:1;text-align:center;">
+        <div style="flex:1;text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px 4px;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">身高</div>
-          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestHeight ? latestHeight[hKey]+'cm' : '—'}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--ink);margin-top:2px;white-space:nowrap;">${latestHeight ? latestHeight[hKey]+'<span style="font-size:11px;font-weight:600;">cm</span>' : '—'}</div>
         </div>
-        <div style="flex:1;text-align:center;">
+        <div style="flex:1;text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px 4px;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">頭圍</div>
-          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestHead ? latestHead[hcKey]+'cm' : '—'}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--ink);margin-top:2px;white-space:nowrap;">${latestHead ? latestHead[hcKey]+'<span style="font-size:11px;font-weight:600;">cm</span>' : '—'}</div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--ink3);text-align:center;margin-top:8px;">${dateStr}</div>
     </div>`;
-  }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
+  }).join('<div style="height:1.5px;background:var(--border);"></div>');
 
-  box.innerHTML = `<div class="section-title" style="margin-bottom:10px;">📏 最新數值</div>
-    <div style="display:flex;gap:16px;">${cols}</div>`;
+  box.innerHTML = `<div class="section-title" style="margin-bottom:4px;">📏 最新數值</div>${cols}`;
 }
 
 function renderWeight(){
