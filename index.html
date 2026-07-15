@@ -467,7 +467,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     <div class="baby-tabs" id="statBabyTabs" style="padding:0;margin-bottom:14px;"></div>
 
     <div class="weight-card" style="margin-bottom:14px;">
-      <div class="section-title" style="margin-bottom:10px;">📏 最新身高體重</div>
+      <div class="section-title" style="margin-bottom:10px;">📏 最新身高體重頭圍</div>
       <div style="display:flex;gap:16px;">
         <div style="flex:1;text-align:center;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">體重</div>
@@ -476,6 +476,10 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         <div style="flex:1;text-align:center;">
           <div style="font-size:11px;color:var(--ink3);font-weight:600;">身高</div>
           <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:2px;" id="statLatestHeight">—</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">頭圍</div>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:2px;" id="statLatestHead">—</div>
         </div>
       </div>
       <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:8px;" id="statLatestDate"></div>
@@ -689,6 +693,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
           <label>身長（公分）</label>
           <input type="number" id="growthHeight" placeholder="例如：50" min="0" step="0.1">
         </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>頭圍（公分）</label>
+          <input type="number" id="growthHead" placeholder="例如：38" min="0" step="0.1">
+        </div>
+        <div class="field"></div>
       </div>
     </div>
 
@@ -1712,6 +1723,7 @@ function logDetail(log){
     const parts=[];
     if(log.weight) parts.push(`體重 ${log.weight}g`);
     if(log.height) parts.push(`身長 ${log.height}cm`);
+    if(log.head)   parts.push(`頭圍 ${log.head}cm`);
     return parts.join(' · ') || '成長記錄';
   }
   if(log.type==='temp') return `${log.temp||'--'} °C`;
@@ -1816,7 +1828,7 @@ function renderWeight(){
   if(!container) return;
   container.innerHTML = ids.map((id,i)=>{
     const c = babyColor(id);
-    const entries = state.weights.filter(w => w[id] || w[id+'_h']);
+    const entries = state.weights.filter(w => w[id] || w[id+'_h'] || w[id+'_hc']);
     let listHtml;
     if(!entries.length){
       listHtml = `<div class="empty-state" style="padding:16px 0"><div class="e-icon" style="font-size:28px;">⚖️</div><p style="font-size:12px;">尚無紀錄</p></div>`;
@@ -1825,7 +1837,7 @@ function renderWeight(){
       const showAll = weightShowAll[id];
       const toShow = showAll ? sorted : sorted.slice(0,1);
       const rows = toShow.map(w=>{
-        const text = [w[id]?w[id]+'g':null, w[id+'_h']?w[id+'_h']+'cm':null].filter(Boolean).join(' · ') || '—';
+        const text = [w[id]?w[id]+'g':null, w[id+'_h']?w[id+'_h']+'cm':null, w[id+'_hc']?'頭 '+w[id+'_hc']+'cm':null].filter(Boolean).join(' · ') || '—';
         return `<div class="growth-entry" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div>
             <div class="ge-date">${new Date(w.date+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}</div>
@@ -2067,23 +2079,30 @@ function renderStats(){
 
 function renderLatestGrowth(baby){
   const hKey = baby+'_h';
+  const hcKey = baby+'_hc';
   const weightEntries = state.weights.filter(w => w[baby]);
   const heightEntries = state.weights.filter(w => w[hKey]);
+  const headEntries   = state.weights.filter(w => w[hcKey]);
 
-  if(!weightEntries.length && !heightEntries.length){
+  if(!weightEntries.length && !heightEntries.length && !headEntries.length){
     document.getElementById('statLatestWeight').textContent = '—';
     document.getElementById('statLatestHeight').textContent = '—';
+    const hEl = document.getElementById('statLatestHead');
+    if(hEl) hEl.textContent = '—';
     document.getElementById('statLatestDate').textContent = '尚無紀錄';
     return;
   }
 
   const latestWeight = weightEntries.length ? [...weightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
   const latestHeight = heightEntries.length ? [...heightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+  const latestHead   = headEntries.length   ? [...headEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0]   : null;
 
   document.getElementById('statLatestWeight').textContent = latestWeight ? `${latestWeight[baby]} g` : '—';
   document.getElementById('statLatestHeight').textContent = latestHeight ? `${latestHeight[hKey]} cm` : '—';
+  const hEl = document.getElementById('statLatestHead');
+  if(hEl) hEl.textContent = latestHead ? `${latestHead[hcKey]} cm` : '—';
 
-  const dates = [latestWeight, latestHeight].filter(Boolean).map(e=>new Date(e.date));
+  const dates = [latestWeight, latestHeight, latestHead].filter(Boolean).map(e=>new Date(e.date));
   const mostRecentDate = dates.length ? new Date(Math.max(...dates)) : null;
   document.getElementById('statLatestDate').textContent = mostRecentDate
     ? `更新於 ${mostRecentDate.toLocaleDateString('zh-TW',{month:'short',day:'numeric'})}`
@@ -2626,7 +2645,7 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
@@ -2665,7 +2684,7 @@ function openEditLog(id){
   document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 
   // Clear all fields first
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
     const el=document.getElementById(fid); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
@@ -2695,6 +2714,7 @@ function openEditLog(id){
   } else if(log.type==='growth'){
     document.getElementById('growthWeight').value = log.weight || '';
     document.getElementById('growthHeight').value = log.height || '';
+    document.getElementById('growthHead').value = log.head || '';
   } else if(log.type==='temp'){
     document.getElementById('tempValue').value = log.temp || '';
   } else if(log.type==='medical'){
@@ -2844,6 +2864,7 @@ function saveLog(){
   } else if(currentType==='growth'){
     log.weight = document.getElementById('growthWeight').value || '';
     log.height = document.getElementById('growthHeight').value || '';
+    log.head   = document.getElementById('growthHead').value || '';
   } else if(currentType==='temp'){
     log.temp = document.getElementById('tempValue').value || '';
   } else if(currentType==='medical'){
@@ -2887,11 +2908,13 @@ function saveLog(){
             const wUpdate = { date: dateVal };
             wUpdate[log.baby] = log.weight || null;
             wUpdate[log.baby+'_h'] = log.height || null;
+            wUpdate[log.baby+'_hc'] = log.head || null;
             fref('weights/'+existingLog.linkedWeightId).update(wUpdate).catch(()=>{});
-          } else if(log.weight || log.height){
+          } else if(log.weight || log.height || log.head){
             const wEntry = { date: dateVal, sourceLogId: editingLogId };
             if(log.weight) wEntry[log.baby] = log.weight;
             if(log.height) wEntry[log.baby+'_h'] = log.height;
+            if(log.head)   wEntry[log.baby+'_hc'] = log.head;
             fref('weights').push(wEntry).then((wRef)=>{
               fref('logs/'+editingLogId+'/linkedWeightId').set(wRef.key).catch(()=>{});
             }).catch(()=>{});
@@ -2910,10 +2933,11 @@ function saveLog(){
       if(currentType==='medical' && currentMedicalPhotoData){
         saveMedicalPhotoForLog(ref.key);
       }
-      if(currentType==='growth' && (log.weight || log.height)){
+      if(currentType==='growth' && (log.weight || log.height || log.head)){
         const wEntry = { date: dateVal, sourceLogId: ref.key };
         if(log.weight) wEntry[selectedBabyInModal] = log.weight;
         if(log.height) wEntry[selectedBabyInModal+'_h'] = log.height;
+        if(log.head)   wEntry[selectedBabyInModal+'_hc'] = log.head;
         fref('weights').push(wEntry).then((wRef)=>{
           // link back so deleting the log can also remove the weights entry
           fref('logs/'+ref.key+'/linkedWeightId').set(wRef.key).catch(()=>{});
@@ -2971,6 +2995,13 @@ function openWeightAdd(){
           <input type="number" id="heightInput_${id}" placeholder="例如：50" step="0.1">
         </div>
       </div>
+      <div class="field-row" style="margin-top:6px;">
+        <div class="field" style="margin-bottom:0">
+          <span style="font-size:12px;color:var(--ink3)">頭圍 (cm)</span>
+          <input type="number" id="headInput_${id}" placeholder="例如：38" step="0.1">
+        </div>
+        <div class="field" style="margin-bottom:0;"></div>
+      </div>
     </div>`;
   }).join('');
   document.getElementById('weightModal').classList.add('open');
@@ -2984,8 +3015,10 @@ function saveWeight(){
   ids.forEach(id=>{
     const w = document.getElementById('weightInput_'+id).value;
     const h = document.getElementById('heightInput_'+id).value;
+    const hc = document.getElementById('headInput_'+id).value;
     if(w){ entry[id]=w; hasAny=true; }
     if(h){ entry[id+'_h']=h; hasAny=true; }
+    if(hc){ entry[id+'_hc']=hc; hasAny=true; }
   });
   if(!hasAny){alert('請至少填入一項數值');return;}
   setSyncStatus('syncing');
