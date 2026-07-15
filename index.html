@@ -1274,6 +1274,7 @@ function submitFamilyCode(){
 }
 
 let migrationChecked = false;
+let familyHasBabiesInCloud = null; // null = unknown, true/false = confirmed via a real cloud read
 
 function enterFamily(code, fromModal){
   familyCode = code;
@@ -1288,13 +1289,30 @@ function enterFamily(code, fromModal){
   maybeMigrateLegacyData(code).then(()=>{
     startListening();
     if(fromModal) closeModal('familyModal');
+    // Do a one-time authoritative read straight from the cloud to check whether this
+    // family already has baby data, instead of guessing from a timeout. A slow or
+    // briefly-failed connection must never be mistaken for "brand new family" — doing
+    // so would show the setup wizard, and submitting it would overwrite real data.
+    return fref('babies').once('value');
+  }).then(snap=>{
+    const val = snap && snap.val();
+    familyHasBabiesInCloud = !!(val && val.names && Object.keys(val.names).length);
     setTimeout(()=>{
       if(!currentUserName){
         document.getElementById('loginModal').classList.add('open');
-      } else if(!state.babies || !Object.keys(state.babies).length) {
+      } else if(familyHasBabiesInCloud === false) {
         document.getElementById('setupModal').classList.add('open');
       }
-    }, 1200);
+    }, 300);
+  }).catch(()=>{
+    // Couldn't confirm cloud state (e.g. offline). Leave familyHasBabiesInCloud as null
+    // and do NOT show the setup wizard — safer to show cached data / a sync error than
+    // to risk the user re-creating and overwriting their real family data.
+    setTimeout(()=>{
+      if(!currentUserName){
+        document.getElementById('loginModal').classList.add('open');
+      }
+    }, 300);
   });
 }
 
@@ -1323,7 +1341,7 @@ function saveLoginName(){
   localStorage.setItem('userName', name);
   updateUserBadge();
   closeModal('loginModal');
-  if(!state.babies || !Object.keys(state.babies).length){
+  if(familyHasBabiesInCloud === false){
     setTimeout(()=>{ document.getElementById('setupModal').classList.add('open'); }, 300);
   }
 }
@@ -1444,9 +1462,20 @@ function saveInitialSetup(){
     names[id] = { name: val, sex, birth, colorKey };
   }
   setSyncStatus('syncing');
-  fref('babies').set({ count: setupBabyCount, names })
-    .then(()=>{ setSyncStatus('ok'); closeModal('setupModal'); })
-    .catch(()=>setSyncStatus('error'));
+  // Safety check: re-confirm from the cloud right before writing that this family
+  // doesn't already have baby data. Prevents this first-time wizard from ever
+  // overwriting real data if it was somehow opened by mistake (e.g. a network blip).
+  fref('babies').once('value').then(snap=>{
+    const val = snap && snap.val();
+    const alreadyHasBabies = !!(val && val.names && Object.keys(val.names).length);
+    if(alreadyHasBabies){
+      setSyncStatus('error');
+      alert('偵測到這個家庭已經有寶寶資料，為了避免覆蓋，請重新整理頁面再試一次。');
+      return;
+    }
+    return fref('babies').set({ count: setupBabyCount, names })
+      .then(()=>{ setSyncStatus('ok'); closeModal('setupModal'); });
+  }).catch(()=>setSyncStatus('error'));
 }
 
 // ─── Settings view (change baby count / names later) ──
