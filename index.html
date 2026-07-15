@@ -395,15 +395,19 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 
   <!-- 成長曲線圖 -->
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
       <div class="section-title" style="margin:0;">📈 成長曲線</div>
       <div class="seg-btns" style="flex:0;gap:6px;" id="growthChartToggle">
         <button class="seg-btn selected" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
         <button class="seg-btn" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
       </div>
     </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;" id="growthAgeToggle">
+      <button class="seg-btn selected" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
+      <button class="seg-btn" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
+    </div>
     <div class="weight-card">
-      <div id="growthChartLegend" style="display:flex;gap:14px;margin-bottom:10px;"></div>
+      <div id="growthChartLegend" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;"></div>
       <div id="growthChartSvgWrap" style="width:100%;overflow-x:auto;"></div>
       <p id="growthChartEmpty" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:24px 0;">尚無足夠資料繪製曲線（需至少 1 筆紀錄）</p>
     </div>
@@ -1116,6 +1120,24 @@ function babyBirth(id){
   if(!entry || typeof entry === 'string') return '';
   return entry.birth || '';
 }
+function babyGestWeeks(id){
+  id = normalizeBabyId(id);
+  const entry = state.babies && state.babies[id];
+  if(!entry || typeof entry === 'string') return null;
+  const w = parseInt(entry.gestWeeks);
+  return (w >= 22 && w <= 41) ? w : null;
+}
+// Corrected birth = actual birth + (40 - gestWeeks) weeks
+// Returns the "expected due date" as a date string, or the actual birth if no gest weeks set
+function babyCorrectedBirthStr(id){
+  const birth = babyBirth(id);
+  const gestW = babyGestWeeks(id);
+  if(!birth || !gestW) return birth;
+  const weeksToAdd = 40 - gestW;
+  const d = new Date(birth + 'T00:00:00');
+  d.setDate(d.getDate() + weeksToAdd * 7);
+  return d.toISOString().slice(0, 10);
+}
 function babyColorKey(id){
   id = normalizeBabyId(id);
   const entry = state.babies && state.babies[id];
@@ -1419,6 +1441,7 @@ function renderSettingsNameFields(){
     const existingSex = typeof existing === 'string' ? '' : (existing.sex || '');
     const existingBirth = typeof existing === 'string' ? '' : (existing.birth || '');
     const existingColorKey = typeof existing === 'string' ? '' : (existing.colorKey || '');
+    const existingGestWeeks = typeof existing === 'string' ? '' : (existing.gestWeeks || '');
     if(!(id in settingsColorChoices)){
       settingsColorChoices[id] = existingColorKey || BABY_COLORS[i].key;
     }
@@ -1445,7 +1468,15 @@ function renderSettingsNameFields(){
           <input type="date" id="settingsBirth_${id}" value="${existingBirth}">
         </div>
       </div>
-      <label style="font-size:12px;">顏色主題</label>
+      <div class="field" style="margin-top:10px;margin-bottom:0;">
+        <label style="font-size:12px;">出生周數（選填，早產寶寶填此欄）</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="settingsGestWeeks_${id}" placeholder="例如：34" min="22" max="42" step="1" value="${existingGestWeeks}" style="flex:1;">
+          <span style="font-size:13px;color:var(--ink2);white-space:nowrap;">週</span>
+        </div>
+        ${existingGestWeeks && existingBirth ? `<div style="font-size:11px;color:var(--gold);margin-top:4px;">矯正年齡起算：出生日加上 ${40 - parseInt(existingGestWeeks)} 週 = 預產期</div>` : '<div style="font-size:11px;color:var(--ink3);margin-top:4px;">填寫後可在成長曲線切換矯正年齡對照 WHO 標準</div>'}
+      </div>
+      <label style="font-size:12px;margin-top:10px;display:block;">顏色主題</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">${swatches}</div>
     </div>`;
   }).join('');
@@ -1462,8 +1493,9 @@ function saveBabySettings(){
     if(!val){ alert('請為每個寶寶輸入名字'); return; }
     const sex = document.getElementById('settingsSex_'+id).value || '';
     const birth = document.getElementById('settingsBirth_'+id).value || '';
+    const gestWeeks = document.getElementById('settingsGestWeeks_'+id).value || '';
     const colorKey = settingsColorChoices[id] || '';
-    names[id] = { name: val, sex, birth, colorKey };
+    names[id] = { name: val, sex, birth, gestWeeks, colorKey };
   }
   setSyncStatus('syncing');
   fref('babies').set({ count: settingsBabyCount, names })
@@ -1539,7 +1571,21 @@ function renderBabyAgeLabel(){
     if(age.years > 0) ageStr += `${age.years} 歲`;
     if(age.months > 0) ageStr += `${age.months} 個月`;
     ageStr += `${age.days} 天`;
-    return `<span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}`;
+    // Show corrected age if gestWeeks is set
+    const gestW = babyGestWeeks(id);
+    let correctedStr = '';
+    if(gestW){
+      const correctedBirth = babyCorrectedBirthStr(id);
+      const correctedAge = calcAge(correctedBirth);
+      if(correctedAge){
+        let ca = '';
+        if(correctedAge.years > 0) ca += `${correctedAge.years} 歲`;
+        if(correctedAge.months > 0) ca += `${correctedAge.months} 個月`;
+        ca += `${correctedAge.days} 天`;
+        correctedStr = ` <span style="color:var(--ink3);font-size:11px;">（矯正 ${ca}）</span>`;
+      }
+    }
+    return `<span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}`;
   }).filter(Boolean);
   el.innerHTML = parts.length ? parts.join('　·　') : '';
 }
@@ -1815,9 +1861,17 @@ function toggleWeightShowAll(id){
 
 // ─── 成長曲線圖（SVG，無外部套件） ────────────────────
 let growthChartMetric = 'weight';
+let growthAgeMode = 'actual'; // 'actual' | 'corrected'
+
 function setGrowthChartMetric(metric, btn){
   growthChartMetric = metric;
   document.querySelectorAll('#growthChartToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  renderGrowthChart();
+}
+function setGrowthAgeMode(mode, btn){
+  growthAgeMode = mode;
+  document.querySelectorAll('#growthAgeToggle .seg-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   renderGrowthChart();
 }
@@ -1857,8 +1911,11 @@ function renderGrowthChart(){
   // Build per-baby sorted point series in (ageMonths, value), only for babies with a birthdate set
   const series = [];
   const missingBirthIds = [];
+  const usingCorrected = growthAgeMode === 'corrected';
   ids.forEach((id, i) => {
-    const birth = babyBirth(id);
+    const actualBirth = babyBirth(id);
+    const birth = usingCorrected ? (babyCorrectedBirthStr(id) || actualBirth) : actualBirth;
+    const gestW = babyGestWeeks(id);
     const fieldKey = metricKey === 'weight' ? id : (id + '_h');
     const rawPoints = state.weights.filter(w => w[fieldKey]);
     if(!birth){
@@ -1870,7 +1927,8 @@ function renderGrowthChart(){
       .filter(p => p.x >= 0 && p.x <= 24)
       .sort((a,b) => a.x - b.x);
     if(points.length){
-      series.push({ id, color: babyColor(id).main, sex: babySex(id) || 'boy', points });
+      const label = usingCorrected && gestW ? `${babyName(id)}（矯正，${gestW}週）` : babyName(id);
+      series.push({ id, color: babyColor(id).main, sex: babySex(id) || 'boy', points, label });
     }
   });
 
@@ -1896,7 +1954,7 @@ function renderGrowthChart(){
 
   legendEl.innerHTML = series.map(s => `
     <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);font-weight:600;">
-      <span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;"></span>${babyName(s.id)}
+      <span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;"></span>${s.label || babyName(s.id)}
     </span>`).join('') + `
     <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);font-weight:500;margin-left:auto;">
       ${dominantSex==='girl'?'👧 女寶':'👦 男寶'} WHO 標準
@@ -1934,7 +1992,7 @@ function renderGrowthChart(){
     xLabels += `<text x="${gx}" y="${H-10}" text-anchor="middle" font-size="11" fill="#8E939C">${m}</text>`;
     xLabels += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${H-padB}" stroke="#E8EBEF" stroke-width="1" />`;
   }
-  xLabels += `<text x="${(padL+W-padR)/2}" y="${H-2}" text-anchor="middle" font-size="11" fill="#8E939C">年齡（月）</text>`;
+  xLabels += `<text x="${(padL+W-padR)/2}" y="${H-2}" text-anchor="middle" font-size="11" fill="#8E939C">${usingCorrected ? '矯正年齡（月）' : '實際年齡（月）'}</text>`;
 
   // WHO percentile bands: outer band (P3-P97) light, inner band (P15-P85) slightly stronger
   const bandColor = dominantSex === 'girl' ? '127,196,184' : '127,168,217'; // rgb for c2(girl-ish teal) / c1(boy-ish blue)
