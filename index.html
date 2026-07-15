@@ -388,6 +388,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
       <button onclick="openWeightAdd()" style="background:linear-gradient(135deg,#7C9BB8,var(--gold));color:#FFFFFF;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
     </div>
+    <div id="growthLatestSummary" class="weight-card" style="margin-bottom:12px;"></div>
     <div id="weightListWrap" class="weight-card" style="overflow:hidden;transition:max-height 0.3s ease;max-height:2000px;">
       <div id="weightColumns" style="display:flex;gap:12px;overflow-x:auto;"></div>
     </div>
@@ -406,6 +407,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <button class="seg-btn selected" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
       <button class="seg-btn" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
     </div>
+    <div id="growthAgeNote" style="display:none;font-size:11px;color:var(--gold);margin:-6px 0 10px;"></div>
     <div class="weight-card">
       <div id="growthChartLegend" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;"></div>
       <div id="growthChartSvgWrap" style="width:100%;overflow-x:auto;"></div>
@@ -1822,6 +1824,52 @@ function applyWeightListState(){
   }
 }
 
+function renderGrowthLatestSummary(){
+  const box = document.getElementById('growthLatestSummary');
+  if(!box) return;
+  const ids = activeBabyIds();
+
+  const cols = ids.map(id=>{
+    const c = babyColor(id);
+    const hKey = id+'_h';
+    const hcKey = id+'_hc';
+    const weightEntries = state.weights.filter(w => w[id]);
+    const heightEntries = state.weights.filter(w => w[hKey]);
+    const headEntries   = state.weights.filter(w => w[hcKey]);
+    const latestWeight = weightEntries.length ? [...weightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+    const latestHeight = heightEntries.length ? [...heightEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+    const latestHead   = headEntries.length   ? [...headEntries].sort((a,b)=>new Date(b.date)-new Date(a.date))[0]   : null;
+    const dates = [latestWeight, latestHeight, latestHead].filter(Boolean).map(e=>new Date(e.date));
+    const mostRecentDate = dates.length ? new Date(Math.max(...dates)) : null;
+    const dateStr = mostRecentDate ? mostRecentDate.toLocaleDateString('zh-TW',{month:'short',day:'numeric'}) : '尚無紀錄';
+
+    return `<div style="flex:1;min-width:150px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border);">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+        <span>${babyName(id)}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">體重</div>
+          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestWeight ? latestWeight[id]+'g' : '—'}</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">身高</div>
+          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestHeight ? latestHeight[hKey]+'cm' : '—'}</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600;">頭圍</div>
+          <div style="font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;">${latestHead ? latestHead[hcKey]+'cm' : '—'}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);text-align:center;margin-top:8px;">${dateStr}</div>
+    </div>`;
+  }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
+
+  box.innerHTML = `<div class="section-title" style="margin-bottom:10px;">📏 最新數值</div>
+    <div style="display:flex;gap:16px;">${cols}</div>`;
+}
+
 function renderWeight(){
   const ids = activeBabyIds();
   const container = document.getElementById('weightColumns');
@@ -1861,6 +1909,7 @@ function renderWeight(){
       <div style="display:flex;flex-direction:column;gap:8px;">${listHtml}</div>
     </div>`;
   }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
+  renderGrowthLatestSummary();
   renderGrowthChart();
   applyWeightListState();
 }
@@ -1924,6 +1973,22 @@ function renderGrowthChart(){
   const series = [];
   const missingBirthIds = [];
   const usingCorrected = growthAgeMode === 'corrected';
+
+  const noteEl = document.getElementById('growthAgeNote');
+  if(noteEl){
+    if(usingCorrected){
+      const missingGestIds = ids.filter(id => !babyGestWeeks(id));
+      if(missingGestIds.length){
+        noteEl.textContent = `⚠️ ${missingGestIds.map(babyName).join('、')} 尚未在「設定」填寫妊娠週數，矯正年齡會與實際年齡相同`;
+        noteEl.style.display = 'block';
+      } else {
+        noteEl.style.display = 'none';
+      }
+    } else {
+      noteEl.style.display = 'none';
+    }
+  }
+
   ids.forEach((id, i) => {
     const actualBirth = babyBirth(id);
     const birth = usingCorrected ? (babyCorrectedBirthStr(id) || actualBirth) : actualBirth;
