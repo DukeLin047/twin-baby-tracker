@@ -247,7 +247,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <div class="header-top">
     <div>
       <h1 id="appTitle" onclick="changeAppTitle()" style="cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="width:36px;height:36px;color:var(--accent-gold);flex-shrink:0;display:inline-flex;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><circle cx="9.7" cy="11" r="2.2"/><circle cx="14.3" cy="11" r="2.2"/><path d="M7.4 16C8.55 17.6 10.85 17.6 12 16"/><path d="M12 16C13.15 17.6 15.45 17.6 16.6 16"/></svg></span> <span class="hl" id="appTitleText">寶寶成長日誌</span></h1>
-      <div id="babyAgeLabel" style="font-size:13px;color:var(--ink2);margin-top:4px;margin-left:46px;"></div>
+      <div id="babyAgeLabel" style="font-size:13px;color:var(--ink2);margin-top:4px;margin-left:46px;line-height:1.7;"></div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
       <div class="sync-dot" id="syncDot" title="雲端同步中"></div>
@@ -1140,15 +1140,34 @@ function babyGestWeeks(id){
   const w = parseInt(entry.gestWeeks);
   return (w >= 22 && w <= 41) ? w : null;
 }
-// Corrected birth = actual birth + (40 - gestWeeks) weeks
+function babyGestDays(id){
+  id = normalizeBabyId(id);
+  const entry = state.babies && state.babies[id];
+  if(!entry || typeof entry === 'string') return 0;
+  const d = parseInt(entry.gestDays);
+  return (d >= 0 && d <= 6) ? d : 0;
+}
+// Total gestation length in days at birth (weeks*7 + extra days), or null if weeks not set
+function babyGestTotalDays(id){
+  const w = babyGestWeeks(id);
+  if(w === null) return null;
+  return w * 7 + babyGestDays(id);
+}
+function babyGestLabel(id){
+  const w = babyGestWeeks(id);
+  if(w === null) return '';
+  const d = babyGestDays(id);
+  return d ? `${w}週${d}天` : `${w}週`;
+}
+// Corrected birth = actual birth + (280 - totalGestDays) days [full term = 40 weeks = 280 days]
 // Returns the "expected due date" as a date string, or the actual birth if no gest weeks set
 function babyCorrectedBirthStr(id){
   const birth = babyBirth(id);
-  const gestW = babyGestWeeks(id);
-  if(!birth || !gestW) return birth;
-  const weeksToAdd = 40 - gestW;
+  const totalGestDays = babyGestTotalDays(id);
+  if(!birth || totalGestDays === null) return birth;
+  const daysToAdd = 280 - totalGestDays;
   const d = new Date(birth + 'T00:00:00');
-  d.setDate(d.getDate() + weeksToAdd * 7);
+  d.setDate(d.getDate() + daysToAdd);
   return d.toISOString().slice(0, 10);
 }
 function babyColorKey(id){
@@ -1455,6 +1474,7 @@ function renderSettingsNameFields(){
     const existingBirth = typeof existing === 'string' ? '' : (existing.birth || '');
     const existingColorKey = typeof existing === 'string' ? '' : (existing.colorKey || '');
     const existingGestWeeks = typeof existing === 'string' ? '' : (existing.gestWeeks || '');
+    const existingGestDays = typeof existing === 'string' ? '' : (existing.gestDays || '');
     if(!(id in settingsColorChoices)){
       settingsColorChoices[id] = existingColorKey || BABY_COLORS[i].key;
     }
@@ -1483,11 +1503,13 @@ function renderSettingsNameFields(){
       </div>
       <div class="field" style="margin-top:10px;margin-bottom:0;">
         <label style="font-size:12px;">出生周數（選填，早產寶寶填此欄）</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" id="settingsGestWeeks_${id}" placeholder="例如：34" min="22" max="42" step="1" value="${existingGestWeeks}" style="flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="number" id="settingsGestWeeks_${id}" placeholder="例如：34" min="22" max="41" step="1" value="${existingGestWeeks}" style="flex:1;">
           <span style="font-size:13px;color:var(--ink2);white-space:nowrap;">週</span>
+          <input type="number" id="settingsGestDays_${id}" placeholder="0" min="0" max="6" step="1" value="${existingGestDays}" style="flex:1;">
+          <span style="font-size:13px;color:var(--ink2);white-space:nowrap;">天</span>
         </div>
-        ${existingGestWeeks && existingBirth ? `<div style="font-size:11px;color:var(--gold);margin-top:4px;">矯正年齡起算：出生日加上 ${40 - parseInt(existingGestWeeks)} 週 = 預產期</div>` : '<div style="font-size:11px;color:var(--ink3);margin-top:4px;">填寫後可在成長曲線切換矯正年齡對照 WHO 標準</div>'}
+        ${existingGestWeeks && existingBirth ? `<div style="font-size:11px;color:var(--gold);margin-top:4px;">矯正年齡起算：出生日加上 ${280 - (parseInt(existingGestWeeks)*7 + (parseInt(existingGestDays)||0))} 天 = 預產期</div>` : '<div style="font-size:11px;color:var(--ink3);margin-top:4px;">填寫後可在成長曲線切換矯正年齡對照 WHO 標準</div>'}
       </div>
       <label style="font-size:12px;margin-top:10px;display:block;">顏色主題</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">${swatches}</div>
@@ -1507,8 +1529,9 @@ function saveBabySettings(){
     const sex = document.getElementById('settingsSex_'+id).value || '';
     const birth = document.getElementById('settingsBirth_'+id).value || '';
     const gestWeeks = document.getElementById('settingsGestWeeks_'+id).value || '';
+    const gestDays = document.getElementById('settingsGestDays_'+id).value || '';
     const colorKey = settingsColorChoices[id] || '';
-    names[id] = { name: val, sex, birth, gestWeeks, colorKey };
+    names[id] = { name: val, sex, birth, gestWeeks, gestDays, colorKey };
   }
   setSyncStatus('syncing');
   fref('babies').set({ count: settingsBabyCount, names })
@@ -1598,7 +1621,7 @@ function renderBabyAgeLabel(){
         correctedStr = ` <span style="color:var(--ink3);font-size:11px;">（矯正 ${ca}）</span>`;
       }
     }
-    return `<span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}`;
+    return `<span style="white-space:nowrap;display:inline-block;"><span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}</span>`;
   }).filter(Boolean);
   el.innerHTML = parts.length ? parts.join('　·　') : '';
 }
@@ -2004,7 +2027,7 @@ function renderGrowthChart(){
       .filter(p => p.x >= 0 && p.x <= 24)
       .sort((a,b) => a.x - b.x);
     if(points.length){
-      const label = usingCorrected && gestW ? `${babyName(id)}（矯正，${gestW}週）` : babyName(id);
+      const label = usingCorrected && gestW ? `${babyName(id)}（矯正，${babyGestLabel(id)}）` : babyName(id);
       series.push({ id, color: babyColor(id).main, sex: babySex(id) || 'boy', points, label });
     }
   });
