@@ -171,10 +171,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--bg-elev1);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
 .cal-cell:active{transform:scale(0.93);}
 .cal-cell.empty{background:none;border:none;cursor:default;}
-.cal-cell.today{border-color:var(--gold);}
+.cal-cell.today{background:var(--accent-gold);border-color:var(--accent-gold);box-shadow:0 2px 8px rgba(184,146,74,0.4);}
 .cal-cell.has-data{background:var(--bg-elev2);}
+.cal-cell.today.has-data{background:var(--accent-gold);}
 .cal-cell .cal-daynum{font-size:15px;font-weight:700;color:var(--ink2);}
-.cal-cell.today .cal-daynum{color:var(--gold);}
+.cal-cell.today .cal-daynum{color:#FFFFFF;}
+.cal-cell.today .cal-dots .dot{box-shadow:0 0 0 1px rgba(255,255,255,0.85);}
 .cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;max-width:28px;}
 .cal-dots .dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
 .dot.milk{background:#7FA8D9;}
@@ -203,8 +205,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .cal-block-memo .cal-weekdays{color:#7C9BB8;}
 .memo-cal-grid .cal-cell{background:#FFFFFF;border-color:#DCE5ED;}
 .memo-cal-grid .cal-cell.has-data{background:#E2E9F0;border-color:#5C7A99;}
-.memo-cal-grid .cal-cell.today{border-color:#5C7A99;}
-.memo-cal-grid .cal-cell.today .cal-daynum{color:#5C7A99;}
+.memo-cal-grid .cal-cell.today{background:#5C7A99;border-color:#5C7A99;box-shadow:0 2px 8px rgba(92,122,153,0.4);}
+.memo-cal-grid .cal-cell.today.has-data{background:#5C7A99;}
+.memo-cal-grid .cal-cell.today .cal-daynum{color:#FFFFFF;}
 .memo-add-btn{background:linear-gradient(135deg,#7C9BB8,#5C7A99);color:#FFFFFF;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;}
 
 .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
