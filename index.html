@@ -54,7 +54,7 @@ document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
   --radius:18px; --radius-sm:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,'Noto Serif TC','Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:90px;}
+body{font-family:-apple-system,'Noto Serif TC','Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:90px;word-break:keep-all;overflow-wrap:break-word;overflow-x:hidden;}
 
 #syncBar{position:fixed;top:0;left:0;right:0;z-index:999;padding:6px 16px;font-size:12px;font-weight:600;text-align:center;transition:all 0.3s;transform:translateY(-100%);}
 #syncBar.show{transform:translateY(0);}
@@ -1147,7 +1147,6 @@ const TYPE_DEFS = [
   {key:'bottlemilk', icon:ICON_SVG.bottlemilk, label:'瓶餵母乳'},
   {key:'pump', icon:ICON_SVG.pump, label:'擠奶'},
   {key:'diaper', icon:ICON_SVG.diaper, label:'換尿片'},
-  {key:'bath', icon:ICON_SVG.bath, label:'洗澡'},
   {key:'growth', icon:ICON_SVG.growth, label:'成長記錄'},
   {key:'temp', icon:ICON_SVG.temp, label:'體溫'},
   {key:'medical', icon:ICON_SVG.medical, label:'症狀紀錄'},
@@ -1725,7 +1724,7 @@ function renderBabyAgeLabel(){
         correctedStr = ` <span style="color:var(--ink3);font-size:11px;">（矯正 ${ca}）</span>`;
       }
     }
-    return `<span style="white-space:nowrap;display:inline-block;"><span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}</span>`;
+    return `<span style="word-break:keep-all;overflow-wrap:break-word;"><span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}</span>`;
   }).filter(Boolean);
   el.innerHTML = parts.length ? parts.join('　·　') : '';
 }
