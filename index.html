@@ -186,6 +186,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 .dot.growth{background:#8FBF9A;}
 .dot.temp{background:#D97A6E;}
 .dot.medical{background:#E0739E;}
+.dot.medicine{background:#9B7FD4;}
 .dot.solidfood{background:#7BAE6B;}
 .dot.note{background:#5C7A99;}
 .cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding:14px;background:var(--bg-elev1);border-radius:var(--radius-sm);border:1px solid var(--border);}
@@ -735,6 +736,32 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </div>
     </div>
 
+    <div id="fields-medicine" style="display:none">
+      <div class="field">
+        <label>用藥形式</label>
+        <div class="seg-btns" id="medicineFormPicker">
+          <button type="button" class="seg-btn selected" onclick="pickMedicineForm('藥水',this)">💧 藥水</button>
+          <button type="button" class="seg-btn" onclick="pickMedicineForm('藥包',this)">💊 藥包</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>藥品名稱（選填）</label>
+        <input type="text" id="medicineName" placeholder="例如：退燒藥水、化痰藥包…">
+      </div>
+      <div class="field" id="medicineLiquidField">
+        <label>劑量（毫升）</label>
+        <input type="number" id="medicineAmount" placeholder="例如：5" min="0" step="0.1">
+      </div>
+      <div class="field" id="medicinePacketField" style="display:none;">
+        <label>包數</label>
+        <input type="number" id="medicinePackets" placeholder="例如：1" min="0" step="0.5">
+      </div>
+      <div class="field">
+        <label>備註（選填）</label>
+        <textarea id="medicineNote" placeholder="例如：飯後服用、醫師指示、吐出來一些…"></textarea>
+      </div>
+    </div>
+
     <div id="fields-solidfood" style="display:none">
       <div class="field">
         <label>食物名稱</label>
@@ -1077,6 +1104,16 @@ let editingLogId = null;
 let currentType = 'nursing';
 let diaperType = '小便';
 let solidfoodReaction = '接受';
+let medicineForm = '藥水';
+function pickMedicineForm(val, btn){
+  medicineForm = val;
+  document.querySelectorAll('#medicineFormPicker .seg-btn').forEach(b=>b.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
+  const liquid = document.getElementById('medicineLiquidField');
+  const packet = document.getElementById('medicinePacketField');
+  if(liquid) liquid.style.display = (val === '藥水') ? '' : 'none';
+  if(packet) packet.style.display = (val === '藥包') ? '' : 'none';
+}
 function pickSolidReaction(val, btn){
   solidfoodReaction = val;
   document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach(b=>b.classList.remove('selected'));
@@ -1100,7 +1137,7 @@ const ICON_SVG = {
   temp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 14.2V5.3a1.8 1.8 0 1 0-3.5 0v8.9a3.6 3.6 0 1 0 3.5 0Z"/><line x1="14.7" y1="7" x2="16.5" y2="7"/><line x1="14.7" y1="9.5" x2="16.5" y2="9.5"/></svg>`,
   note: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l3 3v12.5a.5.5 0 0 1-.5.5H6.5a.5.5 0 0 1-.5-.5V4.5A.5.5 0 0 1 6 4Z"/><path d="M16 4v3h3"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14" x2="15.5" y2="14"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>`,
   medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M9.5 3.5v-1a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1"/><path d="M7 13h2.3l1.2-2.5 1.6 4 1.2-2.5H17"/></svg>`,
-  solidfood: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 0 14 0"/><path d="M5 11H3M21 11h-2"/><path d="M12 4v2M8.5 5.5l1.5 1.5M15.5 5.5 14 7"/><line x1="5" y1="18" x2="19" y2="18"/><path d="M12 18v2"/></svg>`,
+  medicine: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 13h18"/><path d="M8 8V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M12 11v4M10 13h4"/></svg>`,
 };
 
 const TYPE_DEFS = [
@@ -1113,6 +1150,7 @@ const TYPE_DEFS = [
   {key:'growth', icon:ICON_SVG.growth, label:'成長記錄'},
   {key:'temp', icon:ICON_SVG.temp, label:'體溫'},
   {key:'medical', icon:ICON_SVG.medical, label:'症狀紀錄'},
+  {key:'medicine', icon:ICON_SVG.medicine, label:'吃藥紀錄'},
   {key:'solidfood', icon:ICON_SVG.solidfood, label:'副食品'},
   {key:'note', icon:ICON_SVG.note, label:'備註'},
 ];
@@ -1128,6 +1166,7 @@ function typeInfo(type){
     growth:{icon:ICON_SVG.growth,label:'成長記錄'},
     temp:{icon:ICON_SVG.temp,label:'體溫'},
     medical:{icon:ICON_SVG.medical,label:'症狀紀錄'},
+    medicine:{icon:ICON_SVG.medicine,label:'吃藥紀錄'},
     solidfood:{icon:ICON_SVG.solidfood,label:'副食品'},
     note:{icon:ICON_SVG.note,label:'備註'},
   };
@@ -1817,6 +1856,18 @@ function logDetail(log){
   }
   if(log.type==='temp') return `${log.temp||'--'} °C`;
   if(log.type==='medical') return log.medicalText||'症狀紀錄';
+  if(log.type==='medicine'){
+    const parts = [];
+    if(log.medicineName) parts.push(log.medicineName);
+    else parts.push(log.medicineForm || '吃藥');
+    if(log.medicineForm === '藥包'){
+      if(log.medicinePackets) parts.push(log.medicinePackets + ' 包');
+    } else {
+      if(log.medicineAmount) parts.push(log.medicineAmount + 'ml');
+    }
+    if(log.medicineNote) parts.push(log.medicineNote);
+    return parts.filter(Boolean).join(' · ');
+  }
   if(log.type==='solidfood'){
     const parts = [log.solidfoodName||'副食品'];
     if(log.solidfoodAmount) parts.push(log.solidfoodAmount+'g');
@@ -2412,6 +2463,7 @@ function calDotClass(type){
   if(type==='growth') return 'growth';
   if(type==='temp') return 'temp';
   if(type==='medical') return 'medical';
+  if(type==='medicine') return 'medicine';
   if(type==='solidfood') return 'solidfood';
   if(type==='note') return 'note';
   return 'milk';
@@ -2429,6 +2481,7 @@ function renderCalLegend(){
     {dot:'growth', icon:ICON_SVG.growth, label:'成長'},
     {dot:'temp', icon:ICON_SVG.temp, label:'體溫'},
     {dot:'medical', icon:ICON_SVG.medical, label:'症狀'},
+    {dot:'medicine', icon:ICON_SVG.medicine, label:'吃藥'},
     {dot:'solidfood', icon:ICON_SVG.solidfood, label:'副食品'},
     {dot:'note', icon:ICON_SVG.note, label:'備註'},
   ];
@@ -2686,7 +2739,7 @@ function selectType(key){
   updateForm();
 }
 function updateForm(){
-  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','medical','solidfood','note'];
+  const allFieldGroups = ['nursing','bottlemilk','pump','diaper','bath','growth','temp','medical','medicine','solidfood','note'];
   allFieldGroups.forEach(g=>{
     const el = document.getElementById('fields-'+g);
     if(el) el.style.display='none';
@@ -2708,6 +2761,8 @@ function updateForm(){
     document.getElementById('fields-temp').style.display='';
   } else if(currentType==='medical'){
     document.getElementById('fields-medical').style.display='';
+  } else if(currentType==='medicine'){
+    document.getElementById('fields-medicine').style.display='';
   } else if(currentType==='solidfood'){
     document.getElementById('fields-solidfood').style.display='';
   } else if(currentType==='note'){
@@ -2805,7 +2860,7 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
@@ -2820,6 +2875,10 @@ function openAddType(type,baby){
   removeMedicalPhoto();
   solidfoodReaction = '接受';
   document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
+  medicineForm = '藥水';
+  document.querySelectorAll('#medicineFormPicker .seg-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
+  if(document.getElementById('medicineLiquidField')) document.getElementById('medicineLiquidField').style.display='';
+  if(document.getElementById('medicinePacketField')) document.getElementById('medicinePacketField').style.display='none';
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -2844,7 +2903,7 @@ function openEditLog(id){
   document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 
   // Clear all fields first
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
     const el=document.getElementById(fid); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
@@ -2880,6 +2939,17 @@ function openEditLog(id){
   } else if(log.type==='medical'){
     document.getElementById('medicalText').value = log.medicalText || '';
     loadMedicalPhotoForLog(log.id);
+  } else if(log.type==='medicine'){
+    document.getElementById('medicineName').value = log.medicineName || '';
+    document.getElementById('medicineAmount').value = log.medicineAmount || '';
+    document.getElementById('medicinePackets').value = log.medicinePackets || '';
+    document.getElementById('medicineNote').value = log.medicineNote || '';
+    medicineForm = log.medicineForm || '藥水';
+    document.querySelectorAll('#medicineFormPicker .seg-btn').forEach(b=>{
+      b.classList.toggle('selected', b.textContent.trim().includes(medicineForm));
+    });
+    document.getElementById('medicineLiquidField').style.display = (medicineForm==='藥水') ? '' : 'none';
+    document.getElementById('medicinePacketField').style.display = (medicineForm==='藥包') ? '' : 'none';
   } else if(log.type==='solidfood'){
     document.getElementById('solidfoodName').value = log.solidfoodName || '';
     document.getElementById('solidfoodAmount').value = log.solidfoodAmount || '';
@@ -3030,6 +3100,12 @@ function saveLog(){
   } else if(currentType==='medical'){
     log.medicalText = document.getElementById('medicalText').value || '';
     log.hasLocalPhoto = !!currentMedicalPhotoData;
+  } else if(currentType==='medicine'){
+    log.medicineForm = medicineForm || '藥水';
+    log.medicineName = document.getElementById('medicineName').value || '';
+    log.medicineAmount = (medicineForm === '藥水') ? (document.getElementById('medicineAmount').value || '') : '';
+    log.medicinePackets = (medicineForm === '藥包') ? (document.getElementById('medicinePackets').value || '') : '';
+    log.medicineNote = document.getElementById('medicineNote').value || '';
   } else if(currentType==='solidfood'){
     log.solidfoodName = document.getElementById('solidfoodName').value || '';
     log.solidfoodAmount = document.getElementById('solidfoodAmount').value || '';
