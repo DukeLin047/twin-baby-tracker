@@ -1724,9 +1724,9 @@ function renderBabyAgeLabel(){
         correctedStr = ` <span style="color:var(--ink3);font-size:11px;">（矯正 ${ca}）</span>`;
       }
     }
-    return `<span style="word-break:keep-all;overflow-wrap:break-word;"><span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}</span>`;
+    return `<div style="word-break:keep-all;overflow-wrap:break-word;"><span style="color:${c.main};font-weight:600;">${babyName(id)}</span> ${ageStr}${correctedStr}</div>`;
   }).filter(Boolean);
-  el.innerHTML = parts.length ? parts.join('　·　') : '';
+  el.innerHTML = parts.length ? `<div style="display:flex;flex-direction:column;gap:2px;">${parts.join('')}</div>` : '';
 }
 
 // ─── Render ───────────────────────────────────────────
