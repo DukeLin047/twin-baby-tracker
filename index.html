@@ -2051,18 +2051,24 @@ function renderGrowthLatestSummary(){
 
 // ─── 試敏總覽（依衛福部食品過敏原標示規定 11 大類 + 常見高敏食物）──
 const ALLERGEN_CATEGORIES = [
-  {key:'甲殼類', label:'甲殼類', hint:'蝦、蟹'},
-  {key:'芒果', label:'芒果', hint:''},
-  {key:'花生', label:'花生', hint:''},
-  {key:'牛奶羊奶', label:'牛奶／羊奶', hint:'優格、起司'},
-  {key:'蛋', label:'蛋', hint:'蛋黃／蛋白'},
-  {key:'堅果類', label:'堅果類', hint:'杏仁、核桃、腰果等'},
-  {key:'芝麻', label:'芝麻', hint:''},
-  {key:'麩質穀物', label:'麩質穀物', hint:'小麥、大麥、燕麥'},
-  {key:'大豆', label:'大豆', hint:'豆腐、豆漿'},
-  {key:'魚類', label:'魚類', hint:''},
-  {key:'其他高敏', label:'其他高敏', hint:'奇異果、海鮮貝類等'},
+  {key:'甲殼類', label:'甲殼類', hint:'蝦、蟹', examples:'蝦、螃蟹、龍蝦'},
+  {key:'芒果', label:'芒果', hint:'', examples:'芒果'},
+  {key:'花生', label:'花生', hint:'', examples:'花生、花生醬'},
+  {key:'牛奶羊奶', label:'牛奶／羊奶', hint:'優格、起司', examples:'鮮奶、羊奶、優格、起司、奶油'},
+  {key:'蛋', label:'蛋', hint:'蛋黃／蛋白', examples:'雞蛋（蛋黃／蛋白）、鴨蛋'},
+  {key:'堅果類', label:'堅果類', hint:'杏仁、核桃、腰果等', examples:'杏仁、核桃、腰果、開心果、夏威夷豆、榛果'},
+  {key:'芝麻', label:'芝麻', hint:'', examples:'芝麻、芝麻醬、麻油'},
+  {key:'麩質穀物', label:'麩質穀物', hint:'小麥、大麥、燕麥', examples:'小麥、大麥、黑麥、燕麥（麵包、麵條、麥片）'},
+  {key:'大豆', label:'大豆', hint:'豆腐、豆漿', examples:'黃豆、豆腐、豆漿、毛豆'},
+  {key:'魚類', label:'魚類', hint:'', examples:'鮭魚、鱈魚、鯛魚、吻仔魚'},
+  {key:'其他高敏', label:'其他高敏', hint:'奇異果、海鮮貝類等', examples:'奇異果、蛤蜊、干貝、牡蠣、鳳梨、番茄'},
 ];
+
+let allergenTableOpen = false;
+function toggleAllergenTable(){
+  allergenTableOpen = !allergenTableOpen;
+  renderAllergenOverview();
+}
 
 function renderAllergenOverview(){
   const box = document.getElementById('allergenOverview');
@@ -2096,7 +2102,31 @@ function renderAllergenOverview(){
     </div>`;
   }).join('<div style="height:1px;background:var(--border);margin-bottom:14px;"></div>');
 
-  box.innerHTML = rows + `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">✅ 已試過（無過敏反應）　⚠️ 曾有過敏反應　灰色 未試過</div>`;
+  const tableRows = ALLERGEN_CATEGORIES.map((cat,i)=>`
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);${i===0?'border-top:1px solid var(--border);':''}">
+      <div style="flex:0 0 84px;padding:9px 8px;font-size:12px;font-weight:700;color:var(--ink);background:var(--bg-elev1);display:flex;align-items:center;">${cat.label}</div>
+      <div style="flex:1;padding:9px 10px;font-size:12px;color:var(--ink2);line-height:1.6;display:flex;align-items:center;">${cat.examples}</div>
+    </div>`).join('');
+
+  const tableHtml = `
+    <button type="button" onclick="toggleAllergenTable()" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--bg-elev1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;font-weight:700;color:var(--ink2);margin-top:12px;">
+      <span>📖 常見過敏原食物對照表</span>
+      <span>${allergenTableOpen ? '▲ 收合' : '▼ 展開查看'}</span>
+    </button>
+    ${allergenTableOpen ? `
+    <div style="margin-top:8px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);">
+      <div style="display:flex;background:var(--accent-gold);color:#fff;font-size:12px;font-weight:700;">
+        <div style="flex:0 0 84px;padding:9px 8px;">分類</div>
+        <div style="flex:1;padding:9px 10px;">常見食物</div>
+      </div>
+      ${tableRows}
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5;">
+      💡 這 11 類是衛福部食品過敏原標示規定的常見致敏食物，並非「等級」之分。現行兒科建議：不需要刻意延後讓寶寶接觸，仍建議少量開始、觀察 3–7 天再嘗試下一種新食物。
+    </div>` : ''}
+  `;
+
+  box.innerHTML = rows + `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">✅ 已試過（無過敏反應）　⚠️ 曾有過敏反應　灰色 未試過</div>` + tableHtml;
 }
 
 function renderWeight(){
