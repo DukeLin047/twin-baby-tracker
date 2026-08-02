@@ -121,6 +121,8 @@ header p{font-size:14px;color:var(--ink3);margin-top:3px;letter-spacing:1.5px;te
 
 .field{margin-bottom:16px;}
 .field label{display:block;font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:7px;letter-spacing:0.4px;}
+.field label.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer;}
+.field label.chk-row input[type="checkbox"]{width:18px;height:18px;flex-shrink:0;accent-color:var(--gold);}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:17px;color:var(--ink);background:var(--bg-elev2);outline:none;transition:border-color 0.15s;font-family:inherit;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
 .field textarea{resize:vertical;min-height:60px;}
@@ -434,6 +436,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         💡 庫存依「擠奶」與「瓶餵母乳」紀錄自動加總／扣除。若實際庫存與顯示不同（例如丟棄或提前解凍），可用上方按鈕手動調整。
       </p>
     </div>
+  </div>
+
+  <!-- 試敏總覽 -->
+  <div class="section">
+    <div class="section-title">🥄 試敏總覽</div>
+    <div id="allergenOverview" class="weight-card"></div>
   </div>
 
   <!-- 奶量計算器 -->
@@ -768,6 +776,26 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
         <input type="text" id="solidfoodName" placeholder="例如：南瓜泥、蘋果泥、粥…">
       </div>
       <div class="field">
+        <label>過敏原分類（選填）</label>
+        <select id="solidfoodAllergen">
+          <option value="">— 不特別分類（一般食物） —</option>
+          <option value="甲殼類">甲殼類（蝦、蟹）</option>
+          <option value="芒果">芒果</option>
+          <option value="花生">花生</option>
+          <option value="牛奶羊奶">牛奶／羊奶（含優格、起司）</option>
+          <option value="蛋">蛋（蛋黃／蛋白）</option>
+          <option value="堅果類">堅果類（杏仁、核桃、腰果等）</option>
+          <option value="芝麻">芝麻</option>
+          <option value="麩質穀物">麩質穀物（小麥、大麥、燕麥）</option>
+          <option value="大豆">大豆（豆腐、豆漿）</option>
+          <option value="魚類">魚類</option>
+          <option value="其他高敏">其他高敏（奇異果、海鮮貝類等）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="chk-row"><input type="checkbox" id="solidfoodFirstTry"> 這是第一次嘗試這個食物</label>
+      </div>
+      <div class="field">
         <label>份量（選填）</label>
         <input type="number" id="solidfoodAmount" placeholder="例如：30" min="0">
         <div style="font-size:11px;color:var(--ink3);margin-top:4px;">單位：克（g）或毫升（ml）</div>
@@ -780,11 +808,19 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
           <button type="button" class="seg-btn" onclick="pickSolidReaction('過敏反應',this)">⚠️ 過敏反應</button>
         </div>
       </div>
+      <div class="field" id="solidfoodSymptomField" style="display:none;">
+        <label>過敏症狀（選填）</label>
+        <input type="text" id="solidfoodSymptom" placeholder="例如：紅疹、蕁麻疹、嘔吐、腹瀉、呼吸困難…">
+      </div>
       <div class="field">
         <label>備註（選填）</label>
-        <textarea id="solidfoodNote" placeholder="例如：第一次嘗試、喜歡吃、皮膚起疹…"></textarea>
+        <textarea id="solidfoodNote" placeholder="例如：喜歡吃、吃得不多…"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);background:var(--bg-elev1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;line-height:1.6;">
+        💡 試敏小提醒：一次只試一種新食物，先從少量開始，觀察 3–7 天無異狀再嘗試下一種。高敏食物不必刻意延後，但仍建議少量開始。
       </div>
     </div>
+
 
     <div id="fields-note" style="display:none">
       <div class="field">
@@ -1118,6 +1154,8 @@ function pickSolidReaction(val, btn){
   solidfoodReaction = val;
   document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
+  const symField = document.getElementById('solidfoodSymptomField');
+  if(symField) symField.style.display = (val === '過敏反應') ? '' : 'none';
 }
 let nurseTimers = { left:null, right:null };
 let bathTimer = null;
@@ -1870,8 +1908,10 @@ function logDetail(log){
   }
   if(log.type==='solidfood'){
     const parts = [log.solidfoodName||'副食品'];
+    if(log.solidfoodFirstTry) parts.push('🆕首次');
     if(log.solidfoodAmount) parts.push(log.solidfoodAmount+'g');
     if(log.solidfoodReaction) parts.push(log.solidfoodReaction);
+    if(log.solidfoodReaction==='過敏反應' && log.solidfoodSymptom) parts.push(log.solidfoodSymptom);
     return parts.join(' · ');
   }
   if(log.type==='note') return log.note||'';
@@ -2009,6 +2049,56 @@ function renderGrowthLatestSummary(){
   box.innerHTML = `<div class="section-title" style="margin-bottom:4px;">📏 最新數值</div>${cols}`;
 }
 
+// ─── 試敏總覽（依衛福部食品過敏原標示規定 11 大類 + 常見高敏食物）──
+const ALLERGEN_CATEGORIES = [
+  {key:'甲殼類', label:'甲殼類', hint:'蝦、蟹'},
+  {key:'芒果', label:'芒果', hint:''},
+  {key:'花生', label:'花生', hint:''},
+  {key:'牛奶羊奶', label:'牛奶／羊奶', hint:'優格、起司'},
+  {key:'蛋', label:'蛋', hint:'蛋黃／蛋白'},
+  {key:'堅果類', label:'堅果類', hint:'杏仁、核桃、腰果等'},
+  {key:'芝麻', label:'芝麻', hint:''},
+  {key:'麩質穀物', label:'麩質穀物', hint:'小麥、大麥、燕麥'},
+  {key:'大豆', label:'大豆', hint:'豆腐、豆漿'},
+  {key:'魚類', label:'魚類', hint:''},
+  {key:'其他高敏', label:'其他高敏', hint:'奇異果、海鮮貝類等'},
+];
+
+function renderAllergenOverview(){
+  const box = document.getElementById('allergenOverview');
+  if(!box) return;
+  const ids = activeBabyIds();
+  const solidLogs = state.logs.filter(l=>l.type==='solidfood' && l.solidfoodAllergen);
+
+  const rows = ids.map(id=>{
+    const c = babyColor(id);
+    const babyLogs = solidLogs.filter(l=>l.baby===id);
+    const chips = ALLERGEN_CATEGORIES.map(cat=>{
+      const matches = babyLogs.filter(l=>l.solidfoodAllergen===cat.key);
+      let state_, bg, fg, icon;
+      if(!matches.length){
+        state_ = '未試'; bg='var(--bg-elev1)'; fg='var(--ink3)'; icon='';
+      } else if(matches.some(l=>l.solidfoodReaction==='過敏反應')){
+        state_ = '過敏'; bg='#F5DEDC'; fg='#A34A3E'; icon='⚠️ ';
+      } else {
+        state_ = '已試'; bg='#DCEAE0'; fg='#3F7A5C'; icon='✅ ';
+      }
+      const foodNames = matches.map(l=>l.solidfoodName).filter(Boolean).join('、');
+      const title = foodNames ? `${cat.label}：${foodNames}` : cat.label;
+      return `<span title="${title}" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:5px 9px;border-radius:20px;background:${bg};color:${fg};white-space:nowrap;">${icon}${cat.label}</span>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:8px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+        <span>${babyName(id)}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${chips}</div>
+    </div>`;
+  }).join('<div style="height:1px;background:var(--border);margin-bottom:14px;"></div>');
+
+  box.innerHTML = rows + `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">✅ 已試過（無過敏反應）　⚠️ 曾有過敏反應　灰色 未試過</div>`;
+}
+
 function renderWeight(){
   const ids = activeBabyIds();
   const container = document.getElementById('weightColumns');
@@ -2056,6 +2146,7 @@ function renderWeight(){
     </div>`;
   }).join('<div style="width:1.5px;background:var(--border);flex-shrink:0;"></div>');
   renderGrowthLatestSummary();
+  renderAllergenOverview();
   renderGrowthChart();
   applyWeightListState();
 }
@@ -2860,7 +2951,7 @@ function openAddType(type,baby){
   updateForm();
   renderBabyPicker();
   setDefaultTime();
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(id=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','solidfoodSymptom','noteText','commonTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(id=>{
@@ -2875,6 +2966,9 @@ function openAddType(type,baby){
   removeMedicalPhoto();
   solidfoodReaction = '接受';
   document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
+  if(document.getElementById('solidfoodAllergen')) document.getElementById('solidfoodAllergen').value = '';
+  if(document.getElementById('solidfoodFirstTry')) document.getElementById('solidfoodFirstTry').checked = false;
+  if(document.getElementById('solidfoodSymptomField')) document.getElementById('solidfoodSymptomField').style.display = 'none';
   medicineForm = '藥水';
   document.querySelectorAll('#medicineFormPicker .seg-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
   if(document.getElementById('medicineLiquidField')) document.getElementById('medicineLiquidField').style.display='';
@@ -2903,7 +2997,7 @@ function openEditLog(id){
   document.getElementById('logTimeOnly').value = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 
   // Clear all fields first
-  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','noteText','commonTag'].forEach(fid=>{
+  ['nurseLeftMin','nurseRightMin','bottleAmount','pumpAmount','bathMin','growthWeight','growthHeight','growthHead','tempValue','medicalText','medicineName','medicineAmount','medicinePackets','medicineNote','solidfoodName','solidfoodAmount','solidfoodNote','solidfoodSymptom','noteText','commonTag'].forEach(fid=>{
     const el=document.getElementById(fid); if(el) el.value='';
   });
   ['nurseLeftDisplay','nurseRightDisplay','bathDisplay'].forEach(fid=>{
@@ -2954,10 +3048,14 @@ function openEditLog(id){
     document.getElementById('solidfoodName').value = log.solidfoodName || '';
     document.getElementById('solidfoodAmount').value = log.solidfoodAmount || '';
     document.getElementById('solidfoodNote').value = log.solidfoodNote || '';
+    document.getElementById('solidfoodAllergen').value = log.solidfoodAllergen || '';
+    document.getElementById('solidfoodFirstTry').checked = !!log.solidfoodFirstTry;
+    document.getElementById('solidfoodSymptom').value = log.solidfoodSymptom || '';
     solidfoodReaction = log.solidfoodReaction || '接受';
     document.querySelectorAll('#solidfoodReactionPicker .seg-btn').forEach(b=>{
       b.classList.toggle('selected', b.textContent.trim().includes(solidfoodReaction));
     });
+    document.getElementById('solidfoodSymptomField').style.display = (solidfoodReaction==='過敏反應') ? '' : 'none';
   } else if(log.type==='note'){
     document.getElementById('noteText').value = log.note || '';
   }
@@ -3111,6 +3209,9 @@ function saveLog(){
     log.solidfoodAmount = document.getElementById('solidfoodAmount').value || '';
     log.solidfoodReaction = solidfoodReaction || '接受';
     log.solidfoodNote = document.getElementById('solidfoodNote').value || '';
+    log.solidfoodAllergen = document.getElementById('solidfoodAllergen').value || '';
+    log.solidfoodFirstTry = !!document.getElementById('solidfoodFirstTry').checked;
+    log.solidfoodSymptom = (solidfoodReaction === '過敏反應') ? (document.getElementById('solidfoodSymptom').value || '') : '';
   } else if(currentType==='note'){
     log.note = document.getElementById('noteText').value || '';
   }
