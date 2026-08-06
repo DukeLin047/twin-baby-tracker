@@ -2493,13 +2493,15 @@ function renderFeedScheduleForBaby(baby){
     return;
   }
 
-  // Find today's feeding logs (哺乳/配方奶/瓶餵母乳) for this baby, sorted by time
-  const targetDay = new Date(currentDay); targetDay.setHours(0,0,0,0);
-  const feedLogs = state.logs
-    .filter(l => l.baby === baby && ['nursing','formula','bottlemilk'].includes(l.type) && isSameDay(new Date(l.time), targetDay))
-    .sort((a,b) => new Date(a.time) - new Date(b.time));
+  // Find the most recent actual feed log for this baby (哺乳/配方奶/瓶餵母乳),
+  // across all days up to now — not just "today's first feed" — so the schedule
+  // always recalculates forward from whenever the baby was actually last fed.
+  const now = Date.now();
+  const lastFeed = state.logs
+    .filter(l => l.baby === baby && ['nursing','formula','bottlemilk'].includes(l.type) && new Date(l.time).getTime() <= now)
+    .sort((a,b) => new Date(b.time) - new Date(a.time))[0];
 
-  if(!feedLogs.length){
+  if(!lastFeed){
     resultBox.style.display = 'none';
     emptyBox.style.display = 'block';
     return;
@@ -2507,37 +2509,42 @@ function renderFeedScheduleForBaby(baby){
   emptyBox.style.display = 'none';
   resultBox.style.display = 'block';
 
-  const firstFeedTime = new Date(feedLogs[0].time);
+  const lastFeedTime = new Date(lastFeed.time);
   const c = babyColor(baby);
-  baseInfoEl.innerHTML = `以今天第一餐 <strong style="color:${c.main}">${String(firstFeedTime.getHours()).padStart(2,'0')}:${String(firstFeedTime.getMinutes()).padStart(2,'0')}</strong> 為基準，每隔 ${intervalHours} 小時：`;
+  const lastHH = String(lastFeedTime.getHours()).padStart(2,'0');
+  const lastMM = String(lastFeedTime.getMinutes()).padStart(2,'0');
+  const sinceMin = Math.floor((now - lastFeedTime.getTime()) / 60000);
+  const sinceH = Math.floor(sinceMin / 60), sinceM = sinceMin % 60;
+  baseInfoEl.innerHTML = `以最近一次實際餵奶 <strong style="color:${c.main}">${lastHH}:${lastMM}</strong> 為基準（距今 ${sinceH} 小時 ${sinceM} 分），每隔 ${intervalHours} 小時往後推算：`;
 
   const intervalMs = intervalHours * 3600000;
-  const now = Date.now();
   const slots = [];
-  // Generate today's full schedule starting from the first feed, up to 23:59
-  let t = firstFeedTime.getTime();
-  const dayEnd = new Date(targetDay); dayEnd.setHours(23,59,59,999);
-  let slotIndex = 1;
-  while(t <= dayEnd.getTime()){
-    slots.push({ time: new Date(t), index: slotIndex, isPast: t < now });
+  // Slot 0 = the actual last feed (for reference); slots 1+ are forward projections
+  slots.push({ time: lastFeedTime, index: 0, isPast: true, isActual: true });
+  let t = lastFeedTime.getTime() + intervalMs;
+  for(let i = 1; i <= 5; i++){
+    slots.push({ time: new Date(t), index: i, isPast: t < now, isActual: false });
     t += intervalMs;
-    slotIndex++;
   }
 
   listEl.innerHTML = slots.map(s => {
     const hh = String(s.time.getHours()).padStart(2,'0');
     const mm = String(s.time.getMinutes()).padStart(2,'0');
-    const isNext = !s.isPast && slots.find(x => !x.isPast) === s;
+    const isNext = !s.isActual && !s.isPast && slots.find(x => !x.isActual && !x.isPast) === s;
     const style = isNext
       ? `background:${c.light};border:1.5px solid ${c.main};`
-      : s.isPast
-        ? `background:var(--bg-elev2);border:1px solid var(--border);opacity:0.55;`
-        : `background:var(--bg-elev2);border:1px solid var(--border);`;
+      : s.isActual
+        ? `background:var(--bg-elev1);border:1px solid var(--border);`
+        : s.isPast
+          ? `background:var(--bg-elev2);border:1px solid var(--border);opacity:0.55;`
+          : `background:var(--bg-elev2);border:1px solid var(--border);`;
+    const label = s.isActual ? '上次實際餵奶' : (s.index === 1 ? '下一餐（建議）' : `後續預估 +${s.index-1}`);
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;${style}">
-      <span style="font-weight:700;font-size:15px;color:var(--ink);">第 ${s.index} 餐</span>
-      <span style="font-weight:800;font-size:16px;color:${isNext ? c.main : 'var(--ink2)'};">${hh}:${mm}${isNext ? '　🔔 下一餐' : ''}</span>
+      <span style="font-weight:700;font-size:14px;color:var(--ink);">${label}</span>
+      <span style="font-weight:800;font-size:16px;color:${isNext ? c.main : 'var(--ink2)'};">${hh}:${mm}${isNext ? '　🔔' : ''}</span>
     </div>`;
   }).join('');
+  listEl.insertAdjacentHTML('beforeend', `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">💡 每記一次新的餵奶，這份時間表會自動用最新的實際時間重新往後推算。</div>`);
 }
 
 function renderFeedingGoalProgress(baby, actualMl){
