@@ -130,7 +130,7 @@ header p{font-size:14px;color:var(--ink3);margin-top:3px;letter-spacing:1.5px;te
 .field-row .field{flex:1;}
 
 .seg-btns{display:flex;gap:8px;flex-wrap:wrap;}
-.seg-btn{flex:1;min-width:60px;padding:10px 6px;border:2px solid var(--ink);border-radius:14px;background:var(--bg-elev2);cursor:pointer;font-size:15px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;}
+.seg-btn{flex:1;min-width:60px;padding:10px 6px;border:2px solid var(--ink);border-radius:14px;background:var(--bg-elev2);cursor:pointer;font-size:15px;font-weight:600;color:var(--ink2);text-align:center;transition:all 0.15s;white-space:nowrap;}
 .seg-btn.selected{border-color:var(--accent-gold);background:var(--accent-gold-dim);color:var(--accent-gold);}
 
 .timer-row{display:flex;align-items:center;gap:8px;}
@@ -413,11 +413,11 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 
   <!-- 成長曲線圖 -->
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
       <div class="section-title" style="margin:0;">📈 成長曲線</div>
-      <div class="seg-btns" style="flex:0;gap:6px;" id="growthChartToggle">
-        <button class="seg-btn selected" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
-        <button class="seg-btn" style="flex:0;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
+      <div class="seg-btns" style="flex:0 0 auto;gap:6px;" id="growthChartToggle">
+        <button class="seg-btn selected" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
+        <button class="seg-btn" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:12px;" id="growthAgeToggle">
