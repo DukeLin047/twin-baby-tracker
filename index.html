@@ -416,12 +416,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     <div class="section-title" style="margin-bottom:10px;">📈 成長曲線</div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
       <div class="seg-btns" style="flex:0 0 auto;gap:6px;" id="growthAgeToggle">
-        <button class="seg-btn selected" style="flex:0 0 auto;padding:7px 14px;font-size:13px;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
-        <button class="seg-btn" style="flex:0 0 auto;padding:7px 14px;font-size:13px;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
+        <button class="seg-btn selected" style="flex:0 0 auto;padding:8px 18px;font-size:13px;white-space:nowrap;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
+        <button class="seg-btn" style="flex:0 0 auto;padding:8px 18px;font-size:13px;white-space:nowrap;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
       </div>
       <div class="seg-btns" style="flex:0 0 auto;gap:6px;" id="growthChartToggle">
-        <button class="seg-btn selected" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
-        <button class="seg-btn" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
+        <button class="seg-btn selected" style="flex:0 0 auto;padding:8px 18px;white-space:nowrap;" onclick="setGrowthChartMetric('weight',this)">體重</button>
+        <button class="seg-btn" style="flex:0 0 auto;padding:8px 18px;white-space:nowrap;" onclick="setGrowthChartMetric('height',this)">身高</button>
       </div>
     </div>
     <div id="growthAgeNote" style="display:none;font-size:11px;color:var(--gold);margin:-6px 0 10px;"></div>
@@ -586,6 +586,19 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
         把這組密碼分享給同一家庭的成員（例如另一半），輸入同一組密碼就能看到同一份紀錄。切換到別組密碼會看到完全不同（或全新）的資料。
       </p>
+    </div>
+
+    <div class="weight-card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:10px;">💾 資料備份</div>
+      <p style="font-size:11px;color:var(--ink3);margin-bottom:12px;line-height:1.5;">
+        程式碼本身存在 GitHub 上，換手機不需要備份；這裡備份的是全部紀錄資料，多一層保險（例如換手機、或雲端資料異常時可以還原）。
+      </p>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-cancel" style="display:flex;align-items:center;justify-content:center;gap:6px;" onclick="exportBackup()">📤 匯出備份</button>
+        <button class="btn-cancel" style="display:flex;align-items:center;justify-content:center;gap:6px;" onclick="document.getElementById('restoreFileInput').click()">📥 還原備份</button>
+        <input type="file" id="restoreFileInput" accept="application/json,.json" style="display:none;" onchange="importBackup(event)">
+      </div>
+      <p id="backupStatus" style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;"></p>
     </div>
 
     <div class="weight-card" style="margin-bottom:14px;">
@@ -1507,6 +1520,85 @@ function switchFamily(){
   if(!confirm('確定要切換到另一組家庭密碼嗎？畫面會重新載入，並要求輸入新的 6 位數密碼。')) return;
   localStorage.removeItem('familyCode');
   location.reload();
+}
+
+// ─── 資料備份／還原 ─────────────────────────────────────
+function exportBackup(){
+  const toObj = (arr) => {
+    const obj = {};
+    (arr || []).forEach(item => {
+      const { id, ...rest } = item;
+      obj[id] = rest;
+    });
+    return obj;
+  };
+  const backup = {
+    _meta: { app: 'twin-baby-tracker', exportedAt: new Date().toISOString(), familyCode },
+    babies: { count: state.babyCount, names: state.babies },
+    logs: toObj(state.logs),
+    weights: toObj(state.weights),
+    memos: toObj(state.memos),
+    inventoryAdjust: state.inventoryAdjust || 0,
+    feedingGoals: state.feedingGoals || {},
+    appTitle: state.appTitle || '寶寶成長日誌',
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `寶寶紀錄備份_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const statusEl = document.getElementById('backupStatus');
+  if(statusEl) statusEl.textContent = `✅ 已匯出備份（${new Date().toLocaleString('zh-TW')}）— 記得把檔案存到 iCloud 或傳給自己`;
+}
+
+function importBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('backupStatus');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.target.result);
+    } catch (err) {
+      alert('這個檔案不是有效的備份檔（JSON 格式錯誤）');
+      event.target.value = '';
+      return;
+    }
+    if(!data || typeof data !== 'object' || !data.babies){
+      alert('這個檔案看起來不是本 App 匯出的備份檔');
+      event.target.value = '';
+      return;
+    }
+    const meta = data._meta || {};
+    const exportedAtStr = meta.exportedAt ? new Date(meta.exportedAt).toLocaleString('zh-TW') : '未知時間';
+    if(!confirm(`確定要還原這份備份嗎？\n\n匯出時間：${exportedAtStr}\n\n這會覆蓋目前家庭密碼「${familyCode}」底下的全部資料，此動作無法復原！`)){
+      event.target.value = '';
+      return;
+    }
+    if(statusEl) statusEl.textContent = '還原中…';
+    Promise.all([
+      fref('babies').set(data.babies || { count: 2, names: {} }),
+      fref('logs').set(data.logs || {}),
+      fref('weights').set(data.weights || {}),
+      fref('memos').set(data.memos || {}),
+      fref('inventoryAdjust').set(data.inventoryAdjust || 0),
+      fref('feedingGoals').set(data.feedingGoals || {}),
+      fref('appTitle').set(data.appTitle || '寶寶成長日誌'),
+    ]).then(() => {
+      if(statusEl) statusEl.textContent = `✅ 還原完成（${new Date().toLocaleString('zh-TW')}）`;
+      alert('還原完成！');
+    }).catch(() => {
+      if(statusEl) statusEl.textContent = '❌ 還原失敗，請檢查網路後再試一次';
+    });
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ─── Baby count selector grid (shared by setup + settings) ──
