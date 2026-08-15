@@ -413,16 +413,16 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
 
   <!-- 成長曲線圖 -->
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-      <div class="section-title" style="margin:0;">📈 成長曲線</div>
+    <div class="section-title" style="margin-bottom:10px;">📈 成長曲線</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div class="seg-btns" style="flex:0 0 auto;gap:6px;" id="growthAgeToggle">
+        <button class="seg-btn selected" style="flex:0 0 auto;padding:7px 14px;font-size:13px;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
+        <button class="seg-btn" style="flex:0 0 auto;padding:7px 14px;font-size:13px;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
+      </div>
       <div class="seg-btns" style="flex:0 0 auto;gap:6px;" id="growthChartToggle">
         <button class="seg-btn selected" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('weight',this)">體重</button>
         <button class="seg-btn" style="flex:0 0 auto;padding:7px 14px;" onclick="setGrowthChartMetric('height',this)">身高</button>
       </div>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:12px;" id="growthAgeToggle">
-      <button class="seg-btn selected" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('actual',this)">實際年齡</button>
-      <button class="seg-btn" style="flex:0;padding:5px 12px;font-size:12px;" onclick="setGrowthAgeMode('corrected',this)">矯正年齡</button>
     </div>
     <div id="growthAgeNote" style="display:none;font-size:11px;color:var(--gold);margin:-6px 0 10px;"></div>
     <div class="weight-card">
