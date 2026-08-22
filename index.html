@@ -377,6 +377,20 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <label>事項內容</label>
       <textarea id="memoContent" placeholder="例如：打預防針、回診、體檢…"></textarea>
     </div>
+    <div class="field">
+      <label class="chk-row"><input type="checkbox" id="memoRepeatToggle" onchange="toggleMemoRepeatFields()"> 🔁 每週重複（例如每週二、五都要做）</label>
+    </div>
+    <div id="memoRepeatFields" style="display:none;">
+      <div class="field">
+        <label>重複星期（可複選）</label>
+        <div class="seg-btns" id="memoWeekdayPicker" style="gap:6px;"></div>
+      </div>
+      <div class="field">
+        <label>重複到</label>
+        <input type="date" id="memoRepeatUntil">
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;">最多會建立 104 筆，超過會自動截止</div>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('memoAddModal')">取消</button>
       <button class="btn-save" id="saveMemoBtn" onclick="saveMemo()">儲存並加入行事曆</button>
@@ -2821,6 +2835,7 @@ function renderMemoCalendar(){
 
 let memoDayModalDate = null;
 let editingMemoId = null;
+let memoRepeatWeekdays = []; // selected weekday indices (0=Sun..6=Sat) for weekly repeat
 
 function openMemoDayDetail(year, month, day){
   const targetDate = new Date(year, month, day);
@@ -2836,16 +2851,19 @@ function openMemoDayDetail(year, month, day){
     listEl.innerHTML = memos.map(m=>{
       const who = m.baby==='all' ? '全部寶寶' : babyName(m.baby);
       const c = m.baby==='all' ? {main:'var(--gold)'} : babyColor(m.baby);
+      const repeatBadge = m.recurringId ? '　<span style="font-size:11px;color:var(--gold);">🔁 重複系列</span>' : '';
+      const seriesBtn = m.recurringId ? `<button onclick="deleteMemoSeries('${m.recurringId}')" style="background:none;border:none;color:var(--danger);font-size:10px;cursor:pointer;white-space:nowrap;">刪整系列</button>` : '';
       return `<div class="log-item" style="border-left-color:${c.main};">
         <div class="log-icon">📌</div>
         <div class="log-body">
-          <div class="log-who" style="color:${c.main};">${who}</div>
+          <div class="log-who" style="color:${c.main};">${who}${repeatBadge}</div>
           <div class="log-desc">${m.content||''}</div>
           <div class="log-detail">${m.time?('⏰ '+m.time):'整天'}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
           <button onclick="openMemoEdit('${m.id}')" style="background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;">✏️</button>
           <button class="log-del" onclick="deleteMemo('${m.id}')">✕</button>
+          ${seriesBtn}
         </div>
       </div>`;
     }).join('');
@@ -2863,6 +2881,11 @@ function openMemoAdd(){
   document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('memoContent').value = '';
   document.getElementById('saveMemoBtn').textContent = '儲存並加入行事曆';
+  document.getElementById('memoRepeatToggle').checked = false;
+  document.getElementById('memoRepeatToggle').closest('.field').style.display = '';
+  memoRepeatWeekdays = [];
+  document.getElementById('memoRepeatUntil').value = '';
+  toggleMemoRepeatFields();
   document.getElementById('memoAddModal').classList.add('open');
 }
 
@@ -2877,6 +2900,11 @@ function openMemoAddForDate(dateStr){
   document.getElementById('memoTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('memoContent').value = '';
   document.getElementById('saveMemoBtn').textContent = '儲存並加入行事曆';
+  document.getElementById('memoRepeatToggle').checked = false;
+  document.getElementById('memoRepeatToggle').closest('.field').style.display = '';
+  memoRepeatWeekdays = [];
+  document.getElementById('memoRepeatUntil').value = '';
+  toggleMemoRepeatFields();
   document.getElementById('memoAddModal').classList.add('open');
 }
 
@@ -2892,6 +2920,10 @@ function openMemoEdit(id){
   document.getElementById('memoTime').value = memo.time || '';
   document.getElementById('memoContent').value = memo.content || '';
   document.getElementById('saveMemoBtn').textContent = '儲存修改';
+  // Editing only ever affects this single occurrence — hide the repeat option entirely.
+  document.getElementById('memoRepeatToggle').checked = false;
+  document.getElementById('memoRepeatToggle').closest('.field').style.display = 'none';
+  document.getElementById('memoRepeatFields').style.display = 'none';
   document.getElementById('memoAddModal').classList.add('open');
 }
 
@@ -2910,25 +2942,104 @@ function pickMemoBaby(id){
   renderMemoBabyPicker();
 }
 
+const WEEKDAY_LABELS = ['日','一','二','三','四','五','六'];
+function renderMemoWeekdayPicker(){
+  const container = document.getElementById('memoWeekdayPicker');
+  if(!container) return;
+  container.innerHTML = WEEKDAY_LABELS.map((label,i)=>{
+    const isSel = memoRepeatWeekdays.includes(i);
+    return `<button type="button" class="seg-btn ${isSel?'selected':''}" style="flex:0 0 auto;min-width:44px;padding:8px 4px;" onclick="toggleMemoWeekday(${i})">${label}</button>`;
+  }).join('');
+}
+function toggleMemoWeekday(i){
+  const idx = memoRepeatWeekdays.indexOf(i);
+  if(idx>-1) memoRepeatWeekdays.splice(idx,1);
+  else memoRepeatWeekdays.push(i);
+  renderMemoWeekdayPicker();
+}
+function toggleMemoRepeatFields(){
+  const on = document.getElementById('memoRepeatToggle').checked;
+  document.getElementById('memoRepeatFields').style.display = on ? '' : 'none';
+  if(on){
+    // Default: pre-select the weekday matching the currently chosen date
+    const dateVal = document.getElementById('memoDate').value;
+    if(dateVal && !memoRepeatWeekdays.length){
+      const d = new Date(dateVal+'T00:00:00');
+      memoRepeatWeekdays = [d.getDay()];
+    }
+    renderMemoWeekdayPicker();
+    if(!document.getElementById('memoRepeatUntil').value){
+      const until = new Date(dateVal ? dateVal+'T00:00:00' : Date.now());
+      until.setMonth(until.getMonth()+3);
+      document.getElementById('memoRepeatUntil').value = `${until.getFullYear()}-${String(until.getMonth()+1).padStart(2,'0')}-${String(until.getDate()).padStart(2,'0')}`;
+    }
+  }
+}
+
+function computeRecurringDates(startDateStr, weekdays, untilDateStr, maxCount){
+  const dates = [];
+  const start = new Date(startDateStr+'T00:00:00');
+  const until = new Date(untilDateStr+'T00:00:00');
+  if(until < start) return dates;
+  let cursor = new Date(start);
+  while(cursor <= until && dates.length < maxCount){
+    if(weekdays.includes(cursor.getDay())) dates.push(new Date(cursor));
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return dates;
+}
+
 function saveMemo(){
   const date = document.getElementById('memoDate').value;
   const time = document.getElementById('memoTime').value;
   const content = document.getElementById('memoContent').value.trim();
   if(!date || !content){ alert('請填入日期與事項內容'); return; }
-  const memo = { baby: selectedMemoBaby, date, time, content, createdAt: Date.now(), recordedBy: currentUserName||'' };
-  const btn = document.getElementById('saveMemoBtn');
   const isEdit = !!editingMemoId;
-  btn.disabled = true; btn.textContent = isEdit ? '更新中…' : '儲存中…';
+  const isRepeat = !isEdit && document.getElementById('memoRepeatToggle').checked;
+  const btn = document.getElementById('saveMemoBtn');
+
+  if(isRepeat){
+    const until = document.getElementById('memoRepeatUntil').value;
+    if(!memoRepeatWeekdays.length){ alert('請至少選擇一個重複星期'); return; }
+    if(!until){ alert('請選擇重複到哪一天'); return; }
+    const dates = computeRecurringDates(date, memoRepeatWeekdays, until, 104);
+    if(!dates.length){ alert('選擇的日期範圍內沒有符合的星期，請確認設定'); return; }
+    btn.disabled = true; btn.textContent = '儲存中…';
+    setSyncStatus('syncing');
+    const recurringId = 'r'+Date.now()+Math.random().toString(36).slice(2,8);
+    const bigObj = {};
+    dates.forEach(d=>{
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const key = fref('memos').push().key;
+      bigObj[key] = { baby: selectedMemoBaby, date: dateStr, time, content, createdAt: Date.now(), recordedBy: currentUserName||'', recurringId };
+    });
+    fref('memos').update(bigObj)
+      .then(()=>{
+        setSyncStatus('ok');
+        btn.disabled = false; btn.textContent = '儲存並加入行事曆';
+        closeModal('memoAddModal');
+        const who = selectedMemoBaby==='all' ? '' : `（${babyName(selectedMemoBaby)}）`;
+        const label = `📌 ${content}${who}`;
+        exportRecurringToCalendar(date, time, label, memoRepeatWeekdays, until);
+        alert(`已新增 ${dates.length} 筆重複備忘！`);
+      })
+      .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent='儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
+    return;
+  }
+
+  const memo = { baby: selectedMemoBaby, date, time, content, createdAt: Date.now(), recordedBy: currentUserName||'' };
+  const isEditSave = isEdit;
+  btn.disabled = true; btn.textContent = isEditSave ? '更新中…' : '儲存中…';
   setSyncStatus('syncing');
 
-  const savePromise = isEdit
+  const savePromise = isEditSave
     ? fref('memos/'+editingMemoId).update(memo)
     : fref('memos').push(memo);
 
   savePromise
     .then(()=>{
       setSyncStatus('ok');
-      btn.disabled = false; btn.textContent = isEdit ? '儲存修改' : '儲存並加入行事曆';
+      btn.disabled = false; btn.textContent = isEditSave ? '儲存修改' : '儲存並加入行事曆';
       closeModal('memoAddModal');
       editingMemoId = null;
       // Export to calendar
@@ -2944,13 +3055,23 @@ function saveMemo(){
         exportToCalendar(target, label, 60);
       }
     })
-    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent=isEdit?'儲存修改':'儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
+    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent=isEditSave?'儲存修改':'儲存並加入行事曆'; alert('儲存失敗，請確認網路連線'); });
 }
 
 function deleteMemo(id){
   if(!confirm('確定要刪除這筆備忘？')) return;
   setSyncStatus('syncing');
   fref('memos/'+id).remove()
+    .then(()=>{ setSyncStatus('ok'); closeModal('memoDayModal'); })
+    .catch(()=>setSyncStatus('error'));
+}
+
+function deleteMemoSeries(recurringId){
+  const related = state.memos.filter(m=>m.recurringId===recurringId);
+  if(!related.length) return;
+  if(!confirm(`確定要刪除整個重複系列嗎？（共 ${related.length} 筆，此動作無法復原）`)) return;
+  setSyncStatus('syncing');
+  Promise.all(related.map(m=>fref('memos/'+m.id).remove()))
     .then(()=>{ setSyncStatus('ok'); closeModal('memoDayModal'); })
     .catch(()=>setSyncStatus('error'));
 }
@@ -3590,6 +3711,53 @@ function exportToCalendar(targetDate, label, durationMinutes){
   const a = document.createElement('a');
   a.href = url;
   a.download = `提醒_${formatICSDate(startDate)}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+
+// Weekly-recurring reminder as a single .ics using RRULE, so the phone's
+// Calendar app gets one real recurring event instead of many separate files.
+function exportRecurringToCalendar(startDateStr, time, label, weekdays, untilDateStr){
+  const [hh, mm] = time ? time.split(':').map(Number) : [9, 0];
+  const startDate = new Date(startDateStr+'T00:00:00');
+  startDate.setHours(hh, mm, 0, 0);
+  const durationMinutes = time ? 15 : 60;
+  const endDate = new Date(startDate.getTime() + durationMinutes*60000);
+  const untilDate = new Date(untilDateStr+'T00:00:00');
+  untilDate.setHours(23, 59, 59, 0);
+  const dayCodes = ['SU','MO','TU','WE','TH','FR','SA'];
+  const byday = weekdays.slice().sort().map(i=>dayCodes[i]).join(',');
+  const uid = `twin-tracker-${Date.now()}-${Math.random().toString(36).slice(2)}@twinbaby`;
+  const nowStamp = formatICSDate(new Date());
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//雙寶日誌//提醒//ZH',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${nowStamp}`,
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `RRULE:FREQ=WEEKLY;BYDAY=${byday};UNTIL=${formatICSDate(untilDate)}`,
+    `SUMMARY:${label}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:提醒',
+    'TRIGGER:-PT0M',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `重複提醒_${formatICSDate(startDate)}.ics`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
