@@ -113,7 +113,7 @@ header p{font-size:14px;color:var(--ink3);margin-top:3px;letter-spacing:1.5px;te
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(5,7,14,0.7);z-index:200;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.modal{background:var(--bg-elev1);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;max-height:88vh;overflow-y:auto;animation:slideUp 0.28s cubic-bezier(.22,.68,0,1.2);border-top:1px solid var(--gold-dim);}
+.modal{background:var(--bg-elev1);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;max-height:88vh;overflow-y:auto;overflow-x:hidden;animation:slideUp 0.28s cubic-bezier(.22,.68,0,1.2);border-top:1px solid var(--gold-dim);}
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 .modal-handle{width:36px;height:3px;background:var(--border);border-radius:4px;margin:0 auto 20px;}
 .modal-title{font-size:20px;font-weight:700;margin-bottom:20px;color:var(--ink);letter-spacing:0.3px;}
@@ -123,7 +123,8 @@ header p{font-size:14px;color:var(--ink3);margin-top:3px;letter-spacing:1.5px;te
 .field label{display:block;font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:7px;letter-spacing:0.4px;}
 .field label.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer;}
 .field label.chk-row input[type="checkbox"]{width:18px;height:18px;flex-shrink:0;accent-color:var(--gold);}
-.field input,.field select,.field textarea{width:100%;border:2px solid var(--ink);border-radius:14px;padding:12px 14px;font-size:17px;color:var(--ink);background:var(--bg-elev2);outline:none;transition:border-color 0.15s;font-family:inherit;}
+.field input,.field select,.field textarea{width:100%;max-width:100%;min-width:0;border:2px solid var(--ink);border-radius:14px;padding:12px 14px;font-size:17px;color:var(--ink);background:var(--bg-elev2);outline:none;transition:border-color 0.15s;font-family:inherit;box-sizing:border-box;}
+.field input[type="date"],.field input[type="time"]{-webkit-appearance:none;appearance:none;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
 .field textarea{resize:vertical;min-height:60px;}
 .field-row{display:flex;gap:10px;}
