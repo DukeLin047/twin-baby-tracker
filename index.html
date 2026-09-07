@@ -342,6 +342,80 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </p>
     </div>
   </div>
+
+  <!-- 就醫看診紀錄 -->
+  <div class="section">
+    <div class="weight-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="section-title" style="margin:0;">🏥 就醫看診紀錄</div>
+        <button onclick="openClinicAdd()" class="memo-add-btn">＋ 新增看診紀錄</button>
+      </div>
+      <div id="clinicVisitList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="clinicModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div class="modal-title" id="clinicModalTitle" style="margin-bottom:0;"><span>🏥</span>新增看診紀錄</div>
+      <button onclick="closeModal('clinicModal')" style="background:none;border:none;color:var(--ink3);font-size:22px;cursor:pointer;line-height:1;padding:0 0 0 12px;flex-shrink:0;">✕</button>
+    </div>
+
+    <div class="field">
+      <label>寶寶</label>
+      <div class="seg-btns" id="clinicBabyPicker"></div>
+    </div>
+    <div class="field">
+      <label>看診日期</label>
+      <input type="date" id="clinicDate">
+    </div>
+    <div class="field">
+      <label>科別／原因（選填）</label>
+      <input type="text" id="clinicReason" placeholder="例如：小兒科回診、發燒">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>診所／醫院（選填）</label>
+        <input type="text" id="clinicPlace" placeholder="例如：XX診所">
+      </div>
+      <div class="field">
+        <label>醫師（選填）</label>
+        <input type="text" id="clinicDoctor" placeholder="例如：王醫師">
+      </div>
+    </div>
+    <div class="field">
+      <label>狀況記錄</label>
+      <textarea id="clinicCondition" placeholder="就診當下的狀況、主訴…"></textarea>
+    </div>
+    <div class="field">
+      <label>診斷／醫囑（選填）</label>
+      <textarea id="clinicDiagnosis" placeholder="醫師診斷、後續建議…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>💊 用藥紀錄</label>
+      <div id="clinicMedsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button type="button" onclick="addClinicMedRow()" class="btn-cancel" style="width:100%;margin-top:8px;padding:9px;font-size:13px;">＋ 新增藥品</button>
+    </div>
+
+    <div class="field">
+      <label>🧴 耗材使用紀錄</label>
+      <div id="clinicSuppliesList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button type="button" onclick="addClinicSupplyRow()" class="btn-cancel" style="width:100%;margin-top:8px;padding:9px;font-size:13px;">＋ 新增耗材</button>
+    </div>
+
+    <div class="field">
+      <label>備註（選填）</label>
+      <textarea id="clinicNote" placeholder="其他備註…"></textarea>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('clinicModal')">取消</button>
+      <button class="btn-save" id="saveClinicBtn" onclick="saveClinicVisit()">儲存看診紀錄</button>
+    </div>
+  </div>
 </div>
 
 <div class="overlay" id="memoDayModal">
@@ -1172,7 +1246,7 @@ const COLOR_PALETTE = [
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
 // ─── State ────────────────────────────────────────────
-let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], feedingGoals:{}, appTitle:'寶寶成長日誌' };
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], clinicVisits:[], feedingGoals:{}, appTitle:'寶寶成長日誌' };
 let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
@@ -1386,6 +1460,11 @@ function startListening() {
     state.memos = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
     renderAll();
   });
+  fref('clinicVisits').on('value', snap => {
+    const val = snap.val();
+    state.clinicVisits = val ? Object.entries(val).map(([id,v])=>({...v,id})) : [];
+    renderAll();
+  });
   fref('feedingGoals').on('value', snap => {
     state.feedingGoals = snap.val() || {};
     renderAll();
@@ -1556,6 +1635,7 @@ function exportBackup(){
     logs: toObj(state.logs),
     weights: toObj(state.weights),
     memos: toObj(state.memos),
+    clinicVisits: toObj(state.clinicVisits),
     inventoryAdjust: state.inventoryAdjust || 0,
     feedingGoals: state.feedingGoals || {},
     appTitle: state.appTitle || '寶寶成長日誌',
@@ -1605,6 +1685,7 @@ function importBackup(event){
       fref('logs').set(data.logs || {}),
       fref('weights').set(data.weights || {}),
       fref('memos').set(data.memos || {}),
+      fref('clinicVisits').set(data.clinicVisits || {}),
       fref('inventoryAdjust').set(data.inventoryAdjust || 0),
       fref('feedingGoals').set(data.feedingGoals || {}),
       fref('appTitle').set(data.appTitle || '寶寶成長日誌'),
@@ -1891,7 +1972,7 @@ function renderBabyAgeLabel(){
 function renderAll(){
   renderBabyTabs();
   updateDateLabel();renderSummary();
-  renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();renderMemoCalendar();
+  renderTodayLog();renderCalendar();renderWeight();renderStats();renderInventory();renderMemoCalendar();renderClinicVisitList();
   renderBabyPicker();
   renderBabyAgeLabel();
 }
@@ -3079,6 +3160,199 @@ function deleteMemoSeries(recurringId){
     .then(()=>{ setSyncStatus('ok'); closeModal('memoDayModal'); })
     .catch(()=>setSyncStatus('error'));
 }
+
+// ─── 就醫看診紀錄 ───────────────────────────────────────
+let selectedClinicBaby = 'all';
+let editingClinicId = null;
+let clinicMeds = [];      // [{name, dose}]
+let clinicSupplies = [];  // [{name, qty}]
+
+function renderClinicBabyPicker(){
+  const container = document.getElementById('clinicBabyPicker');
+  if(!container) return;
+  const ids = activeBabyIds();
+  const options = [{id:'all', label:'全部寶寶'}, ...ids.map(id=>({id, label:babyName(id)}))];
+  container.innerHTML = options.map(opt=>{
+    const isSel = selectedClinicBaby===opt.id;
+    return `<button class="seg-btn ${isSel?'selected':''}" onclick="pickClinicBaby('${opt.id}')">${opt.label}</button>`;
+  }).join('');
+}
+function pickClinicBaby(id){
+  selectedClinicBaby = id;
+  renderClinicBabyPicker();
+}
+
+function renderClinicMedsList(){
+  const el = document.getElementById('clinicMedsList');
+  if(!el) return;
+  if(!clinicMeds.length){
+    el.innerHTML = `<p style="font-size:12px;color:var(--ink3);">尚未新增藥品</p>`;
+    return;
+  }
+  el.innerHTML = clinicMeds.map((m,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" placeholder="藥品名稱" value="${m.name||''}" oninput="clinicMeds[${i}].name=this.value" style="flex:1.2;">
+      <input type="text" placeholder="劑量／用法" value="${m.dose||''}" oninput="clinicMeds[${i}].dose=this.value" style="flex:1;">
+      <button type="button" onclick="removeClinicMedRow(${i})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>`).join('');
+}
+function addClinicMedRow(){
+  clinicMeds.push({name:'', dose:''});
+  renderClinicMedsList();
+}
+function removeClinicMedRow(i){
+  clinicMeds.splice(i,1);
+  renderClinicMedsList();
+}
+
+function renderClinicSuppliesList(){
+  const el = document.getElementById('clinicSuppliesList');
+  if(!el) return;
+  if(!clinicSupplies.length){
+    el.innerHTML = `<p style="font-size:12px;color:var(--ink3);">尚未新增耗材</p>`;
+    return;
+  }
+  el.innerHTML = clinicSupplies.map((s,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" placeholder="耗材品項（例如：灌食空針60cc）" value="${s.name||''}" oninput="clinicSupplies[${i}].name=this.value" style="flex:1.5;">
+      <input type="text" placeholder="數量" value="${s.qty||''}" oninput="clinicSupplies[${i}].qty=this.value" style="flex:0.6;">
+      <button type="button" onclick="removeClinicSupplyRow(${i})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>`).join('');
+}
+function addClinicSupplyRow(){
+  clinicSupplies.push({name:'', qty:''});
+  renderClinicSuppliesList();
+}
+function removeClinicSupplyRow(i){
+  clinicSupplies.splice(i,1);
+  renderClinicSuppliesList();
+}
+
+function openClinicAdd(){
+  editingClinicId = null;
+  selectedClinicBaby = 'all';
+  clinicMeds = [];
+  clinicSupplies = [];
+  renderClinicBabyPicker();
+  renderClinicMedsList();
+  renderClinicSuppliesList();
+  const now = new Date();
+  document.getElementById('clinicModalTitle').innerHTML = '<span>🏥</span>新增看診紀錄';
+  document.getElementById('clinicDate').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('clinicReason').value = '';
+  document.getElementById('clinicPlace').value = '';
+  document.getElementById('clinicDoctor').value = '';
+  document.getElementById('clinicCondition').value = '';
+  document.getElementById('clinicDiagnosis').value = '';
+  document.getElementById('clinicNote').value = '';
+  document.getElementById('saveClinicBtn').textContent = '儲存看診紀錄';
+  document.getElementById('clinicModal').classList.add('open');
+}
+
+function openClinicEdit(id){
+  const visit = state.clinicVisits.find(v=>v.id===id);
+  if(!visit) return;
+  editingClinicId = id;
+  selectedClinicBaby = visit.baby || 'all';
+  clinicMeds = (visit.meds || []).map(m=>({...m}));
+  clinicSupplies = (visit.supplies || []).map(s=>({...s}));
+  renderClinicBabyPicker();
+  renderClinicMedsList();
+  renderClinicSuppliesList();
+  document.getElementById('clinicModalTitle').innerHTML = '<span>✏️</span>編輯看診紀錄';
+  document.getElementById('clinicDate').value = visit.date || '';
+  document.getElementById('clinicReason').value = visit.reason || '';
+  document.getElementById('clinicPlace').value = visit.place || '';
+  document.getElementById('clinicDoctor').value = visit.doctor || '';
+  document.getElementById('clinicCondition').value = visit.condition || '';
+  document.getElementById('clinicDiagnosis').value = visit.diagnosis || '';
+  document.getElementById('clinicNote').value = visit.note || '';
+  document.getElementById('saveClinicBtn').textContent = '儲存修改';
+  document.getElementById('clinicModal').classList.add('open');
+}
+
+function saveClinicVisit(){
+  const date = document.getElementById('clinicDate').value;
+  const condition = document.getElementById('clinicCondition').value.trim();
+  if(!date){ alert('請選擇看診日期'); return; }
+  if(!condition){ alert('請填入狀況記錄'); return; }
+  const meds = clinicMeds.filter(m=>(m.name||'').trim());
+  const supplies = clinicSupplies.filter(s=>(s.name||'').trim());
+  const visit = {
+    baby: selectedClinicBaby,
+    date,
+    reason: document.getElementById('clinicReason').value.trim(),
+    place: document.getElementById('clinicPlace').value.trim(),
+    doctor: document.getElementById('clinicDoctor').value.trim(),
+    condition,
+    diagnosis: document.getElementById('clinicDiagnosis').value.trim(),
+    meds,
+    supplies,
+    note: document.getElementById('clinicNote').value.trim(),
+    createdAt: Date.now(),
+    recordedBy: currentUserName || '',
+  };
+  const isEdit = !!editingClinicId;
+  const btn = document.getElementById('saveClinicBtn');
+  btn.disabled = true; btn.textContent = isEdit ? '更新中…' : '儲存中…';
+  setSyncStatus('syncing');
+  const savePromise = isEdit
+    ? fref('clinicVisits/'+editingClinicId).update(visit)
+    : fref('clinicVisits').push(visit);
+  savePromise
+    .then(()=>{
+      setSyncStatus('ok');
+      btn.disabled = false; btn.textContent = isEdit ? '儲存修改' : '儲存看診紀錄';
+      closeModal('clinicModal');
+      editingClinicId = null;
+    })
+    .catch(()=>{ setSyncStatus('error'); btn.disabled=false; btn.textContent=isEdit?'儲存修改':'儲存看診紀錄'; alert('儲存失敗，請確認網路連線'); });
+}
+
+function deleteClinicVisit(id){
+  if(!confirm('確定要刪除這筆看診紀錄？')) return;
+  setSyncStatus('syncing');
+  fref('clinicVisits/'+id).remove()
+    .then(()=>setSyncStatus('ok'))
+    .catch(()=>setSyncStatus('error'));
+}
+
+function renderClinicVisitList(){
+  const el = document.getElementById('clinicVisitList');
+  if(!el) return;
+  if(!state.clinicVisits.length){
+    el.innerHTML = `<div class="empty-state"><div class="e-icon">🏥</div><p>還沒有看診紀錄</p></div>`;
+    return;
+  }
+  const sorted = state.clinicVisits.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+  el.innerHTML = sorted.map(v=>{
+    const who = v.baby==='all' ? '全部寶寶' : babyName(v.baby);
+    const c = v.baby==='all' ? {main:'var(--gold)'} : babyColor(v.baby);
+    const dateLabel = new Date(v.date+'T00:00:00').toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
+    const placeLine = [v.place, v.doctor].filter(Boolean).join(' · ');
+    const medsLine = (v.meds||[]).length ? `💊 ${(v.meds||[]).map(m=>m.name+(m.dose?`(${m.dose})`:'')).join('、')}` : '';
+    const suppliesLine = (v.supplies||[]).length ? `🧴 ${(v.supplies||[]).map(s=>s.name+(s.qty?`x${s.qty}`:'')).join('、')}` : '';
+    return `<div class="log-item" style="border-left-color:${c.main};flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:${c.main};">${dateLabel}　${who}</div>
+          ${v.reason ? `<div style="font-size:14px;font-weight:700;color:var(--ink);margin-top:2px;">${v.reason}</div>` : ''}
+          ${placeLine ? `<div style="font-size:12px;color:var(--ink3);margin-top:2px;">${placeLine}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:10px;flex-shrink:0;">
+          <button onclick="openClinicEdit('${v.id}')" style="background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;">✏️</button>
+          <button class="log-del" onclick="deleteClinicVisit('${v.id}')">✕</button>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--ink2);margin-top:8px;line-height:1.6;">${v.condition||''}</div>
+      ${v.diagnosis ? `<div style="font-size:12px;color:var(--ink3);margin-top:4px;">📋 ${v.diagnosis}</div>` : ''}
+      ${medsLine ? `<div style="font-size:12px;color:var(--ink2);margin-top:6px;">${medsLine}</div>` : ''}
+      ${suppliesLine ? `<div style="font-size:12px;color:var(--ink2);margin-top:2px;">${suppliesLine}</div>` : ''}
+      ${v.note ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px;">📝 ${v.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 
 // ─── Type grid in add modal ───────────────────────────
 function renderTypeGrid(){
