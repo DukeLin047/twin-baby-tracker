@@ -601,6 +601,12 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </p>
     </div>
   </div>
+
+  <!-- 餵奶時間表 -->
+  <div class="section">
+    <div class="section-title" style="margin-bottom:10px;">⏰ 餵奶時間表</div>
+    <div id="feedScheduleContainer"></div>
+  </div>
 </div>
 
 <!-- STATS VIEW -->
@@ -672,18 +678,6 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       </p>
     </div>
 
-    <div class="weight-card" style="margin-top:14px;">
-      <div class="section-title" style="margin-bottom:10px;">⏰ 餵奶時間表</div>
-      <div class="field">
-        <label>每隔幾小時餵一餐</label>
-        <input type="number" id="feedIntervalHours" placeholder="例如：3" min="0.5" step="0.5" oninput="saveFeedingGoal()">
-      </div>
-      <div id="feedScheduleResult" style="display:none;margin-top:10px;">
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;" id="feedScheduleBaseInfo"></div>
-        <div id="feedScheduleList" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-      <p id="feedScheduleEmpty" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;">今天還沒有餵奶紀錄，無法計算時間表（需要至少一筆哺乳／配方奶／瓶餵母乳紀錄作為起算基準）</p>
-    </div>
   </div>
 </div>
 
@@ -2338,6 +2332,7 @@ function renderWeight(){
   renderGrowthChart();
   renderGrowthQueryBabyPicker();
   runGrowthQuery(false);
+  renderFeedScheduleSection();
 }
 
 // ─── 成長歷史紀錄查詢 ────────────────────────────────
@@ -2655,7 +2650,6 @@ function renderStats(){
   renderLatestGrowth(baby);
   loadFeedingGoalInputs(baby);
   renderFeedingGoalProgress(baby, actualMl);
-  renderFeedScheduleForBaby(baby);
 }
 
 function renderLatestGrowth(baby){
@@ -2695,8 +2689,6 @@ function loadFeedingGoalInputs(baby){
   document.getElementById('goalWeight').value = goal.weight || '';
   document.getElementById('goalFeeds').value = goal.feeds || 8;
   document.getElementById('goalExtraMl').value = goal.extra || '';
-  const intervalEl = document.getElementById('feedIntervalHours');
-  if(intervalEl) intervalEl.value = goal.intervalHours || '';
 }
 let feedingGoalSaveTimer = null;
 function saveFeedingGoal(){
@@ -2704,7 +2696,9 @@ function saveFeedingGoal(){
   const weight = document.getElementById('goalWeight').value;
   const feeds = document.getElementById('goalFeeds').value || 8;
   const extra = document.getElementById('goalExtraMl').value || 0;
-  const intervalHours = document.getElementById('feedIntervalHours').value || '';
+  // 每隔幾小時餵一餐 現在是成長頁各寶寶各自設定，這裡只保留原值，不覆蓋
+  const existingGoal = (state.feedingGoals && state.feedingGoals[baby]) || {};
+  const intervalHours = existingGoal.intervalHours || '';
 
   // Optimistic local update so the UI feels instant while we sync to Firebase
   if(!state.feedingGoals) state.feedingGoals = {};
@@ -2714,7 +2708,6 @@ function saveFeedingGoal(){
   const dayLogs = state.logs.filter(l=>isSameDay(new Date(l.time),targetDay) && l.baby===baby);
   const ml = dayLogs.filter(l=>['formula','bottlemilk'].includes(l.type)).reduce((s,l)=>s+(parseInt(l.amount)||0),0);
   renderFeedingGoalProgress(baby, ml);
-  renderFeedScheduleForBaby(baby);
 
   // Debounce Firebase writes while the person is actively typing
   clearTimeout(feedingGoalSaveTimer);
@@ -2726,11 +2719,61 @@ function saveFeedingGoal(){
   }, 500);
 }
 
+function renderFeedScheduleSection(){
+  const container = document.getElementById('feedScheduleContainer');
+  if(!container) return;
+  const ids = activeBabyIds();
+  container.innerHTML = ids.map(id=>{
+    const c = babyColor(id);
+    return `<div class="weight-card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+        <span>${babyName(id)}</span>
+      </div>
+      <div class="field">
+        <label>每隔幾小時餵一餐</label>
+        <input type="number" id="feedIntervalHours_${id}" placeholder="例如：3" min="0.5" step="0.5" oninput="saveFeedingInterval('${id}')">
+      </div>
+      <div id="feedScheduleResult_${id}" style="display:none;margin-top:10px;">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;" id="feedScheduleBaseInfo_${id}"></div>
+        <div id="feedScheduleList_${id}" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <p id="feedScheduleEmpty_${id}" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;">今天還沒有餵奶紀錄，無法計算時間表（需要至少一筆哺乳／配方奶／瓶餵母乳紀錄作為起算基準）</p>
+    </div>`;
+  }).join('');
+  ids.forEach(id=>{
+    const goal = (state.feedingGoals && state.feedingGoals[id]) || {};
+    const intervalEl = document.getElementById('feedIntervalHours_'+id);
+    if(intervalEl) intervalEl.value = goal.intervalHours || '';
+    renderFeedScheduleForBaby(id);
+  });
+}
+
+let feedIntervalSaveTimer = null;
+function saveFeedingInterval(baby){
+  const intervalEl = document.getElementById('feedIntervalHours_'+baby);
+  const intervalHours = intervalEl ? intervalEl.value : '';
+
+  if(!state.feedingGoals) state.feedingGoals = {};
+  const existing = state.feedingGoals[baby] || {};
+  const updated = {...existing, intervalHours};
+  state.feedingGoals[baby] = updated;
+  renderFeedScheduleForBaby(baby);
+
+  clearTimeout(feedIntervalSaveTimer);
+  feedIntervalSaveTimer = setTimeout(()=>{
+    setSyncStatus('syncing');
+    fref('feedingGoals/'+baby).set(updated)
+      .then(()=>setSyncStatus('ok'))
+      .catch(()=>setSyncStatus('error'));
+  }, 500);
+}
+
 function renderFeedScheduleForBaby(baby){
-  const resultBox = document.getElementById('feedScheduleResult');
-  const emptyBox = document.getElementById('feedScheduleEmpty');
-  const listEl = document.getElementById('feedScheduleList');
-  const baseInfoEl = document.getElementById('feedScheduleBaseInfo');
+  const resultBox = document.getElementById('feedScheduleResult_'+baby);
+  const emptyBox = document.getElementById('feedScheduleEmpty_'+baby);
+  const listEl = document.getElementById('feedScheduleList_'+baby);
+  const baseInfoEl = document.getElementById('feedScheduleBaseInfo_'+baby);
   if(!resultBox || !emptyBox || !listEl) return;
 
   const goal = (state.feedingGoals && state.feedingGoals[baby]) || {};
