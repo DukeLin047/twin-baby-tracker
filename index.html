@@ -2335,12 +2335,14 @@ function renderWeight(){
   renderAllergenOverview();
   renderGrowthChart();
   renderGrowthQueryBabyPicker();
-  runGrowthQuery();
+  runGrowthQuery(false);
 }
 
 // ─── 成長歷史紀錄查詢 ────────────────────────────────
 let growthQueryBaby = 'all';
 let growthQuerySort = 'desc'; // 'desc'=由新到舊, 'asc'=由舊到新
+let growthQueryPage = 0;
+const GROWTH_QUERY_PAGE_SIZE = 5;
 
 function renderGrowthQueryBabyPicker(){
   const container = document.getElementById('growthQueryBabyPicker');
@@ -2362,7 +2364,8 @@ function setGrowthQuerySort(order, btn){
   btn.classList.add('selected');
 }
 
-function runGrowthQuery(){
+function runGrowthQuery(resetPage){
+  if(resetPage!==false) growthQueryPage = 0;
   const startVal = document.getElementById('growthQueryStart').value;
   const endVal = document.getElementById('growthQueryEnd').value;
   const ids = growthQueryBaby==='all' ? activeBabyIds() : [growthQueryBaby];
@@ -2390,27 +2393,45 @@ function runGrowthQuery(){
     return;
   }
 
-  resultBox.innerHTML = `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">共 ${rows.length} 筆</div>` +
-    rows.map(r=>{
-      const c = babyColor(r.id);
-      const vals = [
-        r.weight ? ['體重', r.weight+'g'] : null,
-        r.height ? ['身高', r.height+'cm'] : null,
-        r.head ? ['頭圍', r.head+'cm'] : null,
-      ].filter(Boolean);
-      const valsHtml = vals.map(v=>`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;"><span style="font-size:11px;color:var(--ink3);font-weight:600;flex-shrink:0;">${v[0]}</span><span style="font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;">${v[1]}</span></div>`).join('');
-      return `<div class="growth-entry" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <span style="width:9px;height:9px;border-radius:50%;background:${c.main};display:inline-block;flex-shrink:0;"></span>
-            <span style="font-size:12px;font-weight:700;color:${c.main};">${babyName(r.id)}</span>
-            <span class="ge-date" style="margin:0;">${new Date(r.date+'T00:00:00').toLocaleDateString('zh-TW',{year:'numeric',month:'short',day:'numeric'})}</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px;">${valsHtml}</div>
+  const totalPages = Math.ceil(rows.length / GROWTH_QUERY_PAGE_SIZE);
+  if(growthQueryPage >= totalPages) growthQueryPage = totalPages - 1;
+  if(growthQueryPage < 0) growthQueryPage = 0;
+  const pageRows = rows.slice(growthQueryPage*GROWTH_QUERY_PAGE_SIZE, growthQueryPage*GROWTH_QUERY_PAGE_SIZE + GROWTH_QUERY_PAGE_SIZE);
+
+  const cardsHtml = pageRows.map(r=>{
+    const c = babyColor(r.id);
+    const vals = [
+      r.weight ? ['體重', r.weight+'g'] : null,
+      r.height ? ['身高', r.height+'cm'] : null,
+      r.head ? ['頭圍', r.head+'cm'] : null,
+    ].filter(Boolean);
+    const valsHtml = vals.map(v=>`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;"><span style="font-size:11px;color:var(--ink3);font-weight:600;flex-shrink:0;">${v[0]}</span><span style="font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;">${v[1]}</span></div>`).join('');
+    return `<div class="growth-entry" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="width:9px;height:9px;border-radius:50%;background:${c.main};display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:12px;font-weight:700;color:${c.main};">${babyName(r.id)}</span>
+          <span class="ge-date" style="margin:0;">${new Date(r.date+'T00:00:00').toLocaleDateString('zh-TW',{year:'numeric',month:'short',day:'numeric'})}</span>
         </div>
-        <button class="log-del" onclick="deleteWeightEntry('${r.wid}')" style="flex-shrink:0;">✕</button>
-      </div>`;
-    }).join('');
+        <div style="display:flex;flex-direction:column;gap:2px;">${valsHtml}</div>
+      </div>
+      <button class="log-del" onclick="deleteWeightEntry('${r.wid}')" style="flex-shrink:0;">✕</button>
+    </div>`;
+  }).join('');
+
+  const pagerHtml = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;">
+      <button onclick="changeGrowthQueryPage(-1)" ${growthQueryPage===0?'disabled':''} style="flex:1;padding:9px;border:2px solid var(--ink);border-radius:10px;background:var(--bg-elev2);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;${growthQueryPage===0?'opacity:0.35;cursor:default;':''}">‹ 上一頁</button>
+      <span style="font-size:12px;color:var(--ink3);flex-shrink:0;white-space:nowrap;">${growthQueryPage+1} / ${totalPages}</span>
+      <button onclick="changeGrowthQueryPage(1)" ${growthQueryPage>=totalPages-1?'disabled':''} style="flex:1;padding:9px;border:2px solid var(--ink);border-radius:10px;background:var(--bg-elev2);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;${growthQueryPage>=totalPages-1?'opacity:0.35;cursor:default;':''}">下一頁 ›</button>
+    </div>` : '';
+
+  resultBox.innerHTML = `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">共 ${rows.length} 筆</div>` +
+    `<div style="display:flex;flex-direction:column;gap:10px;">${cardsHtml}</div>` + pagerHtml;
+}
+function changeGrowthQueryPage(delta){
+  growthQueryPage += delta;
+  runGrowthQuery(false);
 }
 
 // ─── 成長曲線圖（SVG，無外部套件） ────────────────────
