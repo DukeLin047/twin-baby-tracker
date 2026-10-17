@@ -346,11 +346,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <!-- 就醫看診紀錄 -->
   <div class="section">
     <div class="weight-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div class="section-title" style="margin:0;">🏥 就醫看診紀錄</div>
         <button onclick="openClinicAdd()" class="memo-add-btn">＋ 新增看診紀錄</button>
       </div>
-      <div id="clinicVisitList"></div>
+      <div class="seg-btns" id="clinicListBabyFilter" style="margin-bottom:12px;"></div>
+      <div id="clinicVisitList" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="clinicVisitPager"></div>
     </div>
   </div>
 </div>
@@ -3363,15 +3365,55 @@ function deleteClinicVisit(id){
     .catch(()=>setSyncStatus('error'));
 }
 
+let clinicListBaby = 'all';
+let clinicListPage = 0;
+const CLINIC_LIST_PAGE_SIZE = 5;
+
+function renderClinicListBabyFilter(){
+  const container = document.getElementById('clinicListBabyFilter');
+  if(!container) return;
+  const ids = activeBabyIds();
+  const options = [{id:'all', label:'全部寶寶'}, ...ids.map(id=>({id, label:babyName(id)}))];
+  container.innerHTML = options.map(opt=>{
+    const isSel = clinicListBaby===opt.id;
+    return `<button class="seg-btn ${isSel?'selected':''}" onclick="pickClinicListBaby('${opt.id}')">${opt.label}</button>`;
+  }).join('');
+}
+function pickClinicListBaby(id){
+  clinicListBaby = id;
+  clinicListPage = 0;
+  renderClinicVisitList();
+}
+function changeClinicListPage(delta){
+  clinicListPage += delta;
+  renderClinicVisitList();
+}
+
 function renderClinicVisitList(){
+  renderClinicListBabyFilter();
   const el = document.getElementById('clinicVisitList');
+  const pagerEl = document.getElementById('clinicVisitPager');
   if(!el) return;
   if(!state.clinicVisits.length){
     el.innerHTML = `<div class="empty-state"><div class="e-icon">🏥</div><p>還沒有看診紀錄</p></div>`;
+    if(pagerEl) pagerEl.innerHTML = '';
     return;
   }
-  const sorted = state.clinicVisits.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-  el.innerHTML = sorted.map(v=>{
+  let sorted = state.clinicVisits.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+  if(clinicListBaby!=='all'){
+    sorted = sorted.filter(v=> v.baby===clinicListBaby || v.baby==='all');
+  }
+  if(!sorted.length){
+    el.innerHTML = `<div class="empty-state"><div class="e-icon">🏥</div><p>這位寶寶還沒有看診紀錄</p></div>`;
+    if(pagerEl) pagerEl.innerHTML = '';
+    return;
+  }
+  const totalPages = Math.ceil(sorted.length / CLINIC_LIST_PAGE_SIZE);
+  if(clinicListPage >= totalPages) clinicListPage = totalPages - 1;
+  if(clinicListPage < 0) clinicListPage = 0;
+  const pageItems = sorted.slice(clinicListPage*CLINIC_LIST_PAGE_SIZE, clinicListPage*CLINIC_LIST_PAGE_SIZE + CLINIC_LIST_PAGE_SIZE);
+
+  el.innerHTML = pageItems.map(v=>{
     const who = v.baby==='all' ? '全部寶寶' : babyName(v.baby);
     const c = v.baby==='all' ? {main:'var(--gold)'} : babyColor(v.baby);
     const dateLabel = new Date(v.date+'T00:00:00').toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
@@ -3397,6 +3439,15 @@ function renderClinicVisitList(){
       ${v.note ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px;">📝 ${v.note}</div>` : ''}
     </div>`;
   }).join('');
+
+  if(pagerEl){
+    pagerEl.innerHTML = totalPages > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;">
+        <button onclick="changeClinicListPage(-1)" ${clinicListPage===0?'disabled':''} style="flex:1;padding:9px;border:2px solid var(--ink);border-radius:10px;background:var(--bg-elev2);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;${clinicListPage===0?'opacity:0.35;cursor:default;':''}">‹ 上一頁</button>
+        <span style="font-size:12px;color:var(--ink3);flex-shrink:0;white-space:nowrap;">${clinicListPage+1} / ${totalPages}</span>
+        <button onclick="changeClinicListPage(1)" ${clinicListPage>=totalPages-1?'disabled':''} style="flex:1;padding:9px;border:2px solid var(--ink);border-radius:10px;background:var(--bg-elev2);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;${clinicListPage>=totalPages-1?'opacity:0.35;cursor:default;':''}">下一頁 ›</button>
+      </div>` : '';
+  }
 }
 
 
