@@ -605,6 +605,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
   <!-- 餵奶時間表 -->
   <div class="section">
     <div class="section-title" style="margin-bottom:10px;">⏰ 餵奶時間表</div>
+    <div class="seg-btns" id="feedScheduleBabyPicker" style="margin-bottom:12px;"></div>
     <div id="feedScheduleContainer"></div>
   </div>
 </div>
@@ -2332,6 +2333,7 @@ function renderWeight(){
   renderGrowthChart();
   renderGrowthQueryBabyPicker();
   runGrowthQuery(false);
+  renderFeedScheduleBabyPicker();
   renderFeedScheduleSection();
 }
 
@@ -2719,34 +2721,53 @@ function saveFeedingGoal(){
   }, 500);
 }
 
+let feedScheduleBaby = null;
+function renderFeedScheduleBabyPicker(){
+  const container = document.getElementById('feedScheduleBabyPicker');
+  if(!container) return;
+  const ids = activeBabyIds();
+  if(!feedScheduleBaby || !ids.includes(feedScheduleBaby)) feedScheduleBaby = ids[0] || null;
+  container.innerHTML = ids.map(id=>{
+    const isSel = feedScheduleBaby===id;
+    return `<button class="seg-btn ${isSel?'selected':''}" onclick="pickFeedScheduleBaby('${id}')">${babyName(id)}</button>`;
+  }).join('');
+}
+function pickFeedScheduleBaby(id){
+  feedScheduleBaby = id;
+  renderFeedScheduleBabyPicker();
+  renderFeedScheduleSection();
+}
+
 function renderFeedScheduleSection(){
   const container = document.getElementById('feedScheduleContainer');
   if(!container) return;
   const ids = activeBabyIds();
-  container.innerHTML = ids.map(id=>{
-    const c = babyColor(id);
-    return `<div class="weight-card" style="margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
-        <span>${babyName(id)}</span>
-      </div>
-      <div class="field">
-        <label>每隔幾小時餵一餐</label>
-        <input type="number" id="feedIntervalHours_${id}" placeholder="例如：3" min="0.5" step="0.5" oninput="saveFeedingInterval('${id}')">
-      </div>
-      <div id="feedScheduleResult_${id}" style="display:none;margin-top:10px;">
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;" id="feedScheduleBaseInfo_${id}"></div>
-        <div id="feedScheduleList_${id}" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-      <p id="feedScheduleEmpty_${id}" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;">今天還沒有餵奶紀錄，無法計算時間表（需要至少一筆哺乳／配方奶／瓶餵母乳紀錄作為起算基準）</p>
-    </div>`;
-  }).join('');
-  ids.forEach(id=>{
-    const goal = (state.feedingGoals && state.feedingGoals[id]) || {};
-    const intervalEl = document.getElementById('feedIntervalHours_'+id);
-    if(intervalEl) intervalEl.value = goal.intervalHours || '';
-    renderFeedScheduleForBaby(id);
-  });
+  if(!feedScheduleBaby || !ids.includes(feedScheduleBaby)) feedScheduleBaby = ids[0] || null;
+  if(!feedScheduleBaby){
+    container.innerHTML = `<div class="empty-state"><div class="e-icon">⏰</div><p>尚無寶寶資料</p></div>`;
+    return;
+  }
+  const id = feedScheduleBaby;
+  const c = babyColor(id);
+  container.innerHTML = `<div class="weight-card">
+    <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:${c.main};margin-bottom:10px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${c.main};display:inline-block"></span>
+      <span>${babyName(id)}</span>
+    </div>
+    <div class="field">
+      <label>每隔幾小時餵一餐</label>
+      <input type="number" id="feedIntervalHours_${id}" placeholder="例如：3" min="0.5" step="0.5" oninput="saveFeedingInterval('${id}')">
+    </div>
+    <div id="feedScheduleResult_${id}" style="display:none;margin-top:10px;">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;" id="feedScheduleBaseInfo_${id}"></div>
+      <div id="feedScheduleList_${id}" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <p id="feedScheduleEmpty_${id}" style="display:none;font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;">今天還沒有餵奶紀錄，無法計算時間表（需要至少一筆哺乳／配方奶／瓶餵母乳紀錄作為起算基準）</p>
+  </div>`;
+  const goal = (state.feedingGoals && state.feedingGoals[id]) || {};
+  const intervalEl = document.getElementById('feedIntervalHours_'+id);
+  if(intervalEl) intervalEl.value = goal.intervalHours || '';
+  renderFeedScheduleForBaby(id);
 }
 
 let feedIntervalSaveTimer = null;
