@@ -608,6 +608,19 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     <div class="seg-btns" id="feedScheduleBabyPicker" style="margin-bottom:12px;"></div>
     <div id="feedScheduleContainer"></div>
   </div>
+
+  <!-- 疫苗接種時程 -->
+  <div class="section">
+    <div class="section-title" style="margin-bottom:10px;">💉 疫苗接種時程</div>
+    <div class="seg-btns" id="vaccineBabyPicker" style="margin-bottom:12px;"></div>
+    <div class="weight-card" style="margin-bottom:12px;">
+      <div id="vaccineSummary" style="display:flex;gap:10px;margin-bottom:4px;"></div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
+        依衛福部疾病管制署「現行兒童預防接種時程」（114年版）列出，實際接種請以醫護人員判斷及兒童健康手冊為準。流感疫苗為每年接種，不列入下方清單。
+      </p>
+    </div>
+    <div id="vaccineList" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
 </div>
 
 <!-- STATS VIEW -->
@@ -1266,8 +1279,33 @@ const COLOR_PALETTE = [
 ];
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
+// ─── 疫苗接種時程（衛福部疾管署 114年1月版，公費常規疫苗）────
+// ageMonths: 出生滿幾個月接種；ageMonths 為 [min,max] 代表建議區間
+const VACCINE_SCHEDULE = [
+  {key:'hepb1',  name:'B型肝炎疫苗 第1劑',               ageMonths:0,      note:'出生24小時內儘速接種'},
+  {key:'hepb2',  name:'B型肝炎疫苗 第2劑',               ageMonths:1},
+  {key:'penta1', name:'五合一疫苗 第1劑',                 ageMonths:2,      note:'白喉破傷風百日咳b型嗜血桿菌不活化小兒麻痺'},
+  {key:'pcv1',   name:'13價結合型肺炎鏈球菌疫苗 第1劑',   ageMonths:2},
+  {key:'penta2', name:'五合一疫苗 第2劑',                 ageMonths:4},
+  {key:'pcv2',   name:'13價結合型肺炎鏈球菌疫苗 第2劑',   ageMonths:4},
+  {key:'bcg',    name:'卡介苗',                           ageMonths:5,      note:'建議接種時間為滿5-8個月'},
+  {key:'hepb3',  name:'B型肝炎疫苗 第3劑',               ageMonths:6},
+  {key:'penta3', name:'五合一疫苗 第3劑',                 ageMonths:6},
+  {key:'pcv3',   name:'13價結合型肺炎鏈球菌疫苗 第3劑',   ageMonths:12},
+  {key:'var',    name:'水痘疫苗',                         ageMonths:12},
+  {key:'mmr1',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第1劑', ageMonths:12},
+  {key:'je1',    name:'日本腦炎疫苗 第1劑',               ageMonths:15},
+  {key:'penta4', name:'五合一疫苗 第4劑',                 ageMonths:18},
+  {key:'hepa1',  name:'A型肝炎疫苗 第1劑',                ageMonths:18},
+  {key:'je2',    name:'日本腦炎疫苗 第2劑',               ageMonths:27},
+  {key:'hepa2',  name:'A型肝炎疫苗 第2劑',                ageMonths:27},
+  {key:'mmr2',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第2劑', ageMonths:60,  note:'滿5歲至入國小前'},
+  {key:'je3',    name:'日本腦炎疫苗 追加劑',               ageMonths:60,    note:'滿5歲至入國小前，與前一劑間隔至少12個月'},
+  {key:'dtapipv',name:'四合一疫苗(DTaP-IPV)',             ageMonths:60,    note:'滿5歲至入國小前'},
+];
+
 // ─── State ────────────────────────────────────────────
-let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], clinicVisits:[], feedingGoals:{}, appTitle:'寶寶成長日誌' };
+let state = { babies:{}, babyCount:2, logs:[], weights:[], inventoryAdjust:0, memos:[], clinicVisits:[], feedingGoals:{}, appTitle:'寶寶成長日誌', vaccineRecords:{} };
 let currentBaby = null; // null = show all
 let currentDay = new Date(); currentDay.setHours(0,0,0,0);
 let selectedBabyInModal = 'b1';
@@ -1490,6 +1528,10 @@ function startListening() {
     state.feedingGoals = snap.val() || {};
     renderAll();
   });
+  fref('vaccineRecords').on('value', snap => {
+    state.vaccineRecords = snap.val() || {};
+    renderAll();
+  });
   fref('appTitle').on('value', snap => {
     const val = snap.val();
     state.appTitle = val || '寶寶成長日誌';
@@ -1659,6 +1701,7 @@ function exportBackup(){
     clinicVisits: toObj(state.clinicVisits),
     inventoryAdjust: state.inventoryAdjust || 0,
     feedingGoals: state.feedingGoals || {},
+    vaccineRecords: state.vaccineRecords || {},
     appTitle: state.appTitle || '寶寶成長日誌',
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -1709,6 +1752,7 @@ function importBackup(event){
       fref('clinicVisits').set(data.clinicVisits || {}),
       fref('inventoryAdjust').set(data.inventoryAdjust || 0),
       fref('feedingGoals').set(data.feedingGoals || {}),
+      fref('vaccineRecords').set(data.vaccineRecords || {}),
       fref('appTitle').set(data.appTitle || '寶寶成長日誌'),
     ]).then(() => {
       if(statusEl) statusEl.textContent = `✅ 還原完成（${new Date().toLocaleString('zh-TW')}）`;
@@ -2335,6 +2379,8 @@ function renderWeight(){
   runGrowthQuery(false);
   renderFeedScheduleBabyPicker();
   renderFeedScheduleSection();
+  renderVaccineBabyPicker();
+  renderVaccineSection();
 }
 
 // ─── 成長歷史紀錄查詢 ────────────────────────────────
@@ -2858,6 +2904,119 @@ function renderFeedScheduleForBaby(baby){
     </div>`;
   }).join('');
   listEl.insertAdjacentHTML('beforeend', `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">💡 每記一次新的餵奶，這份時間表會自動用最新的實際時間重新往後推算。</div>`);
+}
+
+// ─── 疫苗接種時程 ────────────────────────────────────
+let vaccineBaby = null;
+
+function addMonthsToDate(dateStr, months){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function renderVaccineBabyPicker(){
+  const container = document.getElementById('vaccineBabyPicker');
+  if(!container) return;
+  const ids = activeBabyIds();
+  if(!vaccineBaby || !ids.includes(vaccineBaby)) vaccineBaby = ids[0] || null;
+  container.innerHTML = ids.map(id=>{
+    const isSel = vaccineBaby===id;
+    return `<button class="seg-btn ${isSel?'selected':''}" onclick="pickVaccineBaby('${id}')">${babyName(id)}</button>`;
+  }).join('');
+}
+function pickVaccineBaby(id){
+  vaccineBaby = id;
+  renderVaccineBabyPicker();
+  renderVaccineSection();
+}
+
+function toggleVaccineDone(baby, key, checked){
+  if(!state.vaccineRecords) state.vaccineRecords = {};
+  if(!state.vaccineRecords[baby]) state.vaccineRecords[baby] = {};
+  if(checked){
+    const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+    state.vaccineRecords[baby][key] = { done:true, date: todayStr };
+    fref('vaccineRecords/'+baby+'/'+key).set({ done:true, date: todayStr }).catch(()=>{});
+  } else {
+    delete state.vaccineRecords[baby][key];
+    fref('vaccineRecords/'+baby+'/'+key).remove().catch(()=>{});
+  }
+  renderVaccineSection();
+}
+
+function renderVaccineSection(){
+  const summaryEl = document.getElementById('vaccineSummary');
+  const listEl = document.getElementById('vaccineList');
+  if(!summaryEl || !listEl) return;
+
+  const baby = vaccineBaby;
+  if(!baby){
+    summaryEl.innerHTML = '';
+    listEl.innerHTML = `<div class="empty-state"><div class="e-icon">💉</div><p>尚無寶寶資料</p></div>`;
+    return;
+  }
+  const birth = babyBirth(baby);
+  if(!birth){
+    summaryEl.innerHTML = '';
+    listEl.innerHTML = `<div class="empty-state"><div class="e-icon">💉</div><p>請先到「設定」填寫出生日期，才能計算疫苗時程</p></div>`;
+    return;
+  }
+
+  const c = babyColor(baby);
+  const records = (state.vaccineRecords && state.vaccineRecords[baby]) || {};
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let doneCount = 0, overdueCount = 0, upcomingCount = 0;
+  const rows = VACCINE_SCHEDULE.map(v=>{
+    const dueDate = addMonthsToDate(birth, v.ageMonths);
+    const rec = records[v.key];
+    const isDone = !!(rec && rec.done);
+    const daysDiff = Math.round((dueDate - today) / 86400000);
+    let status, statusColor, statusBg;
+    if(isDone){
+      doneCount++;
+      status = rec.date ? `✅ ${rec.date.replace(/-/g,'/')} 已接種` : '✅ 已接種';
+      statusColor = 'var(--success, #3F7A5C)'; statusBg = 'transparent';
+    } else if(daysDiff < 0){
+      overdueCount++;
+      status = `⚠️ 已超過建議時間 ${Math.abs(daysDiff)} 天`;
+      statusColor = 'var(--danger, #C0392B)'; statusBg = 'rgba(192,57,43,0.06)';
+    } else if(daysDiff <= 14){
+      upcomingCount++;
+      status = daysDiff===0 ? '🔔 建議今天接種' : `🔔 ${daysDiff} 天後建議接種`;
+      statusColor = c.main; statusBg = c.light;
+    } else {
+      status = `預計 ${dueDate.getFullYear()}/${dueDate.getMonth()+1}/${dueDate.getDate()}`;
+      statusColor = 'var(--ink3)'; statusBg = 'transparent';
+    }
+    return { v, dueDate, isDone, status, statusColor, statusBg };
+  });
+
+  summaryEl.innerHTML = `
+    <div style="flex:1;text-align:center;padding:8px;border-radius:10px;background:var(--bg-elev2);">
+      <div style="font-size:18px;font-weight:800;color:${c.main};">${doneCount}</div>
+      <div style="font-size:11px;color:var(--ink3);">已完成</div>
+    </div>
+    <div style="flex:1;text-align:center;padding:8px;border-radius:10px;background:var(--bg-elev2);">
+      <div style="font-size:18px;font-weight:800;color:#C0392B;">${overdueCount}</div>
+      <div style="font-size:11px;color:var(--ink3);">已逾期</div>
+    </div>
+    <div style="flex:1;text-align:center;padding:8px;border-radius:10px;background:var(--bg-elev2);">
+      <div style="font-size:18px;font-weight:800;color:${c.main};">${upcomingCount}</div>
+      <div style="font-size:11px;color:var(--ink3);">近期要打</div>
+    </div>`;
+
+  listEl.innerHTML = rows.map(r=>{
+    return `<div class="growth-entry" style="display:flex;align-items:center;gap:12px;background:${r.isDone?'var(--bg-elev2)':r.statusBg||'var(--bg-elev2)'};">
+      <input type="checkbox" ${r.isDone?'checked':''} onchange="toggleVaccineDone('${baby}','${r.v.key}',this.checked)" style="width:22px;height:22px;flex-shrink:0;accent-color:${c.main};">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--ink);${r.isDone?'opacity:0.6;text-decoration:line-through;':''}">${r.v.name}</div>
+        ${r.v.note ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${r.v.note}</div>` : ''}
+        <div style="font-size:12px;font-weight:700;color:${r.statusColor};margin-top:4px;">${r.status}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderFeedingGoalProgress(baby, actualMl){
