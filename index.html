@@ -616,7 +616,9 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
     <div class="weight-card" style="margin-bottom:12px;">
       <div id="vaccineSummary" style="display:flex;gap:10px;margin-bottom:4px;"></div>
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
-        依衛福部疾病管制署「現行兒童預防接種時程」（114年版）列出，實際接種請以醫護人員判斷及兒童健康手冊為準。流感疫苗為每年接種，不列入下方清單。
+        <span style="font-weight:700;color:#3F7A5C;">公費</span>：政府全額補助，攜兒童健康手冊及健保卡至合約院所接種即可，不用額外付費。<br>
+        <span style="font-weight:700;color:#B8792A;">自費</span>：政府未補助，需自行付費，是否接種可與醫師討論後自行決定（例如輪狀病毒疫苗現為自費，2027年起才會改公費）。<br>
+        清單依衛福部疾病管制署「現行兒童預防接種時程」及常見自費疫苗整理，實際接種請以醫護人員判斷及兒童健康手冊為準。流感疫苗、COVID-19疫苗為每年／每季接種，不列入下方清單。
       </p>
     </div>
     <div id="vaccineList" style="display:flex;flex-direction:column;gap:10px;"></div>
@@ -1279,29 +1281,37 @@ const COLOR_PALETTE = [
 ];
 const BABY_IDS = ['b1','b2','b3','b4','b5'];
 
-// ─── 疫苗接種時程（衛福部疾管署 114年1月版，公費常規疫苗）────
-// ageMonths: 出生滿幾個月接種；ageMonths 為 [min,max] 代表建議區間
+// ─── 疫苗接種時程（衛福部疾管署 114年1月版公費常規疫苗 + 常見自費疫苗，2026年10月版本）────
+// ageMonths: 出生滿幾個月接種；paid: 'public'=公費（政府全額補助，攜兒童健康手冊及健保卡接種）、'private'=自費（需自行付費，依醫師建議與家庭意願決定）
 const VACCINE_SCHEDULE = [
-  {key:'hepb1',  name:'B型肝炎疫苗 第1劑',               ageMonths:0,      note:'出生24小時內儘速接種'},
-  {key:'hepb2',  name:'B型肝炎疫苗 第2劑',               ageMonths:1},
-  {key:'penta1', name:'五合一疫苗 第1劑',                 ageMonths:2,      note:'白喉破傷風百日咳b型嗜血桿菌不活化小兒麻痺'},
-  {key:'pcv1',   name:'13價結合型肺炎鏈球菌疫苗 第1劑',   ageMonths:2},
-  {key:'penta2', name:'五合一疫苗 第2劑',                 ageMonths:4},
-  {key:'pcv2',   name:'13價結合型肺炎鏈球菌疫苗 第2劑',   ageMonths:4},
-  {key:'bcg',    name:'卡介苗',                           ageMonths:5,      note:'建議接種時間為滿5-8個月'},
-  {key:'hepb3',  name:'B型肝炎疫苗 第3劑',               ageMonths:6},
-  {key:'penta3', name:'五合一疫苗 第3劑',                 ageMonths:6},
-  {key:'pcv3',   name:'13價結合型肺炎鏈球菌疫苗 第3劑',   ageMonths:12},
-  {key:'var',    name:'水痘疫苗',                         ageMonths:12},
-  {key:'mmr1',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第1劑', ageMonths:12},
-  {key:'je1',    name:'日本腦炎疫苗 第1劑',               ageMonths:15},
-  {key:'penta4', name:'五合一疫苗 第4劑',                 ageMonths:18},
-  {key:'hepa1',  name:'A型肝炎疫苗 第1劑',                ageMonths:18},
-  {key:'je2',    name:'日本腦炎疫苗 第2劑',               ageMonths:27},
-  {key:'hepa2',  name:'A型肝炎疫苗 第2劑',                ageMonths:27},
-  {key:'mmr2',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第2劑', ageMonths:60,  note:'滿5歲至入國小前'},
-  {key:'je3',    name:'日本腦炎疫苗 追加劑',               ageMonths:60,    note:'滿5歲至入國小前，與前一劑間隔至少12個月'},
-  {key:'dtapipv',name:'四合一疫苗(DTaP-IPV)',             ageMonths:60,    note:'滿5歲至入國小前'},
+  {key:'hepb1',  name:'B型肝炎疫苗 第1劑',               ageMonths:0,  paid:'public', note:'出生24小時內儘速接種'},
+  {key:'hepb2',  name:'B型肝炎疫苗 第2劑',               ageMonths:1,  paid:'public'},
+  {key:'penta1', name:'五合一疫苗 第1劑',                 ageMonths:2,  paid:'public', note:'白喉破傷風百日咳b型嗜血桿菌不活化小兒麻痺'},
+  {key:'pcv1',   name:'13價結合型肺炎鏈球菌疫苗 第1劑',   ageMonths:2,  paid:'public'},
+  {key:'rota1',  name:'口服輪狀病毒疫苗 第1劑',           ageMonths:2,  paid:'private', note:'2劑型/3劑型皆於此時接種；現為自費，2027年起全面公費，部分縣市已補助'},
+  {key:'menin1', name:'腦膜炎雙球菌疫苗 第1劑',           ageMonths:2,  paid:'private', note:'劑次與時程依廠牌不同，請與醫師討論'},
+  {key:'penta2', name:'五合一疫苗 第2劑',                 ageMonths:4,  paid:'public'},
+  {key:'pcv2',   name:'13價結合型肺炎鏈球菌疫苗 第2劑',   ageMonths:4,  paid:'public'},
+  {key:'rota2',  name:'口服輪狀病毒疫苗 第2劑',           ageMonths:4,  paid:'private', note:'2劑型滿2劑；3劑型還有第3劑'},
+  {key:'menin2', name:'腦膜炎雙球菌疫苗 第2劑',           ageMonths:4,  paid:'private'},
+  {key:'bcg',    name:'卡介苗',                           ageMonths:5,  paid:'public', note:'建議接種時間為滿5-8個月'},
+  {key:'hepb3',  name:'B型肝炎疫苗 第3劑',               ageMonths:6,  paid:'public'},
+  {key:'penta3', name:'五合一疫苗 第3劑',                 ageMonths:6,  paid:'public'},
+  {key:'rota3',  name:'口服輪狀病毒疫苗 第3劑',           ageMonths:6,  paid:'private', note:'僅3劑型廠牌需要接種此劑'},
+  {key:'pcvext', name:'13價結合型肺炎鏈球菌疫苗 加強劑',  ageMonths:6,  paid:'private', note:'非必要，可提升黏膜保護力（如常感冒、送托嬰）'},
+  {key:'menin3', name:'腦膜炎雙球菌疫苗 第3劑',           ageMonths:6,  paid:'private'},
+  {key:'pcv3',   name:'13價結合型肺炎鏈球菌疫苗 第3劑',   ageMonths:12, paid:'public'},
+  {key:'var',    name:'水痘疫苗',                         ageMonths:12, paid:'public'},
+  {key:'mmr1',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第1劑', ageMonths:12, paid:'public'},
+  {key:'je1',    name:'日本腦炎疫苗 第1劑',               ageMonths:15, paid:'public'},
+  {key:'penta4', name:'五合一疫苗 第4劑',                 ageMonths:18, paid:'public'},
+  {key:'hepa1',  name:'A型肝炎疫苗 第1劑',                ageMonths:18, paid:'public'},
+  {key:'menin4', name:'腦膜炎雙球菌疫苗 第4劑',           ageMonths:18, paid:'private'},
+  {key:'je2',    name:'日本腦炎疫苗 第2劑',               ageMonths:27, paid:'public'},
+  {key:'hepa2',  name:'A型肝炎疫苗 第2劑',                ageMonths:27, paid:'public'},
+  {key:'mmr2',   name:'麻疹腮腺炎德國麻疹混合疫苗(MMR) 第2劑', ageMonths:60, paid:'public', note:'滿5歲至入國小前'},
+  {key:'je3',    name:'日本腦炎疫苗 追加劑',               ageMonths:60, paid:'public', note:'滿5歲至入國小前，與前一劑間隔至少12個月'},
+  {key:'dtapipv',name:'四合一疫苗(DTaP-IPV)',             ageMonths:60, paid:'public', note:'滿5歲至入國小前'},
 ];
 
 // ─── State ────────────────────────────────────────────
@@ -2935,13 +2945,25 @@ function toggleVaccineDone(baby, key, checked){
   if(!state.vaccineRecords) state.vaccineRecords = {};
   if(!state.vaccineRecords[baby]) state.vaccineRecords[baby] = {};
   if(checked){
+    const existing = state.vaccineRecords[baby][key];
     const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
-    state.vaccineRecords[baby][key] = { done:true, date: todayStr };
-    fref('vaccineRecords/'+baby+'/'+key).set({ done:true, date: todayStr }).catch(()=>{});
+    // Keep a previously-set date if there is one (e.g. person unchecked by mistake then re-checked)
+    const dateStr = (existing && existing.date) || todayStr;
+    state.vaccineRecords[baby][key] = { done:true, date: dateStr };
+    fref('vaccineRecords/'+baby+'/'+key).set({ done:true, date: dateStr }).catch(()=>{});
   } else {
     delete state.vaccineRecords[baby][key];
     fref('vaccineRecords/'+baby+'/'+key).remove().catch(()=>{});
   }
+  renderVaccineSection();
+}
+
+function updateVaccineDate(baby, key, dateVal){
+  if(!dateVal) return;
+  if(!state.vaccineRecords) state.vaccineRecords = {};
+  if(!state.vaccineRecords[baby]) state.vaccineRecords[baby] = {};
+  state.vaccineRecords[baby][key] = { done:true, date: dateVal };
+  fref('vaccineRecords/'+baby+'/'+key).set({ done:true, date: dateVal }).catch(()=>{});
   renderVaccineSection();
 }
 
@@ -2976,7 +2998,7 @@ function renderVaccineSection(){
     let status, statusColor, statusBg;
     if(isDone){
       doneCount++;
-      status = rec.date ? `✅ ${rec.date.replace(/-/g,'/')} 已接種` : '✅ 已接種';
+      status = '✅ 已接種，接種日期：';
       statusColor = 'var(--success, #3F7A5C)'; statusBg = 'transparent';
     } else if(daysDiff < 0){
       overdueCount++;
@@ -2990,8 +3012,8 @@ function renderVaccineSection(){
       status = `預計 ${dueDate.getFullYear()}/${dueDate.getMonth()+1}/${dueDate.getDate()}`;
       statusColor = 'var(--ink3)'; statusBg = 'transparent';
     }
-    return { v, dueDate, isDone, status, statusColor, statusBg };
-  });
+    return { v, dueDate, isDone, status, statusColor, statusBg, recDate: rec && rec.date };
+  }).sort((a,b)=> a.v.ageMonths - b.v.ageMonths);
 
   summaryEl.innerHTML = `
     <div style="flex:1;text-align:center;padding:8px;border-radius:10px;background:var(--bg-elev2);">
@@ -3008,12 +3030,22 @@ function renderVaccineSection(){
     </div>`;
 
   listEl.innerHTML = rows.map(r=>{
+    const isPublic = r.v.paid === 'public';
+    const badge = isPublic
+      ? `<span style="font-size:10px;font-weight:700;color:#3F7A5C;background:#DDEAE3;border-radius:5px;padding:2px 6px;flex-shrink:0;">公費</span>`
+      : `<span style="font-size:10px;font-weight:700;color:#B8792A;background:#F6E6CE;border-radius:5px;padding:2px 6px;flex-shrink:0;">自費</span>`;
+    const dateControl = r.isDone
+      ? `<input type="date" value="${r.recDate||''}" onchange="updateVaccineDate('${baby}','${r.v.key}',this.value)" style="font-size:12px;font-weight:700;color:${r.statusColor};border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--bg-elev1);">`
+      : '';
     return `<div class="growth-entry" style="display:flex;align-items:center;gap:12px;background:${r.isDone?'var(--bg-elev2)':r.statusBg||'var(--bg-elev2)'};">
       <input type="checkbox" ${r.isDone?'checked':''} onchange="toggleVaccineDone('${baby}','${r.v.key}',this.checked)" style="width:22px;height:22px;flex-shrink:0;accent-color:${c.main};">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;color:var(--ink);${r.isDone?'opacity:0.6;text-decoration:line-through;':''}">${r.v.name}</div>
-        ${r.v.note ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${r.v.note}</div>` : ''}
-        <div style="font-size:12px;font-weight:700;color:${r.statusColor};margin-top:4px;">${r.status}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${badge}
+          <span style="font-size:14px;font-weight:700;color:var(--ink);${r.isDone?'opacity:0.6;text-decoration:line-through;':''}">${r.v.name}</span>
+        </div>
+        ${r.v.note ? `<div style="font-size:11px;color:var(--ink3);margin-top:3px;">${r.v.note}</div>` : ''}
+        <div style="font-size:12px;font-weight:700;color:${r.statusColor};margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${r.status}${dateControl}</div>
       </div>
     </div>`;
   }).join('');
