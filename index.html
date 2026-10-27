@@ -618,9 +618,21 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev1);border-top
       <p style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">
         <span style="font-weight:700;color:#3F7A5C;">公費</span>：政府全額補助，攜兒童健康手冊及健保卡至合約院所接種即可，不用額外付費。<br>
         <span style="font-weight:700;color:#B8792A;">自費</span>：政府未補助，需自行付費，是否接種可與醫師討論後自行決定（例如輪狀病毒疫苗現為自費，2027年起才會改公費）。<br>
-        清單依衛福部疾病管制署「現行兒童預防接種時程」及常見自費疫苗整理，實際接種請以醫護人員判斷及兒童健康手冊為準。流感疫苗、COVID-19疫苗為每年／每季接種，不列入下方清單。
+        清單依衛福部疾病管制署「現行兒童預防接種時程」及常見自費疫苗整理，實際接種請以醫護人員判斷及兒童健康手冊為準。流感疫苗因為是每年接種，另外獨立列在下方。
       </p>
     </div>
+
+    <div class="weight-card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;color:#3F7A5C;background:#DDEAE3;border-radius:5px;padding:2px 6px;">公費</span>
+        <span style="font-size:14px;font-weight:700;color:var(--ink);">流感疫苗</span>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin:4px 0 10px;line-height:1.5;">滿6個月以上至國小學齡前幼兒為公費對象；8歲（含）以下兒童第一次接種需打2劑，間隔4週，之後每年接種1劑。</p>
+      <div id="fluStatus" style="font-size:12px;font-weight:700;margin-bottom:10px;"></div>
+      <div id="fluDoseList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+      <button onclick="addFluDose(vaccineBaby)" style="width:100%;padding:10px;border:2px solid var(--ink);border-radius:12px;background:var(--bg-elev2);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer;">＋ 新增一次流感疫苗接種紀錄</button>
+    </div>
+
     <div id="vaccineList" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </div>
@@ -3049,6 +3061,71 @@ function renderVaccineSection(){
       </div>
     </div>`;
   }).join('');
+
+  renderFluSection(baby);
+}
+
+// ─── 流感疫苗（每年接種，獨立於單次疫苗清單之外）──────────
+function addFluDose(baby){
+  if(!baby) return;
+  const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+  const ref = fref('vaccineRecords/'+baby+'/flu').push();
+  const doseId = ref.key;
+  if(!state.vaccineRecords) state.vaccineRecords = {};
+  if(!state.vaccineRecords[baby]) state.vaccineRecords[baby] = {};
+  if(!state.vaccineRecords[baby].flu) state.vaccineRecords[baby].flu = {};
+  state.vaccineRecords[baby].flu[doseId] = { date: todayStr };
+  ref.set({ date: todayStr }).catch(()=>{});
+  renderFluSection(baby);
+}
+function updateFluDoseDate(baby, doseId, dateVal){
+  if(!dateVal) return;
+  state.vaccineRecords[baby].flu[doseId] = { date: dateVal };
+  fref('vaccineRecords/'+baby+'/flu/'+doseId).set({ date: dateVal }).catch(()=>{});
+  renderFluSection(baby);
+}
+function deleteFluDose(baby, doseId){
+  if(!confirm('確定要刪除這筆流感疫苗接種紀錄？')) return;
+  delete state.vaccineRecords[baby].flu[doseId];
+  fref('vaccineRecords/'+baby+'/flu/'+doseId).remove().catch(()=>{});
+  renderFluSection(baby);
+}
+
+function renderFluSection(baby){
+  const statusEl = document.getElementById('fluStatus');
+  const listEl = document.getElementById('fluDoseList');
+  if(!statusEl || !listEl) return;
+  if(!baby){ statusEl.innerHTML=''; listEl.innerHTML=''; return; }
+
+  const birth = babyBirth(baby);
+  const fluRecords = (state.vaccineRecords && state.vaccineRecords[baby] && state.vaccineRecords[baby].flu) || {};
+  const entries = Object.entries(fluRecords)
+    .map(([id,v])=>({id, date:v.date}))
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+  if(birth){
+    const ageMonths = Math.floor((new Date() - new Date(birth+'T00:00:00')) / (30.44*86400000));
+    const c = babyColor(baby);
+    if(ageMonths < 6){
+      statusEl.innerHTML = `<span style="color:var(--ink3);">尚未符合公費接種資格（滿6個月以上才開始接種）</span>`;
+    } else if(entries.length === 0){
+      statusEl.innerHTML = `<span style="color:var(--danger, #C0392B);">⚠️ 尚未接種過，建議儘快接種第1劑</span>`;
+    } else if(entries.length === 1){
+      statusEl.innerHTML = `<span style="color:${c.main};">🔔 已接種1劑，8歲以下首次接種需完成2劑（間隔4週），記得安排第2劑</span>`;
+    } else {
+      const lastDate = entries[0].date;
+      statusEl.innerHTML = `<span style="color:var(--success, #3F7A5C);">✅ 已接種 ${entries.length} 劑，最近一次 ${(lastDate||'').replace(/-/g,'/')}（每年記得追加1劑）</span>`;
+    }
+  } else {
+    statusEl.innerHTML = '';
+  }
+
+  listEl.innerHTML = entries.length ? entries.map(e=>{
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:var(--bg-elev2);border:1px solid var(--border);">
+      <input type="date" value="${e.date||''}" onchange="updateFluDoseDate('${baby}','${e.id}',this.value)" style="font-size:13px;font-weight:700;color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:3px 5px;background:var(--bg-elev1);">
+      <button class="log-del" onclick="deleteFluDose('${baby}','${e.id}')">✕</button>
+    </div>`;
+  }).join('') : '';
 }
 
 function renderFeedingGoalProgress(baby, actualMl){
